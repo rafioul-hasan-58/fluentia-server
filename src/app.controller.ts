@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, NotFoundException } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -12,5 +12,9 @@ export class AppController {
       message: 'Fetched Successfully!',
       data: result,
     };
+  }
+  @Get('test-error')
+  testError() {
+    throw new NotFoundException('This is a test-error');
   }
 }
