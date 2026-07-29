@@ -1,6 +1,9 @@
-import { Controller, Get, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, NotFoundException } from '@nestjs/common';
 import { AppService } from './app.service';
 import z from 'zod';
+import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
+import { testUserSchema } from './app.validation';
+import type { TestUserDto } from './app.validation';
 
 @Controller()
 export class AppController {
@@ -26,5 +29,9 @@ export class AppController {
   @Get('test-prisma')
   async testPrisma() {
     return this.appService.triggerNotFound();
+  }
+  @Post('test-validate')
+  testValidate(@Body(new ZodValidationPipe(testUserSchema)) dto: TestUserDto) {
+    return { message: 'Validation passed', data: dto };
   }
 }
