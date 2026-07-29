@@ -6,8 +6,14 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 
+interface ErrorMessage {
+  path: string;
+  message: string;
+}
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
@@ -19,8 +25,21 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     let statusCode: number = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Something went wrong';
+    let errorMessages: ErrorMessage[] = [];
 
-    if (exception instanceof HttpException) {
+    if (exception instanceof ZodError) {
+      statusCode = HttpStatus.BAD_REQUEST;
+      message = 'Validation Error';
+      errorMessages = exception.issues.map((issue) => ({
+        path: issue.path.join('.'),
+        message: issue.message,
+      }));
+    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      const mapped = this.mapPrismaError(exception);
+      statusCode = mapped.statusCode;
+      message = mapped.message;
+      errorMessages = mapped.errorMessages;
+    } else if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
       const res = exception.getResponse();
       if (typeof res === 'string') {
@@ -51,7 +70,49 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     response.status(statusCode).json({
       success: false,
       message,
-      errorMessage: [],
+      errorMessages,
     });
+  }
+  private mapPrismaError(exception: Prisma.PrismaClientKnownRequestError) {
+    console.log('exception', exception);
+    switch (exception.code) {
+      case 'P2025':
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'Record not found',
+          errorMessages: [{ path: '', message: 'Record not found' }],
+        };
+      case 'P2002':
+        return {
+          statusCode: HttpStatus.CONFLICT,
+          message: 'Unique constraint failed',
+          errorMessages: [
+            {
+              path: (exception.meta?.target as string[])?.join(', ') ?? '',
+              message: 'Already exists',
+            },
+          ],
+        };
+      case 'P2003':
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Foreign key constraint failed',
+          errorMessages: [
+            { path: '', message: 'Related record constraint violated' },
+          ],
+        };
+      case 'P2023':
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Invalid ID format',
+          errorMessages: [{ path: '', message: 'Invalid MongoDB ObjectId' }],
+        };
+      default:
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Database request error',
+          errorMessages: [{ path: '', message: exception.message }],
+        };
+    }
   }
 }
