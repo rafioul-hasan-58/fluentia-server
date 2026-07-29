@@ -2,11 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from './config/env.schema';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   console.log('Bootstrap starting...');
   try {
     const app = await NestFactory.create(AppModule);
+    app.useGlobalInterceptors(new TransformInterceptor());
     const configService = app.get(ConfigService<EnvConfig, true>);
     const port = configService.get('PORT', { infer: true });
 
