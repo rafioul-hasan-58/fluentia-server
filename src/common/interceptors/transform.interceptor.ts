@@ -4,10 +4,12 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { map, Observable } from 'rxjs';
 
 export interface ApiResponse<T> {
   success: true;
+  statusCode: number;
   message: string;
   data: T;
 }
@@ -21,6 +23,8 @@ export class TransformInterceptor<T> implements NestInterceptor<
     context: ExecutionContext,
     next: CallHandler<T>,
   ): Observable<ApiResponse<T>> {
+    const response = context.switchToHttp().getResponse<Response>();
+
     return next.handle().pipe(
       map((result: unknown) => {
         const isObject = result !== null && typeof result === 'object';
@@ -35,6 +39,7 @@ export class TransformInterceptor<T> implements NestInterceptor<
 
         return {
           success: true,
+          statusCode: response.statusCode,
           message,
           data,
         };

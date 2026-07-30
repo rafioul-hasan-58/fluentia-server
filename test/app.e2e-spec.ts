@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { TransformInterceptor } from './../src/common/interceptors/transform.interceptor';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -13,6 +14,7 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalInterceptors(new TransformInterceptor());
     await app.init();
   });
 
@@ -20,7 +22,15 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect((res: request.Response) => {
+        const body = res.body as Record<string, unknown>;
+        expect(body.success).toBe(true);
+        expect(body.statusCode).toBe(200);
+        expect(body.message).toBe('Fetched Successfully!');
+        expect(
+          typeof body.data === 'string' && body.data.includes('Hello World!'),
+        ).toBe(true);
+      });
   });
 
   afterEach(async () => {

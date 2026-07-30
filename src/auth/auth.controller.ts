@@ -2,6 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -17,6 +18,18 @@ export class AuthController {
     const data = await this.authService.register(dto);
     return {
       message: 'Registration successfull',
+      data,
+    };
+  }
+
+  @Post('login')
+  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiResponse({ status: 200, description: 'Token' })
+  @ApiResponse({ status: 401, description: 'Invalid email or password' })
+  async login(@Body() dto: LoginDto) {
+    const data = await this.authService.login(dto);
+    return {
+      message: 'Login successfull!',
       data,
     };
   }
