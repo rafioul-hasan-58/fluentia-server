@@ -59,11 +59,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password!');
     }
 
-    const tokenPaylod = {
+    const tokenPayload = {
       id: user.id,
       email: user.email,
+      role: user.role as string,
     };
-    const accessToken = this.jwtService.sign(tokenPaylod);
+    const accessToken = this.jwtService.sign(tokenPayload);
     return {
       accessToken,
     };
