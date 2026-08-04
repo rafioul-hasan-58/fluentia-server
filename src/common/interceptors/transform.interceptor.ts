@@ -6,13 +6,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { map, Observable } from 'rxjs';
-
-export interface ApiResponse<T> {
-  success: true;
-  statusCode: number;
-  message: string;
-  data: T;
-}
+import { ApiResponse } from '../../shared/interfaces/api-response.interface';
 
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<
@@ -31,9 +25,7 @@ export class TransformInterceptor<T> implements NestInterceptor<
         const resObj = isObject ? (result as Record<string, unknown>) : null;
 
         const message =
-          typeof resObj?.message === 'string'
-            ? resObj.message
-            : 'Request Successfull';
+          typeof resObj?.message === 'string' ? resObj.message : undefined;
 
         const data = (resObj && 'data' in resObj ? resObj.data : result) as T;
 
@@ -42,6 +34,7 @@ export class TransformInterceptor<T> implements NestInterceptor<
           statusCode: response.statusCode,
           message,
           data,
+          timestamp: new Date().toISOString(),
         };
       }),
     );

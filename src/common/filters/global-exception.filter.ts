@@ -72,6 +72,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       statusCode,
       message,
       errorMessages,
+      timestamp: new Date().toISOString(),
     });
   }
   private mapPrismaError(exception: Prisma.PrismaClientKnownRequestError) {

@@ -9,7 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import { Request } from 'express';
-import { ROLES_KEY } from '../decorators/roles.decorator';
+import { ROLES_KEY } from '../../core/constants';
 
 export interface JwtPayload {
   id: string;
@@ -26,6 +26,23 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
+
+    // 1. Authenticate (Verify JWT token)
+    const payload = await this.authenticate(request);
+    request['user'] = payload;
+
+    // 2. Authorize (Check role-based permissions)
+    const isAuthorized = this.authorize(context, payload.role);
+    if (!isAuthorized) {
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
+    }
+
+    return true;
+  }
+
+  private async authenticate(request: Request): Promise<JwtPayload> {
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
@@ -38,15 +55,15 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('You are not authorized');
     }
 
-    let payload: JwtPayload;
     try {
-      payload = await this.jwtService.verifyAsync<JwtPayload>(token);
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
+      return payload;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
+  }
 
-    request['user'] = payload;
-
+  private authorize(context: ExecutionContext, userRole: Role): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -56,13 +73,6 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    const hasRole = requiredRoles.includes(payload.role);
-    if (!hasRole) {
-      throw new ForbiddenException(
-        'You do not have permission to access this resource',
-      );
-    }
-
-    return true;
+    return requiredRoles.includes(userRole);
   }
 }
