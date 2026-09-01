@@ -11,7 +11,7 @@ import { API_DOCS_PATH, GLOBAL_PREFIX } from './core/constants';
 
 async function bootstrap() {
   const logger = new CustomLogger();
-  logger.log('Bootstrap starting...', 'Bootstrap');
+  logger.log('Starting Fluentia Server...', 'Bootstrap');
   try {
     const app = await NestFactory.create(AppModule, {
       logger,
