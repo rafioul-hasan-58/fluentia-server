@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { Role } from '@prisma/client';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class GoogleLoginDto {
   @ApiProperty({
@@ -10,14 +9,4 @@ export class GoogleLoginDto {
   @IsString()
   @IsNotEmpty()
   token!: string;
-
-  @ApiProperty({
-    description:
-      'The active role of the user (required for first-time registration)',
-    enum: Role,
-    required: false,
-  })
-  @IsEnum(Role, { message: 'Invalid Role!' })
-  @IsOptional()
-  activeRole?: Role;
 }
