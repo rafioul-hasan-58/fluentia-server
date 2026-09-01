@@ -12,6 +12,7 @@ import { LoginDto } from './dto/login.dto';
 import { User } from '@prisma/client';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from 'src/modules/mail';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(payload: RegisterDto) {
@@ -95,5 +97,12 @@ export class AuthService {
         expiresAt: otpExpireAt,
       },
     });
+
+    await this.mailService.sendPasswordResetOtp(payload.email, otpCode);
+    return {
+      message:
+        'Password reset OTP verification code sent to your email address.',
+      email: payload.email,
+    };
   }
 }

@@ -3,6 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -31,6 +32,18 @@ export class AuthController {
     const data = await this.authService.login(dto);
     return {
       message: 'Login successfull!',
+      data,
+    };
+  }
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Forgot Password' })
+  @ApiResponse({ status: 200, description: 'OTP sent successfully!' })
+  @ApiResponse({ status: 404, description: 'User not found!' })
+  async forgotPassword(@Body() dto: ForgotPasswordDTO) {
+    const data = await this.authService.forgotPassword(dto);
+    return {
+      message: 'Forgot password reset OTP sent successfully!',
       data,
     };
   }
