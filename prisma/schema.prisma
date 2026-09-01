@@ -155,3 +155,11 @@ model LearningProfile {
   streakDays    Int       @default(0)
   lastActiveAt  DateTime?
 }
+
+model Otp {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  otp       String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}

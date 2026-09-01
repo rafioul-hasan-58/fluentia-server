@@ -10,6 +10,7 @@ import { HealthModule } from './health/health.module';
 import { SkillsModule } from './modules/skills';
 import { AiModule } from './modules/ai';
 import { GrammarModule } from './modules/grammar';
+import { MailModule } from './modules/mail';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { GrammarModule } from './modules/grammar';
     SkillsModule,
     AiModule,
     GrammarModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

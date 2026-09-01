@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -9,12 +10,15 @@ import { RegisterDto } from './dto/register.dto';
 import bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
 import { User } from '@prisma/client';
+import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async register(payload: RegisterDto) {
@@ -67,5 +71,29 @@ export class AuthService {
     return {
       accessToken,
     };
+  }
+  async forgotPassword(payload: ForgotPasswordDTO) {
+    const user = await this.usersRepository.findByEmail(payload.email);
+    if (!user) {
+      throw new NotFoundException('User not found!');
+    }
+
+    const otpCode = Math.floor(10000 + Math.random() * 90000).toString();
+    const otpExpireAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await this.prisma.otp.upsert({
+      where: {
+        email: payload.email,
+      },
+      update: {
+        otp: otpCode,
+        expiresAt: otpExpireAt,
+      },
+      create: {
+        email: payload.email,
+        otp: otpCode,
+        expiresAt: otpExpireAt,
+      },
+    });
   }
 }
