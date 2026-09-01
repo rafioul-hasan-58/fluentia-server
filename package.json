@@ -1,7 +1,7 @@
 {
-  "name": "nest-starter-pack",
+  "name": "fluentia-server",
   "version": "0.0.1",
-  "description": "",
+  "description": "Fluentia Server - AI-Powered English Learning Platform Backend",
   "author": "",
   "private": true,
   "license": "UNLICENSED",

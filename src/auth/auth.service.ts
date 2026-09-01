@@ -8,6 +8,7 @@ import { UsersRepository } from '../modules/users/users.repository';
 import { RegisterDto } from './dto/register.dto';
 import bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -17,28 +18,34 @@ export class AuthService {
   ) {}
 
   async register(payload: RegisterDto) {
-    const existing = await this.usersRepository.findByEmail(payload.email);
+    const existing: User | null = await this.usersRepository.findByEmail(
+      payload.email,
+    );
 
     if (existing) {
       throw new ConflictException('This email is already in use!');
     }
     const hashedPassword = await bcrypt.hash(payload.password, 12);
 
-    const user = await this.usersRepository.create({
-      name: payload.name,
+    const user: User = await this.usersRepository.create({
+      firstName: payload.firstName,
+      lastName: payload.lastName,
       email: payload.email,
       password: hashedPassword,
     });
 
     return {
       id: user.id,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
     };
   }
 
   async login(payload: LoginDto) {
-    const user = await this.usersRepository.findByEmail(payload.email);
+    const user: User | null = await this.usersRepository.findByEmail(
+      payload.email,
+    );
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password!');
@@ -53,6 +60,8 @@ export class AuthService {
       id: user.id,
       email: user.email,
       role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
     };
     const accessToken = this.jwtService.sign(tokenPayload);
     return {

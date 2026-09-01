@@ -39,8 +39,10 @@ async function bootstrap() {
     const port = configService.get('PORT', { infer: true });
 
     const config = new DocumentBuilder()
-      .setTitle('NestJS Starter Pack API')
-      .setDescription('The starter pack API description')
+      .setTitle('Fluentia API')
+      .setDescription(
+        'Fluentia - AI-Powered English Learning Platform API Documentation',
+      )
       .setVersion('1.0')
       .addBearerAuth()
       .build();

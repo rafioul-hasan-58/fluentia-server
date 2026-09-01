@@ -45,7 +45,8 @@ describe('AppController (e2e)', () => {
   it('Full Authentication Flow: Register -> Login -> Protected Route -> Health Check', async () => {
     const randomSuffix = Math.floor(Math.random() * 1000000);
     const registerPayload = {
-      name: 'E2E Test User',
+      firstName: 'Rafioul',
+      lastName: 'Hasan Sourob',
       email: `e2e_${randomSuffix}@example.com`,
       password: 'password123',
     };
