@@ -9,11 +9,14 @@ import { UsersRepository } from '../modules/users/users.repository';
 import { RegisterDto } from './dto/register.dto';
 import bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
-import { User } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from 'src/modules/mail';
-import { VerifyResetOtpDto } from './dto/verify-reset-otp-dto';
+import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
+import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from 'src/config/env.schema';
+import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +25,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
+    private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
   async register(payload: RegisterDto) {
@@ -48,13 +52,30 @@ export class AuthService {
       email: user.email,
     };
   }
+  private async generateTokens(user: User) {
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
 
+    const accessToken = await this.jwtService.signAsync(tokenPayload);
+
+    const refreshToken = await this.jwtService.signAsync(tokenPayload, {
+      secret: this.configService.get('JWT_REFRESH_SECRET', { infer: true }),
+      expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', {
+        infer: true,
+      }),
+    });
+
+    return { accessToken, refreshToken };
+  }
   async login(payload: LoginDto) {
     const user: User | null = await this.usersRepository.findByEmail(
       payload.email,
     );
 
-    if (!user) {
+    if (!user || !user.password) {
       throw new UnauthorizedException('Invalid email or password!');
     }
 
@@ -169,5 +190,69 @@ export class AuthService {
     return {
       message: 'Password reset successfully.',
     };
+  }
+  async authenticateGoogleToken(idToken: string) {
+    const clientId = this.configService.get('OAUTH_CLIENT_ID', {
+      infer: true,
+    });
+    if (!clientId) {
+      throw new Error('Google Client ID is not configured');
+    }
+    const client = new OAuth2Client(clientId);
+
+    const ticket = await client
+      .verifyIdToken({
+        idToken,
+        audience: clientId,
+      })
+      .catch(() => {
+        throw new UnauthorizedException('Invalid Google ID token');
+      });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      throw new UnauthorizedException('Invalid Google token payload');
+    }
+
+    const {
+      sub: googleId,
+      email,
+      given_name: firstName,
+      family_name: lastName,
+    } = payload;
+
+    if (!email) {
+      throw new UnauthorizedException('Email not provided by Google');
+    }
+
+    // Check if user exists by googleId first
+    let user = await this.prisma.user.findFirst({
+      where: { googleId },
+    });
+
+    // If not found, check by email (to link account if they registered with email previously)
+    if (!user) {
+      user = await this.usersRepository.findByEmail(email);
+
+      if (user) {
+        user = await this.prisma.user.update({
+          where: { email },
+          data: {
+            googleId,
+          },
+        });
+      } else {
+        // Create new user without password
+        user = await this.usersRepository.create({
+          email,
+          googleId,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          role: Role.USER,
+        });
+      }
+    }
+
+    return this.generateTokens(user);
   }
 }

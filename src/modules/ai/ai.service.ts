@@ -17,7 +17,6 @@ export class AiService implements OnModuleInit {
   onModuleInit() {
     const apiKey =
       this.configService.get('OPENAI_API_KEY', { infer: true }) ||
-      this.configService.get('OPEN_AI_KEY', { infer: true }) ||
       process.env.OPENAI_API_KEY ||
       process.env.OPEN_AI_KEY;
 
