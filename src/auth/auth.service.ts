@@ -13,6 +13,7 @@ import { User } from '@prisma/client';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from 'src/modules/mail';
+import { VerifyResetOtpDto } from './dto/verify-reset-otp-dto';
 
 @Injectable()
 export class AuthService {
@@ -103,6 +104,51 @@ export class AuthService {
       message:
         'Password reset OTP verification code sent to your email address.',
       email: payload.email,
+    };
+  }
+  async verifyResetOtp(payload: VerifyResetOtpDto) {
+    const otpRecord = await this.prisma.otp.findUnique({
+      where: { email: payload.email },
+    });
+
+    if (!otpRecord) {
+      throw new UnauthorizedException(
+        'No verification request found for this email',
+      );
+    }
+
+    if (otpRecord.otp !== payload.otp) {
+      throw new UnauthorizedException('Invalid verification code');
+    }
+
+    if (new Date() > otpRecord.expiresAt) {
+      throw new UnauthorizedException('Verification code has expired');
+    }
+
+    const user = await this.usersRepository.findByEmail(payload.email);
+    if (!user) {
+      throw new NotFoundException('User with this email does not exist');
+    }
+
+    await this.prisma.otp.delete({
+      where: { email: payload.email },
+    });
+
+    const resetToken = await this.jwtService.signAsync(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        purpose: 'reset-password',
+      },
+      {
+        expiresIn: '10m',
+      },
+    );
+
+    return {
+      message: 'OTP verified successfully.',
+      resetToken,
     };
   }
 }

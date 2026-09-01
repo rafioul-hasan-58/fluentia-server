@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
+import { VerifyResetOtpDto } from './dto/verify-reset-otp-dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -44,6 +45,20 @@ export class AuthController {
     const data = await this.authService.forgotPassword(dto);
     return {
       message: 'Forgot password reset OTP sent successfully!',
+      data,
+    };
+  }
+
+  @Post('verify-reset-password-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify Reset Password OTP' })
+  @ApiResponse({ status: 200, description: 'OTP verified successfully!' })
+  @ApiResponse({ status: 401, description: 'Invalid verification code' })
+  @ApiResponse({ status: 404, description: 'User not found!' })
+  async verifyResetOtp(@Body() dto: VerifyResetOtpDto) {
+    const data = await this.authService.verifyResetOtp(dto);
+    return {
+      message: 'OTP verified successfully!',
       data,
     };
   }
