@@ -13,6 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
@@ -21,9 +26,131 @@ model User {
   role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  profile       LearningProfile?
+  sessions      LearningSession[]
+  attempts      ExerciseAttempt[]
+  submissions   SentenceSubmission[]
+  skillProgress SkillProgress[]
+  weaknesses    Weakness[]
+  reviews       ReviewSchedule[]
 }
 
-enum Role {
-  USER
-  ADMIN
+// The curated taxonomy — seeded by you, not created by the AI at runtime.
+model Skill {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  slug     String  @unique // "present_perfect"
+  name     String // "Present Perfect"
+  category String // "verb_tenses"
+  cefr     String? // "B1"
+  parentId String? @db.ObjectId
+  parent   Skill?  @relation("SkillTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Skill[] @relation("SkillTree")
+
+  sessions    LearningSession[]
+  exercises   Exercise[]
+  submissions SentenceSubmission[]
+  progress    SkillProgress[]
+  weaknesses  Weakness[]
+  reviews     ReviewSchedule[]
+}
+
+// One "diagnose → teach → practice" pass, scoped to one known skillId.
+model LearningSession {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String     @db.ObjectId
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId   String     @db.ObjectId
+  skill     Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  rawInput  String? // optional free-text detail
+  diagnosis Json // validated AI diagnosis output
+  status    String     @default("diagnosing") // diagnosing|teaching|practicing|completed
+  createdAt DateTime   @default(now())
+  exercises Exercise[]
+}
+
+model Exercise {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId  String            @db.ObjectId
+  session    LearningSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  skillId    String            @db.ObjectId
+  skill      Skill             @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  type       String // mcq|fill_blank|error_correction|sentence_transform
+  difficulty String // beginner|intermediate|advanced
+  content    Json // question/options — AI-generated, backend-validated
+  createdAt  DateTime          @default(now())
+  attempts   ExerciseAttempt[]
+}
+
+model ExerciseAttempt {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId String   @db.ObjectId
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  userAnswer String
+  isCorrect  Boolean
+  createdAt  DateTime @default(now())
+}
+
+model SentenceSubmission {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String   @db.ObjectId
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId           String   @db.ObjectId
+  skill             Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  prompt            String
+  sentence          String
+  aiEvaluation      Json // errors, correction, explanation
+  usedTargetGrammar Boolean
+  createdAt         DateTime @default(now())
+}
+
+model Weakness {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId       String   @db.ObjectId
+  skill         Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  confidence    Float // 0–1, backend-calculated from evidence
+  evidenceCount Int      @default(0)
+  status        String   @default("active") // active|improving|resolved
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, skillId])
+}
+
+model SkillProgress {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String    @db.ObjectId
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId         String    @db.ObjectId
+  skill           Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  masteryScore    Float     @default(0) // 0–100, backend-owned math
+  correctCount    Int       @default(0)
+  incorrectCount  Int       @default(0)
+  lastPracticedAt DateTime?
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, skillId])
+}
+
+model ReviewSchedule {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId      String   @db.ObjectId
+  skill        Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  nextReviewAt DateTime
+  intervalDays Int      @default(1)
+  lastResult   String? // success|fail
+}
+
+model LearningProfile {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String    @unique @db.ObjectId
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  estimatedCEFR String    @default("A2")
+  streakDays    Int       @default(0)
+  lastActiveAt  DateTime?
 }
