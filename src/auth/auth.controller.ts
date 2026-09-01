@@ -5,7 +5,6 @@ import {
   HttpStatus,
   Post,
   Req,
-  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -21,7 +20,7 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { AuthGuard, JwtPayload } from 'src/common/guards/auth.guard';
+import { AuthGuard, JwtPayload } from '../common/guards/auth.guard';
 import { GoogleLoginDto } from './dto/google-login.dto';
 
 @ApiTags('Authentication')
@@ -116,17 +115,18 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid Google token' })
   async googleLogin(
     @Body() dto: GoogleLoginDto,
-    @Res({ passthrough: true }) response: Response,
+    // @Res({ passthrough: true }) response: Response,
   ) {
-    const { accessToken, refreshToken } =
-      await this.authService.authenticateGoogleToken(dto.token);
+    const { accessToken } = await this.authService.authenticateGoogleToken(
+      dto.token,
+    );
 
-    response.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
+    // response.cookie('refreshToken', refreshToken, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === 'production',
+    //   sameSite: 'lax',
+    //   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    // });
 
     return {
       message: 'Google login successful!',

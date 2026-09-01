@@ -12,10 +12,10 @@ import { LoginDto } from './dto/login.dto';
 import { Role, User } from '@prisma/client';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { MailService } from 'src/modules/mail';
+import { MailService } from '../modules/mail';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
 import { ConfigService } from '@nestjs/config';
-import { EnvConfig } from 'src/config/env.schema';
+import { EnvConfig } from '../config/env.schema';
 import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
