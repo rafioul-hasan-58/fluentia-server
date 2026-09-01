@@ -7,6 +7,9 @@ import { validateConfig } from './config/env.schema';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './modules/users';
 import { HealthModule } from './health/health.module';
+import { SkillsModule } from './modules/skills';
+import { AiModule } from './modules/ai';
+import { GrammarModule } from './modules/grammar';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { HealthModule } from './health/health.module';
     AuthModule,
     UsersModule,
     HealthModule,
+    SkillsModule,
+    AiModule,
+    GrammarModule,
   ],
   controllers: [AppController],
   providers: [AppService],

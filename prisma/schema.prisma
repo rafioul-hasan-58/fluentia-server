@@ -64,7 +64,7 @@ model LearningSession {
   skillId   String     @db.ObjectId
   skill     Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
   rawInput  String? // optional free-text detail
-  diagnosis Json // validated AI diagnosis output
+  diagnosis Json? // validated AI diagnosis output
   status    String     @default("diagnosing") // diagnosing|teaching|practicing|completed
   createdAt DateTime   @default(now())
   exercises Exercise[]
