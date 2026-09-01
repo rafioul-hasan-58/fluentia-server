@@ -1,10 +1,26 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp-dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AuthGuard, JwtPayload } from 'src/common/guards/auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -59,6 +75,28 @@ export class AuthController {
     const data = await this.authService.verifyResetOtp(dto);
     return {
       message: 'OTP verified successfully!',
+      data,
+    };
+  }
+
+  @Post('reset-password')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset Password' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully!' })
+  @ApiResponse({ status: 404, description: 'User not found!' })
+  async resetPassword(
+    @Req() req: Record<string, unknown>,
+    @Body() dto: ResetPasswordDto,
+  ) {
+    const user = req.user as JwtPayload | undefined;
+    if (user?.purpose !== 'reset-password') {
+      throw new UnauthorizedException('Invalid token purpose');
+    }
+    const data = await this.authService.resetPassword(user.id, dto.password);
+    return {
+      message: 'Password reset successfully!',
       data,
     };
   }
