@@ -17,6 +17,19 @@ async function bootstrap() {
       logger,
     });
 
+    // Enable CORS
+    app.enableCors({
+      origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Accept',
+        'X-Requested-With',
+      ],
+    });
+
     app.setGlobalPrefix(GLOBAL_PREFIX);
 
     // Enable URI versioning (e.g. /api/v1/auth/login)
