@@ -19,7 +19,11 @@ async function bootstrap() {
 
     // Enable CORS
     app.enableCors({
-      origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+      origin: [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://fluentia.sourob.com',
+      ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
       allowedHeaders: [
