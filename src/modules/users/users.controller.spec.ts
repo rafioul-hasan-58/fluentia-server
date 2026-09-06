@@ -10,6 +10,8 @@ describe('UsersController', () => {
   let controller: UsersController;
   let service: {
     myProfile: jest.Mock;
+    updateProfile: jest.Mock;
+    uploadProfileImage: jest.Mock;
   };
 
   const mockUserProfile = {
@@ -17,6 +19,8 @@ describe('UsersController', () => {
     firstName: 'Jane',
     lastName: 'Doe',
     email: 'jane@example.com',
+    profileImage:
+      'https://medsyst.s3.eu-north-1.amazonaws.com/avatars/avatar.jpg',
     role: Role.USER,
     registrationMethod: 'EMAIL',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -27,6 +31,8 @@ describe('UsersController', () => {
   beforeEach(async () => {
     const mockUsersService = {
       myProfile: jest.fn(),
+      updateProfile: jest.fn(),
+      uploadProfileImage: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -86,6 +92,75 @@ describe('UsersController', () => {
           email: 'test@example.com',
           role: Role.USER,
         }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should update profile and return formatted response', async () => {
+      const updatedProfile = { ...mockUserProfile, firstName: 'Updated' };
+      service.updateProfile.mockResolvedValue(updatedProfile);
+
+      const user = {
+        id: '665f1b2e1111111111111111',
+        email: 'jane@example.com',
+        role: Role.USER,
+      };
+
+      const result = await controller.updateProfile(user, {
+        firstName: 'Updated',
+      });
+
+      expect(service.updateProfile).toHaveBeenCalledWith(
+        '665f1b2e1111111111111111',
+        { firstName: 'Updated' },
+        undefined,
+      );
+      expect(result).toEqual({
+        message: 'User profile updated successfully.',
+        data: updatedProfile,
+      });
+    });
+
+    it('should throw UnauthorizedException when updating without valid user id', async () => {
+      await expect(
+        controller.updateProfile(undefined, { firstName: 'Test' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('uploadProfileImage', () => {
+    it('should upload profile image and return response', async () => {
+      const mockResult = {
+        profileImage:
+          'https://medsyst.s3.eu-north-1.amazonaws.com/avatars/new.jpg',
+        user: mockUserProfile,
+      };
+      service.uploadProfileImage.mockResolvedValue(mockResult);
+
+      const user = {
+        id: '665f1b2e1111111111111111',
+        email: 'jane@example.com',
+        role: Role.USER,
+      };
+      const mockFile = {} as Express.Multer.File;
+
+      const result = await controller.uploadProfileImage(user, mockFile);
+
+      expect(service.uploadProfileImage).toHaveBeenCalledWith(
+        '665f1b2e1111111111111111',
+        mockFile,
+      );
+      expect(result).toEqual({
+        message: 'Profile image uploaded successfully.',
+        data: mockResult,
+      });
+    });
+
+    it('should throw UnauthorizedException when uploading without user', async () => {
+      const mockFile = {} as Express.Multer.File;
+      await expect(
+        controller.uploadProfileImage(undefined, mockFile),
       ).rejects.toThrow(UnauthorizedException);
     });
   });

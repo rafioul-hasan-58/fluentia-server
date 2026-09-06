@@ -11,6 +11,7 @@ import { SkillsModule } from './modules/skills';
 import { AiModule } from './modules/ai';
 import { GrammarModule } from './modules/grammar';
 import { MailModule } from './modules/mail';
+import { S3Module } from './modules/s3';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MailModule } from './modules/mail';
     AiModule,
     GrammarModule,
     MailModule,
+    S3Module,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -25,6 +25,11 @@ model User {
   email              String             @unique
   password           String?
   role               Role               @default(USER)
+  profileImage       String?
+  bio                String?
+  phoneNumber        String?
+  country            String?
+  timezone           String?
   registrationMethod RegistrationMethod @default(EMAIL)
   googleId           String?
   createdAt          DateTime           @default(now())
@@ -150,12 +155,16 @@ model ReviewSchedule {
 }
 
 model LearningProfile {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String    @unique @db.ObjectId
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  estimatedCEFR String    @default("A2")
-  streakDays    Int       @default(0)
-  lastActiveAt  DateTime?
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String    @unique @db.ObjectId
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  estimatedCEFR    String    @default("A2")
+  targetLevel      String?
+  nativeLanguage   String?
+  learningGoals    String[]  @default([])
+  dailyGoalMinutes Int?      @default(15)
+  streakDays       Int       @default(0)
+  lastActiveAt     DateTime?
 }
 
 model Otp {

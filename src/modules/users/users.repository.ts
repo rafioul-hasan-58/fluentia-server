@@ -31,6 +31,7 @@ export class UsersRepository implements IBaseRepository<
         firstName: true,
         lastName: true,
         email: true,
+        profileImage: true,
         role: true,
         registrationMethod: true,
         createdAt: true,
