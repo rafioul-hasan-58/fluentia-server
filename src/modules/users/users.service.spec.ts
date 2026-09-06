@@ -22,6 +22,10 @@ describe('UsersService', () => {
     lastName: 'Doe',
     email: 'john@example.com',
     profileImage: 'https://medsyst.s3.eu-north-1.amazonaws.com/avatars/old.jpg',
+    bio: 'Passionate learner',
+    phoneNumber: '+8801700000000',
+    country: 'Bangladesh',
+    timezone: 'Asia/Dhaka',
     role: 'USER',
     registrationMethod: 'EMAIL',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -30,6 +34,10 @@ describe('UsersService', () => {
       id: '665f1b2e2222222222222222',
       userId: '665f1b2e1111111111111111',
       estimatedCEFR: 'B1',
+      targetLevel: 'B2',
+      nativeLanguage: 'Bengali',
+      learningGoals: ['Speaking', 'Grammar'],
+      dailyGoalMinutes: 20,
       streakDays: 5,
       lastActiveAt: new Date('2026-01-02T00:00:00.000Z'),
     },
@@ -96,23 +104,83 @@ describe('UsersService', () => {
   });
 
   describe('updateProfile', () => {
-    it('should update profile fields without file', async () => {
+    it('should update profile personal fields without file', async () => {
       repository.findById.mockResolvedValue(mockUserProfile);
       repository.update.mockResolvedValue(mockUserProfile);
       repository.findProfileById.mockResolvedValue({
         ...mockUserProfile,
         firstName: 'Jane',
+        bio: 'Updated bio',
+        phoneNumber: '+8801999999999',
+        country: 'UK',
+        timezone: 'Europe/London',
       });
 
       const result = await service.updateProfile('665f1b2e1111111111111111', {
         firstName: 'Jane',
+        bio: 'Updated bio',
+        phoneNumber: '+8801999999999',
+        country: 'UK',
+        timezone: 'Europe/London',
       });
 
       expect(repository.update).toHaveBeenCalledWith(
         '665f1b2e1111111111111111',
-        { firstName: 'Jane' },
+        {
+          firstName: 'Jane',
+          bio: 'Updated bio',
+          phoneNumber: '+8801999999999',
+          country: 'UK',
+          timezone: 'Europe/London',
+        },
       );
       expect(result?.firstName).toBe('Jane');
+      expect(result?.bio).toBe('Updated bio');
+    });
+
+    it('should update learning preferences with upsert', async () => {
+      repository.findById.mockResolvedValue(mockUserProfile);
+      repository.update.mockResolvedValue(mockUserProfile);
+      repository.findProfileById.mockResolvedValue({
+        ...mockUserProfile,
+        profile: {
+          ...mockUserProfile.profile,
+          targetLevel: 'C1',
+          nativeLanguage: 'Spanish',
+          learningGoals: ['IELTS', 'Speaking'],
+          dailyGoalMinutes: 30,
+        },
+      });
+
+      const result = await service.updateProfile('665f1b2e1111111111111111', {
+        targetLevel: 'C1',
+        nativeLanguage: 'Spanish',
+        learningGoals: ['IELTS', 'Speaking'],
+        dailyGoalMinutes: 30,
+      });
+
+      expect(repository.update).toHaveBeenCalledWith(
+        '665f1b2e1111111111111111',
+        {
+          profile: {
+            upsert: {
+              create: {
+                targetLevel: 'C1',
+                nativeLanguage: 'Spanish',
+                learningGoals: ['IELTS', 'Speaking'],
+                dailyGoalMinutes: 30,
+              },
+              update: {
+                targetLevel: 'C1',
+                nativeLanguage: 'Spanish',
+                learningGoals: ['IELTS', 'Speaking'],
+                dailyGoalMinutes: 30,
+              },
+            },
+          },
+        },
+      );
+      expect(result?.profile?.targetLevel).toBe('C1');
     });
 
     it('should upload file to S3 and update profile image when file is provided', async () => {

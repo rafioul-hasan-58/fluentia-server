@@ -21,11 +21,25 @@ describe('UsersController', () => {
     email: 'jane@example.com',
     profileImage:
       'https://medsyst.s3.eu-north-1.amazonaws.com/avatars/avatar.jpg',
+    bio: 'Learning English',
+    phoneNumber: '+8801700000000',
+    country: 'Bangladesh',
+    timezone: 'Asia/Dhaka',
     role: Role.USER,
     registrationMethod: 'EMAIL',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-    profile: null,
+    profile: {
+      id: '665f1b2e2222222222222222',
+      userId: '665f1b2e1111111111111111',
+      estimatedCEFR: 'B1',
+      targetLevel: 'B2',
+      nativeLanguage: 'Bengali',
+      learningGoals: ['Speaking', 'Grammar'],
+      dailyGoalMinutes: 15,
+      streakDays: 3,
+      lastActiveAt: new Date('2026-01-02T00:00:00.000Z'),
+    },
   };
 
   beforeEach(async () => {
@@ -98,7 +112,25 @@ describe('UsersController', () => {
 
   describe('updateProfile', () => {
     it('should update profile and return formatted response', async () => {
-      const updatedProfile = { ...mockUserProfile, firstName: 'Updated' };
+      const updateDto = {
+        firstName: 'Updated',
+        bio: 'Updated bio',
+        targetLevel: 'C1',
+        learningGoals: ['Business English'],
+        dailyGoalMinutes: 30,
+      };
+
+      const updatedProfile = {
+        ...mockUserProfile,
+        firstName: 'Updated',
+        bio: 'Updated bio',
+        profile: {
+          ...mockUserProfile.profile,
+          targetLevel: 'C1',
+          learningGoals: ['Business English'],
+          dailyGoalMinutes: 30,
+        },
+      };
       service.updateProfile.mockResolvedValue(updatedProfile);
 
       const user = {
@@ -107,13 +139,11 @@ describe('UsersController', () => {
         role: Role.USER,
       };
 
-      const result = await controller.updateProfile(user, {
-        firstName: 'Updated',
-      });
+      const result = await controller.updateProfile(user, updateDto);
 
       expect(service.updateProfile).toHaveBeenCalledWith(
         '665f1b2e1111111111111111',
-        { firstName: 'Updated' },
+        updateDto,
         undefined,
       );
       expect(result).toEqual({

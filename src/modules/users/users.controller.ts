@@ -62,9 +62,9 @@ export class UsersController {
   @UseInterceptors(FileInterceptor('profileImage'))
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiOperation({
-    summary: 'Update current user profile',
+    summary: 'Update current user profile and learning preferences',
     description:
-      'Updates first name, last name, and optionally uploads a new profile image (JPEG, PNG, WEBP, GIF, SVG) to S3 or accepts a profileImage URL.',
+      'Updates personal information (first name, last name, bio, phone number, country, timezone), learning preferences (target CEFR/level, native language, learning goals, daily goal minutes), and optionally uploads a new avatar image to S3 or accepts a profileImage URL.',
   })
   @ApiBody({
     schema: {
@@ -78,6 +78,22 @@ export class UsersController {
           description:
             'Profile image file to upload to AWS S3 (or image URL string)',
         },
+        bio: {
+          type: 'string',
+          example: 'English enthusiast passionate about fluent communication.',
+        },
+        phoneNumber: { type: 'string', example: '+8801700000000' },
+        country: { type: 'string', example: 'Bangladesh' },
+        timezone: { type: 'string', example: 'Asia/Dhaka' },
+        targetLevel: { type: 'string', example: 'B2' },
+        estimatedCEFR: { type: 'string', example: 'B1' },
+        nativeLanguage: { type: 'string', example: 'Bengali' },
+        learningGoals: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['Speaking', 'Grammar', 'Business English'],
+        },
+        dailyGoalMinutes: { type: 'integer', example: 15 },
       },
     },
   })
