@@ -5,7 +5,12 @@ import {
   Body,
   NotFoundException,
   UseGuards,
+  Res,
+  Req,
+  VERSION_NEUTRAL,
 } from '@nestjs/common';
+import { ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
 import { AppService } from './app.service';
 import z from 'zod';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
@@ -13,11 +18,38 @@ import { testUserSchema } from './shared/dto/test-user.dto';
 import type { TestUserDto } from './shared/dto/test-user.dto';
 import { AuthGuard } from './common/guards/auth.guard';
 
-@Controller()
+@ApiTags('App')
+@Controller({ version: VERSION_NEUTRAL })
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
+  @ApiExcludeEndpoint()
+  getWelcome(@Req() req: Request, @Res() res: Response) {
+    const acceptHeader = req.headers['accept'] || '';
+    if (
+      acceptHeader.includes('application/json') &&
+      !acceptHeader.includes('text/html')
+    ) {
+      return res.json({
+        success: true,
+        statusCode: 200,
+        message: 'Welcome to Fluentia Server API!',
+        data: {
+          name: 'Fluentia Server',
+          version: '1.0.0',
+          docs: '/api/docs',
+          health: '/api/v1/health',
+          status: 'online',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.type('html').send(this.appService.getWelcomeHtml());
+  }
+
+  @Get('hello')
   async getHello() {
     const result = await this.appService.getHello();
     return {

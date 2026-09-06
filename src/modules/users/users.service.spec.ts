@@ -180,7 +180,9 @@ describe('UsersService', () => {
           },
         },
       );
-      expect(result?.profile?.targetLevel).toBe('C1');
+      expect(
+        (result as typeof mockUserProfile | null)?.profile?.targetLevel,
+      ).toBe('C1');
     });
 
     it('should upload file to S3 and update profile image when file is provided', async () => {
