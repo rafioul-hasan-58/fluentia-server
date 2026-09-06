@@ -23,6 +23,23 @@ export class UsersRepository implements IBaseRepository<
     return this.prisma.user.findUnique({ where: { id } });
   }
 
+  async findProfileById(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        registrationMethod: true,
+        createdAt: true,
+        updatedAt: true,
+        profile: true,
+      },
+    });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { email } });
   }
