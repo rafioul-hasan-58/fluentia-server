@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -21,11 +22,78 @@ import {
 } from './interfaces/level-test-submission.interface';
 
 @Injectable()
-export class LevelTestQuestionsService {
+export class LevelTestQuestionsService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiService: AiService,
   ) {}
+
+  async onModuleInit() {
+    try {
+      const attempts = await this.prisma.testAttempt.findMany({
+        include: { answers: { include: { question: true } } },
+      });
+
+      for (const a of attempts) {
+        const attempt = a as Record<string, any>;
+        const bd = attempt.sectionBreakdown as Record<
+          string,
+          { total?: number }
+        > | null;
+        const answers = (attempt.answers || []) as Array<{
+          isCorrect?: boolean;
+          question?: { sectionType?: string };
+        }>;
+        const needsBreakdown =
+          !bd ||
+          ((bd.grammar?.total ?? 0) === 0 &&
+            (bd.vocabulary?.total ?? 0) === 0 &&
+            (bd.reading?.total ?? 0) === 0 &&
+            answers.length > 0);
+
+        if (needsBreakdown) {
+          const sectionStats = {
+            grammar: { correct: 0, total: 0, percentage: 0 },
+            vocabulary: { correct: 0, total: 0, percentage: 0 },
+            reading: { correct: 0, total: 0, percentage: 0 },
+          };
+
+          for (const ans of answers) {
+            const sec = (ans.question?.sectionType || '').toLowerCase();
+            if (sec === 'grammar') {
+              sectionStats.grammar.total++;
+              if (ans.isCorrect) sectionStats.grammar.correct++;
+            } else if (sec === 'vocabulary') {
+              sectionStats.vocabulary.total++;
+              if (ans.isCorrect) sectionStats.vocabulary.correct++;
+            } else if (sec === 'reading') {
+              sectionStats.reading.total++;
+              if (ans.isCorrect) sectionStats.reading.correct++;
+            }
+          }
+
+          for (const sec of ['grammar', 'vocabulary', 'reading'] as const) {
+            if (sectionStats[sec].total > 0) {
+              sectionStats[sec].percentage = Math.round(
+                (sectionStats[sec].correct / sectionStats[sec].total) * 100,
+              );
+            }
+          }
+
+          await this.prisma.testAttempt.update({
+            where: { id: attempt.id as string },
+            data: {
+              sectionBreakdown: sectionStats,
+              totalQuestions:
+                answers.length || (attempt.totalQuestions as number) || 0,
+            } as Prisma.TestAttemptUpdateInput,
+          });
+        }
+      }
+    } catch {
+      // Non-blocking initialization
+    }
+  }
 
   /**
    * Validates MongoDB ObjectId format (24 hex characters).
@@ -557,27 +625,111 @@ export class LevelTestQuestionsService {
   private formatSubmissionListItem(
     attempt: Record<string, any>,
   ): SubmissionListItem {
-    const rawBreakdown = attempt.sectionBreakdown as {
-      grammar?: { correct?: number; total?: number; percentage?: number };
-      vocabulary?: { correct?: number; total?: number; percentage?: number };
-      reading?: { correct?: number; total?: number; percentage?: number };
-    } | null;
+    const rawBreakdown = (attempt.sectionBreakdown || {}) as Record<
+      string,
+      { correct?: number; total?: number; percentage?: number }
+    >;
 
-    const grammar = rawBreakdown?.grammar || {
-      correct: 0,
-      total: 0,
-      percentage: 0,
+    const grammar = {
+      correct:
+        rawBreakdown.grammar?.correct ?? rawBreakdown.GRAMMAR?.correct ?? 0,
+      total: rawBreakdown.grammar?.total ?? rawBreakdown.GRAMMAR?.total ?? 0,
+      percentage:
+        rawBreakdown.grammar?.percentage ??
+        rawBreakdown.GRAMMAR?.percentage ??
+        0,
     };
-    const vocabulary = rawBreakdown?.vocabulary || {
-      correct: 0,
-      total: 0,
-      percentage: 0,
+    const vocabulary = {
+      correct:
+        rawBreakdown.vocabulary?.correct ??
+        rawBreakdown.VOCABULARY?.correct ??
+        0,
+      total:
+        rawBreakdown.vocabulary?.total ?? rawBreakdown.VOCABULARY?.total ?? 0,
+      percentage:
+        rawBreakdown.vocabulary?.percentage ??
+        rawBreakdown.VOCABULARY?.percentage ??
+        0,
     };
-    const reading = rawBreakdown?.reading || {
-      correct: 0,
-      total: 0,
-      percentage: 0,
+    const reading = {
+      correct:
+        rawBreakdown.reading?.correct ?? rawBreakdown.READING?.correct ?? 0,
+      total: rawBreakdown.reading?.total ?? rawBreakdown.READING?.total ?? 0,
+      percentage:
+        rawBreakdown.reading?.percentage ??
+        rawBreakdown.READING?.percentage ??
+        0,
     };
+
+    // Fallback 1: Calculate from answers if available and questions are loaded
+    if (
+      grammar.total === 0 &&
+      vocabulary.total === 0 &&
+      reading.total === 0 &&
+      Array.isArray(attempt.answers) &&
+      attempt.answers.length > 0
+    ) {
+      for (const ans of attempt.answers) {
+        const sec = (ans.question?.sectionType || '').toUpperCase();
+        if (sec === 'GRAMMAR') {
+          grammar.total++;
+          if (ans.isCorrect) grammar.correct++;
+        } else if (sec === 'VOCABULARY') {
+          vocabulary.total++;
+          if (ans.isCorrect) vocabulary.correct++;
+        } else if (sec === 'READING') {
+          reading.total++;
+          if (ans.isCorrect) reading.correct++;
+        }
+      }
+      if (grammar.total > 0) {
+        grammar.percentage = Math.round(
+          (grammar.correct / grammar.total) * 100,
+        );
+      }
+      if (vocabulary.total > 0) {
+        vocabulary.percentage = Math.round(
+          (vocabulary.correct / vocabulary.total) * 100,
+        );
+      }
+      if (reading.total > 0) {
+        reading.percentage = Math.round(
+          (reading.correct / reading.total) * 100,
+        );
+      }
+    }
+
+    // Fallback 2: Parse from AI Analysis scoreText if still 0
+    if (
+      grammar.total === 0 &&
+      vocabulary.total === 0 &&
+      reading.total === 0 &&
+      attempt.aiAnalysis?.sectionBreakdown
+    ) {
+      const aiSec = attempt.aiAnalysis.sectionBreakdown;
+      const parseScoreText = (scoreText?: string) => {
+        if (!scoreText) return { correct: 0, total: 0, percentage: 0 };
+        const match = scoreText.match(/(\d+)\s*\/\s*(\d+)/);
+        if (match) {
+          const correct = parseInt(match[1], 10);
+          const total = parseInt(match[2], 10);
+          const percentage =
+            total > 0 ? Math.round((correct / total) * 100) : 0;
+          return { correct, total, percentage };
+        }
+        return { correct: 0, total: 0, percentage: 0 };
+      };
+
+      if (aiSec.grammar?.scoreText) {
+        Object.assign(grammar, parseScoreText(aiSec.grammar.scoreText));
+      }
+      if (aiSec.vocabulary?.scoreText) {
+        Object.assign(vocabulary, parseScoreText(aiSec.vocabulary.scoreText));
+      }
+      if (aiSec.reading?.scoreText) {
+        Object.assign(reading, parseScoreText(aiSec.reading.scoreText));
+      }
+    }
 
     const totalQuestions =
       attempt.totalQuestions || attempt.answers?.length || 1;
@@ -623,22 +775,22 @@ export class LevelTestQuestionsService {
       },
       sectionBreakdown: {
         grammar: {
-          correct: grammar.correct || 0,
-          total: grammar.total || 0,
-          percentage: grammar.percentage || 0,
-          formatted: `G: ${grammar.correct || 0}/${grammar.total || 0}`,
+          correct: grammar.correct,
+          total: grammar.total,
+          percentage: grammar.percentage,
+          formatted: `G: ${grammar.correct}/${grammar.total}`,
         },
         vocabulary: {
-          correct: vocabulary.correct || 0,
-          total: vocabulary.total || 0,
-          percentage: vocabulary.percentage || 0,
-          formatted: `V: ${vocabulary.correct || 0}/${vocabulary.total || 0}`,
+          correct: vocabulary.correct,
+          total: vocabulary.total,
+          percentage: vocabulary.percentage,
+          formatted: `V: ${vocabulary.correct}/${vocabulary.total}`,
         },
         reading: {
-          correct: reading.correct || 0,
-          total: reading.total || 0,
-          percentage: reading.percentage || 0,
-          formatted: `R: ${reading.correct || 0}/${reading.total || 0}`,
+          correct: reading.correct,
+          total: reading.total,
+          percentage: reading.percentage,
+          formatted: `R: ${reading.correct}/${reading.total}`,
         },
       },
       duration: {
