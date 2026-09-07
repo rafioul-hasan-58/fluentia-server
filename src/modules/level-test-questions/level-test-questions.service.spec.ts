@@ -85,11 +85,13 @@ describe('LevelTestQuestionsService', () => {
   const mockAiAnalysis: LevelTestAnalysis = {
     estimatedLevel: 'A1',
     cefrScore: 85,
-    summary: 'Strong grasp of foundational grammar and basic subject-verb agreement.',
+    summary:
+      'Strong grasp of foundational grammar and basic subject-verb agreement.',
     strengths: [
       {
         area: 'Basic Tenses',
-        description: 'Demonstrated solid understanding of present simple verbs.',
+        description:
+          'Demonstrated solid understanding of present simple verbs.',
         evidence: 'Answered Q1 correctly.',
       },
     ],
@@ -242,7 +244,9 @@ describe('LevelTestQuestionsService', () => {
   describe('findAll', () => {
     it('should return paginated items and metadata', async () => {
       prismaService.levelTestQuestion.count.mockResolvedValue(1);
-      prismaService.levelTestQuestion.findMany.mockResolvedValue([mockQuestion]);
+      prismaService.levelTestQuestion.findMany.mockResolvedValue([
+        mockQuestion,
+      ]);
 
       const result = await service.findAll({
         level: EnglishLevel.A1,
@@ -270,7 +274,9 @@ describe('LevelTestQuestionsService', () => {
 
   describe('findById', () => {
     it('should return question when valid id exists', async () => {
-      prismaService.levelTestQuestion.findUnique.mockResolvedValue(mockQuestion);
+      prismaService.levelTestQuestion.findUnique.mockResolvedValue(
+        mockQuestion,
+      );
 
       const result = await service.findById(mockQuestionId);
 
@@ -298,7 +304,9 @@ describe('LevelTestQuestionsService', () => {
 
   describe('update', () => {
     it('should update question fields and sync options', async () => {
-      prismaService.levelTestQuestion.findUnique.mockResolvedValue(mockQuestion);
+      prismaService.levelTestQuestion.findUnique.mockResolvedValue(
+        mockQuestion,
+      );
       prismaService.levelTestQuestion.update.mockResolvedValue({
         ...mockQuestion,
         question: 'Updated question text',
@@ -325,7 +333,9 @@ describe('LevelTestQuestionsService', () => {
 
   describe('remove', () => {
     it('should delete existing question by id', async () => {
-      prismaService.levelTestQuestion.findUnique.mockResolvedValue(mockQuestion);
+      prismaService.levelTestQuestion.findUnique.mockResolvedValue(
+        mockQuestion,
+      );
       prismaService.levelTestQuestion.delete.mockResolvedValue(mockQuestion);
 
       const result = await service.remove(mockQuestionId);
@@ -342,7 +352,9 @@ describe('LevelTestQuestionsService', () => {
 
   describe('submitAndAnalyze', () => {
     it('should grade answers, request AI analysis, and save attempt for authenticated user', async () => {
-      prismaService.levelTestQuestion.findMany.mockResolvedValue([mockQuestion]);
+      prismaService.levelTestQuestion.findMany.mockResolvedValue([
+        mockQuestion,
+      ]);
       prismaService.user.findUnique.mockResolvedValue({ id: mockUserId });
       prismaService.testAttempt.create.mockResolvedValue({
         id: '665f1b2e4444444444444444',
@@ -390,7 +402,9 @@ describe('LevelTestQuestionsService', () => {
     });
 
     it('should work for guest user without saving to database', async () => {
-      prismaService.levelTestQuestion.findMany.mockResolvedValue([mockQuestion]);
+      prismaService.levelTestQuestion.findMany.mockResolvedValue([
+        mockQuestion,
+      ]);
       aiService.analyzeLevelTest.mockResolvedValue(mockAiAnalysis);
 
       const submitDto = {
@@ -412,9 +426,9 @@ describe('LevelTestQuestionsService', () => {
     });
 
     it('should throw BadRequestException when answers list is empty', async () => {
-      await expect(
-        service.submitAndAnalyze({ answers: [] }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.submitAndAnalyze({ answers: [] })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException if submitted questions are not found in DB', async () => {

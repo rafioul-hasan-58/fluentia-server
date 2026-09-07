@@ -9,7 +9,8 @@ import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class GetLevelTestQuestionsQueryDto {
   @ApiPropertyOptional({
-    description: 'Filter by CEFR proficiency level (e.g. A1, A2, B1, B2, C1, C2)',
+    description:
+      'Filter by CEFR proficiency level (e.g. A1, A2, B1, B2, C1, C2)',
     enum: EnglishLevel,
     example: EnglishLevel.B1,
   })
@@ -20,7 +21,8 @@ export class GetLevelTestQuestionsQueryDto {
   level?: EnglishLevel;
 
   @ApiPropertyOptional({
-    description: 'Filter by section category (e.g. GRAMMAR, VOCABULARY, READING)',
+    description:
+      'Filter by section category (e.g. GRAMMAR, VOCABULARY, READING)',
     enum: TestQuestionSection,
     example: TestQuestionSection.GRAMMAR,
   })
@@ -31,7 +33,8 @@ export class GetLevelTestQuestionsQueryDto {
   sectionType?: TestQuestionSection;
 
   @ApiPropertyOptional({
-    description: 'Filter by difficulty classification (e.g. EASY, MEDIUM, HARD)',
+    description:
+      'Filter by difficulty classification (e.g. EASY, MEDIUM, HARD)',
     enum: DifficultyType,
     example: DifficultyType.MEDIUM,
   })

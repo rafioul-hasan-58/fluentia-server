@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { EnglishLevel, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { LevelTestEvaluationInput } from '../ai/prompts/level-test-analysis.prompt';
@@ -11,6 +11,10 @@ import { CreateLevelTestQuestionDto } from './dto/create-level-test-question.dto
 import { UpdateLevelTestQuestionDto } from './dto/update-level-test-question.dto';
 import { GetLevelTestQuestionsQueryDto } from './dto/get-level-test-questions-query.dto';
 import { SubmitLevelTestDto } from './dto/submit-level-test.dto';
+import {
+  GradedQuestionItem,
+  LevelTestSubmitResult,
+} from './interfaces/level-test-submission.interface';
 
 @Injectable()
 export class LevelTestQuestionsService {
@@ -240,7 +244,10 @@ export class LevelTestQuestionsService {
    * Submits learner answers, grades each question, formats diagnostic data with passage & context,
    * invokes AI assessment for comprehensive CEFR analysis & learning roadmap, and persists results.
    */
-  async submitAndAnalyze(dto: SubmitLevelTestDto, userId?: string) {
+  async submitAndAnalyze(
+    dto: SubmitLevelTestDto,
+    userId?: string,
+  ): Promise<LevelTestSubmitResult> {
     if (!dto.answers || dto.answers.length === 0) {
       throw new BadRequestException(
         'Answers array cannot be empty. Please provide test answers.',
@@ -294,19 +301,7 @@ export class LevelTestQuestionsService {
     };
 
     let correctCount = 0;
-    const gradedItems: Array<{
-      questionId: string;
-      number: number;
-      question: string;
-      passage?: string | null;
-      sectionType: string;
-      level: string;
-      difficulty: string;
-      userAnswer: string;
-      correctAnswer: string;
-      isCorrect: boolean;
-      explanation?: string | null;
-    }> = [];
+    const gradedItems: GradedQuestionItem[] = [];
 
     dto.answers.forEach((ans, index) => {
       const q = questionMap.get(ans.questionId);
@@ -331,8 +326,8 @@ export class LevelTestQuestionsService {
         ? selectedOption.isCorrect
         : Boolean(
             ans.userAnswer &&
-              ans.userAnswer.trim().toLowerCase() ===
-                correctAnswerText.trim().toLowerCase(),
+            ans.userAnswer.trim().toLowerCase() ===
+              correctAnswerText.trim().toLowerCase(),
           );
 
       if (isCorrect) {
@@ -457,7 +452,7 @@ export class LevelTestQuestionsService {
                 isCorrect: item.isCorrect,
               })),
             },
-          },
+          } as unknown as Prisma.TestAttemptCreateInput,
         });
         savedAttemptId = attempt.id;
 
