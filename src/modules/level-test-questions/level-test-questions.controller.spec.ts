@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   DifficultyType,
   EnglishLevel,
+  Role,
   TestQuestionSection,
 } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
@@ -19,9 +20,11 @@ describe('LevelTestQuestionsController', () => {
     findById: jest.Mock;
     update: jest.Mock;
     remove: jest.Mock;
+    submitAndAnalyze: jest.Mock;
   };
 
   const mockQuestionId = '665f1b2e2222222222222222';
+  const mockUserId = '665f1b2e1111111111111111';
 
   const mockQuestion = {
     id: mockQuestionId,
@@ -58,20 +61,75 @@ describe('LevelTestQuestionsController', () => {
       findById: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
+      submitAndAnalyze: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [LevelTestQuestionsController],
       providers: [
         { provide: LevelTestQuestionsService, useValue: service },
-        { provide: JwtService, useValue: {} },
-        { provide: Reflector, useValue: {} },
+        { provide: JwtService, useValue: { verifyAsync: jest.fn() } },
+        { provide: Reflector, useValue: { getAllAndOverride: jest.fn() } },
       ],
     }).compile();
 
     controller = module.get<LevelTestQuestionsController>(
       LevelTestQuestionsController,
     );
+  });
+
+  describe('submit', () => {
+    it('should submit answers and return evaluated results and AI analysis', async () => {
+      const mockResult = {
+        attemptId: '665f1b2e4444444444444444',
+        score: 1,
+        totalQuestions: 1,
+        percentage: 100,
+        sectionBreakdown: {
+          grammar: { correct: 1, total: 1, percentage: 100 },
+          vocabulary: { correct: 0, total: 0, percentage: 0 },
+          reading: { correct: 0, total: 0, percentage: 0 },
+        },
+        analysis: {
+          estimatedLevel: 'A1',
+          cefrScore: 85,
+          summary: 'Good score',
+          strengths: [],
+          weaknesses: [],
+          sectionBreakdown: {},
+          learningRoadmap: [],
+        },
+        questions: [],
+      };
+
+      service.submitAndAnalyze.mockResolvedValue(mockResult);
+
+      const submitDto = {
+        answers: [
+          {
+            questionId: mockQuestionId,
+            answerOptionId: '665f1b2e3333333333333331',
+          },
+        ],
+      };
+
+      const user = {
+        id: mockUserId,
+        email: 'user@example.com',
+        role: Role.USER,
+      };
+
+      const result = await controller.submit(submitDto, user);
+
+      expect(service.submitAndAnalyze).toHaveBeenCalledWith(
+        submitDto,
+        mockUserId,
+      );
+      expect(result).toEqual({
+        message: 'Placement test evaluated and analyzed successfully.',
+        data: mockResult,
+      });
+    });
   });
 
   describe('create', () => {

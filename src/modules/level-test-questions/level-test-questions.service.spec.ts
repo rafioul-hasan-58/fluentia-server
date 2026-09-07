@@ -8,6 +8,8 @@ import {
 } from '@prisma/client';
 import { LevelTestQuestionsService } from './level-test-questions.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AiService } from '../ai/ai.service';
+import { LevelTestAnalysis } from '../ai/schemas/level-test-analysis.schema';
 
 describe('LevelTestQuestionsService', () => {
   let service: LevelTestQuestionsService;
@@ -24,9 +26,22 @@ describe('LevelTestQuestionsService', () => {
       deleteMany: jest.Mock;
       createMany: jest.Mock;
     };
+    user: {
+      findUnique: jest.Mock;
+    };
+    testAttempt: {
+      create: jest.Mock;
+    };
+    learningProfile: {
+      upsert: jest.Mock;
+    };
+  };
+  let aiService: {
+    analyzeLevelTest: jest.Mock;
   };
 
   const mockQuestionId = '665f1b2e2222222222222222';
+  const mockUserId = '665f1b2e1111111111111111';
 
   const mockQuestion = {
     id: mockQuestionId,
@@ -67,6 +82,60 @@ describe('LevelTestQuestionsService', () => {
     ],
   };
 
+  const mockAiAnalysis: LevelTestAnalysis = {
+    estimatedLevel: 'A1',
+    cefrScore: 85,
+    summary: 'Strong grasp of foundational grammar and basic subject-verb agreement.',
+    strengths: [
+      {
+        area: 'Basic Tenses',
+        description: 'Demonstrated solid understanding of present simple verbs.',
+        evidence: 'Answered Q1 correctly.',
+      },
+    ],
+    weaknesses: [
+      {
+        area: 'Complex Structures',
+        description: 'Needs practice with modal perfects and relative clauses.',
+        errorPattern: 'Minor errors in advanced items.',
+        recommendation: 'Review conditional sentences.',
+      },
+    ],
+    sectionBreakdown: {
+      grammar: {
+        level: 'A1',
+        scoreText: '1/1 (100%)',
+        analysis: 'Excellent foundation.',
+      },
+      vocabulary: {
+        level: 'A1',
+        scoreText: '0/0 (0%)',
+        analysis: 'Not tested.',
+      },
+      reading: {
+        level: 'A1',
+        scoreText: '0/0 (0%)',
+        analysis: 'Not tested.',
+      },
+    },
+    learningRoadmap: [
+      {
+        step: 1,
+        title: 'Solidify Present and Past Simple',
+        focusArea: 'Grammar Foundation',
+        description: 'Practice everyday sentence building.',
+        suggestedSkills: ['Present Simple', 'Past Simple'],
+      },
+      {
+        step: 2,
+        title: 'Learn Present Perfect',
+        focusArea: 'Intermediate Grammar',
+        description: 'Connect past events with present results.',
+        suggestedSkills: ['Present Perfect'],
+      },
+    ],
+  };
+
   beforeEach(async () => {
     prismaService = {
       levelTestQuestion: {
@@ -81,12 +150,26 @@ describe('LevelTestQuestionsService', () => {
         deleteMany: jest.fn(),
         createMany: jest.fn(),
       },
+      user: {
+        findUnique: jest.fn(),
+      },
+      testAttempt: {
+        create: jest.fn(),
+      },
+      learningProfile: {
+        upsert: jest.fn(),
+      },
+    };
+
+    aiService = {
+      analyzeLevelTest: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LevelTestQuestionsService,
         { provide: PrismaService, useValue: prismaService },
+        { provide: AiService, useValue: aiService },
       ],
     }).compile();
 
@@ -254,6 +337,94 @@ describe('LevelTestQuestionsService', () => {
         message: 'Level test question deleted successfully',
         id: mockQuestionId,
       });
+    });
+  });
+
+  describe('submitAndAnalyze', () => {
+    it('should grade answers, request AI analysis, and save attempt for authenticated user', async () => {
+      prismaService.levelTestQuestion.findMany.mockResolvedValue([mockQuestion]);
+      prismaService.user.findUnique.mockResolvedValue({ id: mockUserId });
+      prismaService.testAttempt.create.mockResolvedValue({
+        id: '665f1b2e4444444444444444',
+        userId: mockUserId,
+        score: 1,
+      });
+      prismaService.learningProfile.upsert.mockResolvedValue({});
+      aiService.analyzeLevelTest.mockResolvedValue(mockAiAnalysis);
+
+      const submitDto = {
+        answers: [
+          {
+            questionId: mockQuestionId,
+            answerOptionId: '665f1b2e3333333333333331',
+          },
+        ],
+      };
+
+      const result = await service.submitAndAnalyze(submitDto, mockUserId);
+
+      expect(prismaService.levelTestQuestion.findMany).toHaveBeenCalledWith({
+        where: { id: { in: [mockQuestionId] } },
+        include: { questionOptions: true },
+      });
+      expect(aiService.analyzeLevelTest).toHaveBeenCalled();
+      expect(prismaService.testAttempt.create).toHaveBeenCalled();
+      expect(prismaService.learningProfile.upsert).toHaveBeenCalledWith({
+        where: { userId: mockUserId },
+        update: {
+          estimatedCEFR: 'A1',
+          lastActiveAt: expect.any(Date),
+        },
+        create: {
+          userId: mockUserId,
+          estimatedCEFR: 'A1',
+          lastActiveAt: expect.any(Date),
+        },
+      });
+
+      expect(result.score).toBe(1);
+      expect(result.totalQuestions).toBe(1);
+      expect(result.percentage).toBe(100);
+      expect(result.attemptId).toBe('665f1b2e4444444444444444');
+      expect(result.analysis).toEqual(mockAiAnalysis);
+    });
+
+    it('should work for guest user without saving to database', async () => {
+      prismaService.levelTestQuestion.findMany.mockResolvedValue([mockQuestion]);
+      aiService.analyzeLevelTest.mockResolvedValue(mockAiAnalysis);
+
+      const submitDto = {
+        answers: [
+          {
+            questionId: mockQuestionId,
+            selectedOptionId: '665f1b2e3333333333333331',
+          },
+        ],
+      };
+
+      const result = await service.submitAndAnalyze(submitDto);
+
+      expect(prismaService.user.findUnique).not.toHaveBeenCalled();
+      expect(prismaService.testAttempt.create).not.toHaveBeenCalled();
+      expect(result.attemptId).toBeNull();
+      expect(result.score).toBe(1);
+      expect(result.analysis).toEqual(mockAiAnalysis);
+    });
+
+    it('should throw BadRequestException when answers list is empty', async () => {
+      await expect(
+        service.submitAndAnalyze({ answers: [] }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException if submitted questions are not found in DB', async () => {
+      prismaService.levelTestQuestion.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.submitAndAnalyze({
+          answers: [{ questionId: mockQuestionId, answerOptionId: 'opt1' }],
+        }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

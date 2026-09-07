@@ -24,8 +24,12 @@ import { LevelTestQuestionsService } from './level-test-questions.service';
 import { CreateLevelTestQuestionDto } from './dto/create-level-test-question.dto';
 import { UpdateLevelTestQuestionDto } from './dto/update-level-test-question.dto';
 import { GetLevelTestQuestionsQueryDto } from './dto/get-level-test-questions-query.dto';
+import { SubmitLevelTestDto } from './dto/submit-level-test.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { OptionalAuthGuard } from '../../common/guards/optional-auth.guard';
+import type { JwtPayload } from '../../common/guards/auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Level Test Questions')
 @Controller('level-test-questions')
@@ -33,6 +37,47 @@ export class LevelTestQuestionsController {
   constructor(
     private readonly levelTestQuestionsService: LevelTestQuestionsService,
   ) {}
+
+  @Post('submit')
+  @UseGuards(OptionalAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Submit level test answers for AI-powered CEFR evaluation and learning roadmap',
+    description:
+      'Evaluates user-submitted answers against database questions/passages, leverages OpenAI for diagnostic strengths/weaknesses and personalized learning roadmap generation, and saves the attempt if authenticated.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Level test submitted and analyzed successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Missing answers or invalid question IDs.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found — Submitted questions do not exist in database.',
+  })
+  @ApiResponse({
+    status: 502,
+    description:
+      'Bad Gateway — AI service failed to evaluate or return valid schema.',
+  })
+  async submit(
+    @Body() dto: SubmitLevelTestDto,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    const data = await this.levelTestQuestionsService.submitAndAnalyze(
+      dto,
+      user?.id,
+    );
+    return {
+      message: 'Placement test evaluated and analyzed successfully.',
+      data,
+    };
+  }
 
   @Post()
   @UseGuards(AuthGuard)

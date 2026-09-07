@@ -1,0 +1,21 @@
+{
+  "answers": [
+    {
+      "questionId": "6a9eb6ad0991ecb104b57eef",
+      "answerOptionId": "6a9eb77caf983cad303334da"
+    },
+    {
+      "questionId": "6a9eb6af0991ecb104b57ef4",
+      "answerOptionId": "6a9eb77daf983cad303334de"
+    },
+    {
+      "questionId": "6a9eb6bc0991ecb104b57ef9",
+      "answerOptionId": "6a9eb77eaf983cad303334e2"
+    },
+    {
+      "questionId": "6a9eb6bd0991ecb104b57efe",
+      "answerOptionId": "6a9eb788af983cad303334e6"
+    }
+  ],
+  "timeSpentSeconds": 180
+}

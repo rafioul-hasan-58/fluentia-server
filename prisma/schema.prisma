@@ -219,6 +219,7 @@ model TestAttempt {
   score          Int
   answers        TestAttemptAnswer[]
   estimatedLevel EnglishLevel
+  aiAnalysis     Json?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
 }
