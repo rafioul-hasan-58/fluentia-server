@@ -1,4 +1,5 @@
 import { EnglishLevel, PrismaClient } from '@prisma/client';
+import { seedLevelTestQuestions } from './seeds/level-test-questions.seed';
 
 const prisma = new PrismaClient();
 
@@ -103,7 +104,18 @@ async function main() {
     console.log(`✅ Upserted skill: ${upserted.slug} (${upserted.name})`);
   }
 
-  console.log('✨ Seeding completed successfully!');
+  console.log('✨ Skills seeding completed successfully!\n');
+
+  console.log('🌱 Starting English Level Test questions seed...');
+  const levelTestResult = await seedLevelTestQuestions(prisma);
+  console.log('\n========================================');
+  console.log('🎉 English Level Test Seed Complete');
+  console.log('========================================');
+  console.log(`Total Questions: ${levelTestResult.total}`);
+  console.log(`Inserted:        ${levelTestResult.inserted}`);
+  console.log(`Updated:         ${levelTestResult.updated}`);
+  console.log(`Skipped:         ${levelTestResult.skipped}`);
+  console.log('========================================\n');
 }
 
 main()
