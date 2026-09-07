@@ -6,6 +6,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { SkillsService } from '../skills/skills.service';
 import { AiService } from '../ai/ai.service';
 import { Lesson } from '../ai/schemas/lesson.schema';
+import { EnglishLevel } from '@prisma/client';
 import { AiServiceError, AiValidationError } from '../ai/errors/ai.errors';
 
 describe('GrammarService', () => {
@@ -23,8 +24,10 @@ describe('GrammarService', () => {
     slug: 'present_perfect',
     name: 'Present Perfect',
     category: 'verb_tenses',
-    cefr: 'B1',
+    cefr: EnglishLevel.B1,
     parentId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   const mockLesson: Lesson = {

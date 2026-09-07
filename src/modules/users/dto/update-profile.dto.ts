@@ -1,7 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { EnglishLevel } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -78,19 +80,25 @@ export class UpdateProfileDto {
   @ApiPropertyOptional({
     description: 'Target English proficiency level or exam score target',
     example: 'B2',
+    enum: EnglishLevel,
   })
   @IsOptional()
-  @IsString({ message: 'targetLevel must be a string' })
-  targetLevel?: string;
+  @IsEnum(EnglishLevel, {
+    message: 'targetLevel must be one of: A1, A2, B1, B2, C1, C2',
+  })
+  targetLevel?: EnglishLevel;
 
   @ApiPropertyOptional({
     description:
       'Current estimated or self-reported CEFR level (A1, A2, B1, B2, C1, C2)',
     example: 'B1',
+    enum: EnglishLevel,
   })
   @IsOptional()
-  @IsString({ message: 'estimatedCEFR must be a string' })
-  estimatedCEFR?: string;
+  @IsEnum(EnglishLevel, {
+    message: 'estimatedCEFR must be one of: A1, A2, B1, B2, C1, C2',
+  })
+  estimatedCEFR?: EnglishLevel;
 
   @ApiPropertyOptional({
     description: "User's native / primary language",

@@ -4,7 +4,7 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
-import { Role } from '@prisma/client';
+import { EnglishLevel, Role } from '@prisma/client';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -32,13 +32,15 @@ describe('UsersController', () => {
     profile: {
       id: '665f1b2e2222222222222222',
       userId: '665f1b2e1111111111111111',
-      estimatedCEFR: 'B1',
-      targetLevel: 'B2',
+      estimatedCEFR: EnglishLevel.B1,
+      targetLevel: EnglishLevel.B2,
       nativeLanguage: 'Bengali',
       learningGoals: ['Speaking', 'Grammar'],
       dailyGoalMinutes: 15,
       streakDays: 3,
       lastActiveAt: new Date('2026-01-02T00:00:00.000Z'),
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     },
   };
 
@@ -115,7 +117,7 @@ describe('UsersController', () => {
       const updateDto = {
         firstName: 'Updated',
         bio: 'Updated bio',
-        targetLevel: 'C1',
+        targetLevel: EnglishLevel.C1,
         learningGoals: ['Business English'],
         dailyGoalMinutes: 30,
       };
@@ -126,7 +128,7 @@ describe('UsersController', () => {
         bio: 'Updated bio',
         profile: {
           ...mockUserProfile.profile,
-          targetLevel: 'C1',
+          targetLevel: EnglishLevel.C1,
           learningGoals: ['Business English'],
           dailyGoalMinutes: 30,
         },

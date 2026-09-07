@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+import { EnglishLevel } from '@prisma/client';
 import { UsersService } from './users.service';
 import { UsersRepository } from './users.repository';
 import { S3Service } from '../s3';
@@ -33,13 +34,15 @@ describe('UsersService', () => {
     profile: {
       id: '665f1b2e2222222222222222',
       userId: '665f1b2e1111111111111111',
-      estimatedCEFR: 'B1',
-      targetLevel: 'B2',
+      estimatedCEFR: EnglishLevel.B1,
+      targetLevel: EnglishLevel.B2,
       nativeLanguage: 'Bengali',
       learningGoals: ['Speaking', 'Grammar'],
       dailyGoalMinutes: 20,
       streakDays: 5,
       lastActiveAt: new Date('2026-01-02T00:00:00.000Z'),
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     },
   };
 
@@ -145,7 +148,7 @@ describe('UsersService', () => {
         ...mockUserProfile,
         profile: {
           ...mockUserProfile.profile,
-          targetLevel: 'C1',
+          targetLevel: EnglishLevel.C1,
           nativeLanguage: 'Spanish',
           learningGoals: ['IELTS', 'Speaking'],
           dailyGoalMinutes: 30,
@@ -153,7 +156,7 @@ describe('UsersService', () => {
       });
 
       const result = await service.updateProfile('665f1b2e1111111111111111', {
-        targetLevel: 'C1',
+        targetLevel: EnglishLevel.C1,
         nativeLanguage: 'Spanish',
         learningGoals: ['IELTS', 'Speaking'],
         dailyGoalMinutes: 30,
@@ -165,13 +168,13 @@ describe('UsersService', () => {
           profile: {
             upsert: {
               create: {
-                targetLevel: 'C1',
+                targetLevel: EnglishLevel.C1,
                 nativeLanguage: 'Spanish',
                 learningGoals: ['IELTS', 'Speaking'],
                 dailyGoalMinutes: 30,
               },
               update: {
-                targetLevel: 'C1',
+                targetLevel: EnglishLevel.C1,
                 nativeLanguage: 'Spanish',
                 learningGoals: ['IELTS', 'Speaking'],
                 dailyGoalMinutes: 30,
@@ -182,7 +185,7 @@ describe('UsersService', () => {
       );
       expect(
         (result as typeof mockUserProfile | null)?.profile?.targetLevel,
-      ).toBe('C1');
+      ).toBe(EnglishLevel.C1);
     });
 
     it('should upload file to S3 and update profile image when file is provided', async () => {

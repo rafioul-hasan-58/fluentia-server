@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+import { EnglishLevel } from '@prisma/client';
 import { SkillsController } from './skills.controller';
 import { SkillsService } from './skills.service';
 
@@ -14,8 +15,10 @@ describe('SkillsController', () => {
       slug: 'present_perfect',
       name: 'Present Perfect',
       category: 'verb_tenses',
-      cefr: 'B1',
+      cefr: EnglishLevel.B1,
       parentId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   ];
 

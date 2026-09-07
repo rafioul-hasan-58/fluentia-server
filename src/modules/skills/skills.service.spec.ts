@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { EnglishLevel } from '@prisma/client';
 import { SkillsService } from './skills.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -17,16 +18,20 @@ describe('SkillsService', () => {
       slug: 'present_perfect',
       name: 'Present Perfect',
       category: 'verb_tenses',
-      cefr: 'B1',
+      cefr: EnglishLevel.B1,
       parentId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
     {
       id: '665f1b2e3333333333333333',
       slug: 'first_conditional',
       name: 'First Conditional',
       category: 'conditionals',
-      cefr: 'A2',
+      cefr: EnglishLevel.A2,
       parentId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   ];
 

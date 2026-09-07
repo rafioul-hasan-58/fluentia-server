@@ -42,18 +42,21 @@ model User {
   skillProgress SkillProgress[]
   weaknesses    Weakness[]
   reviews       ReviewSchedule[]
+  testAttempts  TestAttempt[]
 }
 
 // The curated taxonomy — seeded by you, not created by the AI at runtime.
 model Skill {
-  id       String  @id @default(auto()) @map("_id") @db.ObjectId
-  slug     String  @unique // "present_perfect"
-  name     String // "Present Perfect"
-  category String // "verb_tenses"
-  cefr     String? // "B1"
-  parentId String? @db.ObjectId
-  parent   Skill?  @relation("SkillTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  children Skill[] @relation("SkillTree")
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  slug      String        @unique // "present_perfect"
+  name      String // "Present Perfect"
+  category  String // "verb_tenses"
+  cefr      EnglishLevel? // "B1"
+  parentId  String?       @db.ObjectId
+  parent    Skill?        @relation("SkillTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children  Skill[]       @relation("SkillTree")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   sessions    LearningSession[]
   exercises   Exercise[]
@@ -74,6 +77,7 @@ model LearningSession {
   diagnosis Json? // validated AI diagnosis output
   status    String     @default("diagnosing") // diagnosing|teaching|practicing|completed
   createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   exercises Exercise[]
 }
 
@@ -87,6 +91,7 @@ model Exercise {
   difficulty String // beginner|intermediate|advanced
   content    Json // question/options — AI-generated, backend-validated
   createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
   attempts   ExerciseAttempt[]
 }
 
@@ -123,6 +128,7 @@ model Weakness {
   confidence    Float // 0–1, backend-calculated from evidence
   evidenceCount Int      @default(0)
   status        String   @default("active") // active|improving|resolved
+  createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@unique([userId, skillId])
@@ -138,6 +144,7 @@ model SkillProgress {
   correctCount    Int       @default(0)
   incorrectCount  Int       @default(0)
   lastPracticedAt DateTime?
+  createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   @@unique([userId, skillId])
@@ -152,19 +159,25 @@ model ReviewSchedule {
   nextReviewAt DateTime
   intervalDays Int      @default(1)
   lastResult   String? // success|fail
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, skillId])
 }
 
 model LearningProfile {
-  id               String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId           String    @unique @db.ObjectId
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  estimatedCEFR    String    @default("A2")
-  targetLevel      String?
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String       @unique @db.ObjectId
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  estimatedCEFR    EnglishLevel @default(A2)
+  targetLevel      EnglishLevel?
   nativeLanguage   String?
-  learningGoals    String[]  @default([])
-  dailyGoalMinutes Int?      @default(15)
-  streakDays       Int       @default(0)
+  learningGoals    String[]     @default([])
+  dailyGoalMinutes Int?         @default(15)
+  streakDays       Int          @default(0)
   lastActiveAt     DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }
 
 model Otp {
@@ -175,7 +188,77 @@ model Otp {
   expiresAt DateTime
 }
 
+model LevelTestQuestion {
+  id                 String              @id @default(auto()) @map("_id") @db.ObjectId
+  question           String
+  passage            String?
+  sectionType        TestQuestionSection
+  level              EnglishLevel
+  difficulty         DifficultyType
+  questionOptions    QuestionOption[]
+  answer             String?
+  explanation        String?
+  testAttemptAnswers TestAttemptAnswer[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model QuestionOption {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  content    String
+  isCorrect  Boolean           @default(false)
+  questionId String            @db.ObjectId
+  question   LevelTestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime          @default(now())
+}
+
+model TestAttempt {
+  id             String              @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String              @db.ObjectId
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score          Int
+  answers        TestAttemptAnswer[]
+  estimatedLevel EnglishLevel
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model TestAttemptAnswer {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  questionId String            @db.ObjectId
+  question   LevelTestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  attemptId  String            @db.ObjectId
+  attempt    TestAttempt       @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  userAnswer String
+  isCorrect  Boolean
+  createdAt  DateTime          @default(now())
+
+  @@unique([attemptId, questionId])
+}
+
+enum TestQuestionSection {
+  GRAMMAR
+  VOCABULARY
+  READING
+}
+
+enum EnglishLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+enum DifficultyType {
+  EASY
+  MEDIUM
+  HARD
+}
+
 enum RegistrationMethod {
   EMAIL
   GOOGLE
 }
+

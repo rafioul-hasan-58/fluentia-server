@@ -1,79 +1,84 @@
-import { PrismaClient } from '@prisma/client';
+import { EnglishLevel, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const skills = [
+const skills: {
+  slug: string;
+  name: string;
+  category: string;
+  cefr: EnglishLevel;
+}[] = [
   {
     slug: 'present_simple',
     name: 'Present Simple',
     category: 'verb_tenses',
-    cefr: 'A1',
+    cefr: EnglishLevel.A1,
   },
   {
     slug: 'present_continuous',
     name: 'Present Continuous',
     category: 'verb_tenses',
-    cefr: 'A1',
+    cefr: EnglishLevel.A1,
   },
   {
     slug: 'past_simple',
     name: 'Past Simple',
     category: 'verb_tenses',
-    cefr: 'A2',
+    cefr: EnglishLevel.A2,
   },
   {
     slug: 'present_perfect',
     name: 'Present Perfect',
     category: 'verb_tenses',
-    cefr: 'B1',
+    cefr: EnglishLevel.B1,
   },
   {
     slug: 'past_perfect',
     name: 'Past Perfect',
     category: 'verb_tenses',
-    cefr: 'B2',
+    cefr: EnglishLevel.B2,
   },
   {
     slug: 'first_conditional',
     name: 'First Conditional',
     category: 'conditionals',
-    cefr: 'A2',
+    cefr: EnglishLevel.A2,
   },
   {
     slug: 'second_conditional',
     name: 'Second Conditional',
     category: 'conditionals',
-    cefr: 'B1',
+    cefr: EnglishLevel.B1,
   },
   {
     slug: 'third_conditional',
     name: 'Third Conditional',
     category: 'conditionals',
-    cefr: 'B2',
+    cefr: EnglishLevel.B2,
   },
   {
     slug: 'passive_voice',
     name: 'Passive Voice',
     category: 'voice',
-    cefr: 'B1',
+    cefr: EnglishLevel.B1,
   },
   {
     slug: 'modal_verbs_obligation',
     name: 'Modal Verbs of Obligation',
     category: 'modals',
-    cefr: 'A2',
+    cefr: EnglishLevel.A2,
   },
   {
     slug: 'relative_clauses',
     name: 'Relative Clauses',
     category: 'clauses',
-    cefr: 'B1',
+    cefr: EnglishLevel.B1,
   },
   {
     slug: 'gerunds_and_infinitives',
     name: 'Gerunds and Infinitives',
     category: 'verb_patterns',
-    cefr: 'B2',
+    cefr: EnglishLevel.B2,
   },
 ];
 
