@@ -25,6 +25,10 @@ import { CreateLevelTestQuestionDto } from './dto/create-level-test-question.dto
 import { UpdateLevelTestQuestionDto } from './dto/update-level-test-question.dto';
 import { GetLevelTestQuestionsQueryDto } from './dto/get-level-test-questions-query.dto';
 import { SubmitLevelTestDto } from './dto/submit-level-test.dto';
+import {
+  GetRecentSubmissionsQueryDto,
+  GetSubmissionsQueryDto,
+} from './dto/get-submissions-query.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { OptionalAuthGuard } from '../../common/guards/optional-auth.guard';
 import type { JwtPayload } from '../../common/guards/auth.guard';
@@ -150,6 +154,128 @@ export class LevelTestQuestionsController {
     return {
       message: 'Placement test set retrieved successfully.',
       count: data.length,
+      data,
+    };
+  }
+
+  @Get('recent-submissions')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get recent placement test submissions for live feed dashboard',
+    description:
+      'Retrieves the latest placement test submissions with learner profile, CEFR rating, score, section breakdown, duration, and timestamp.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 5,
+    description: 'Number of recent submissions to retrieve (default: 5)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Recent placement test submissions retrieved successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  async getRecentSubmissions(@Query() query: GetRecentSubmissionsQueryDto) {
+    const data = await this.levelTestQuestionsService.getRecentSubmissions(
+      query?.limit,
+    );
+    return {
+      message: 'Recent placement test submissions retrieved successfully.',
+      count: data.length,
+      data,
+    };
+  }
+
+  @Get('submissions')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get all placement test submissions with pagination & filters',
+    description:
+      'Retrieves paginated placement test submissions for admin dashboard with search by learner name/email and level filter.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Placement test submissions retrieved successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  async getSubmissions(@Query() query: GetSubmissionsQueryDto) {
+    const result =
+      await this.levelTestQuestionsService.getAllSubmissions(query);
+    return {
+      message: 'Placement test submissions retrieved successfully.',
+      ...result,
+    };
+  }
+
+  @Get('my-submissions')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get test submission history for currently logged-in student',
+    description:
+      'Retrieves list of placement test attempts completed by the authenticated learner.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Learner placement test history retrieved successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  async getMySubmissions(@CurrentUser() user: JwtPayload) {
+    const data = await this.levelTestQuestionsService.getUserSubmissions(
+      user.id,
+    );
+    return {
+      message: 'Learner placement test history retrieved successfully.',
+      count: data.length,
+      data,
+    };
+  }
+
+  @Get('submissions/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get detailed diagnostic report of a test attempt',
+    description:
+      'Retrieves the complete evaluation breakdown, question-by-question responses, and AI roadmap for a specific test attempt.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ObjectId of the test attempt',
+    example: '665f1b2e2222222222222222',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Placement test report retrieved successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden — Not authorized to view this report.',
+  })
+  @ApiResponse({ status: 404, description: 'Test submission not found.' })
+  async getSubmissionById(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const data = await this.levelTestQuestionsService.getSubmissionById(
+      id,
+      user.id,
+      user.role,
+    );
+    return {
+      message: 'Placement test report retrieved successfully.',
       data,
     };
   }

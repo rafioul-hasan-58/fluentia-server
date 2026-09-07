@@ -1,9 +1,10 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { LevelTestEvaluationInput } from '../ai/prompts/level-test-analysis.prompt';
@@ -11,9 +12,12 @@ import { CreateLevelTestQuestionDto } from './dto/create-level-test-question.dto
 import { UpdateLevelTestQuestionDto } from './dto/update-level-test-question.dto';
 import { GetLevelTestQuestionsQueryDto } from './dto/get-level-test-questions-query.dto';
 import { SubmitLevelTestDto } from './dto/submit-level-test.dto';
+import { GetSubmissionsQueryDto } from './dto/get-submissions-query.dto';
 import {
   GradedQuestionItem,
   LevelTestSubmitResult,
+  SubmissionListItem,
+  SubmissionListResult,
 } from './interfaces/level-test-submission.interface';
 
 @Injectable()
@@ -430,6 +434,11 @@ export class LevelTestQuestionsService {
     // Trigger AI Diagnostic Evaluation
     const analysis = await this.aiService.analyzeLevelTest(evaluationInput);
 
+    const timeSpentSeconds = this.parseDurationSeconds(
+      dto.timeSpentSeconds ?? dto.duration ?? dto.timeSpent,
+    );
+    const durationFormatted = this.formatDuration(timeSpentSeconds);
+
     let savedAttemptId: string | null = null;
 
     // Persist attempt & update learning profile if user is authenticated and exists
@@ -443,6 +452,12 @@ export class LevelTestQuestionsService {
           data: {
             userId: user.id,
             score: correctCount,
+            totalQuestions,
+            percentage: scorePercentage,
+            timeSpentSeconds,
+            duration: durationFormatted,
+            sectionBreakdown:
+              sectionBreakdown as unknown as Prisma.InputJsonValue,
             estimatedLevel: analysis.estimatedLevel,
             aiAnalysis: analysis as unknown as Prisma.InputJsonValue,
             answers: {
@@ -476,9 +491,345 @@ export class LevelTestQuestionsService {
       score: correctCount,
       totalQuestions,
       percentage: scorePercentage,
+      timeSpentSeconds,
+      duration: durationFormatted,
       sectionBreakdown,
       analysis,
       questions: gradedItems,
     };
+  }
+
+  /**
+   * Parses timeSpent / duration from number or string into seconds.
+   */
+  private parseDurationSeconds(input?: number | string | null): number {
+    if (!input) return 0;
+    if (typeof input === 'number') return Math.max(0, Math.round(input));
+
+    const str = String(input).trim();
+    if (!str) return 0;
+
+    // Numeric string "492"
+    if (/^\d+$/.test(str)) {
+      return parseInt(str, 10);
+    }
+
+    // Format like "8m 12s", "8m", "12s"
+    const mMatch = str.match(/(\d+)\s*m/i);
+    const sMatch = str.match(/(\d+)\s*s/i);
+    if (mMatch || sMatch) {
+      const mins = mMatch ? parseInt(mMatch[1], 10) : 0;
+      const secs = sMatch ? parseInt(sMatch[1], 10) : 0;
+      return mins * 60 + secs;
+    }
+
+    // Format like "08:12" or "01:08:12"
+    const parts = str.split(':').map((p) => parseInt(p, 10));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      return parts[0] * 60 + parts[1];
+    }
+    if (
+      parts.length === 3 &&
+      !isNaN(parts[0]) &&
+      !isNaN(parts[1]) &&
+      !isNaN(parts[2])
+    ) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+
+    const parsed = Number(str);
+    return isNaN(parsed) ? 0 : Math.max(0, Math.round(parsed));
+  }
+
+  /**
+   * Formats duration in seconds into human-friendly string (e.g. 8m 12s).
+   */
+  private formatDuration(seconds?: number | null): string {
+    if (!seconds || seconds <= 0) return '0m 0s';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs}s`;
+  }
+
+  /**
+   * Transforms raw Prisma TestAttempt entity with user & answers into clean frontend submission item.
+   */
+  private formatSubmissionListItem(
+    attempt: Record<string, any>,
+  ): SubmissionListItem {
+    const rawBreakdown = attempt.sectionBreakdown as {
+      grammar?: { correct?: number; total?: number; percentage?: number };
+      vocabulary?: { correct?: number; total?: number; percentage?: number };
+      reading?: { correct?: number; total?: number; percentage?: number };
+    } | null;
+
+    const grammar = rawBreakdown?.grammar || {
+      correct: 0,
+      total: 0,
+      percentage: 0,
+    };
+    const vocabulary = rawBreakdown?.vocabulary || {
+      correct: 0,
+      total: 0,
+      percentage: 0,
+    };
+    const reading = rawBreakdown?.reading || {
+      correct: 0,
+      total: 0,
+      percentage: 0,
+    };
+
+    const totalQuestions =
+      attempt.totalQuestions || attempt.answers?.length || 1;
+    const score = attempt.score || 0;
+    const percentage =
+      attempt.percentage !== undefined && attempt.percentage !== null
+        ? attempt.percentage
+        : Math.round((score / totalQuestions) * 100);
+    const timeSpentSeconds =
+      attempt.timeSpentSeconds ||
+      this.parseDurationSeconds(attempt.duration) ||
+      0;
+    const durationFormatted =
+      attempt.duration || this.formatDuration(timeSpentSeconds);
+
+    const user = attempt.user || {
+      id: attempt.userId,
+      firstName: '',
+      lastName: '',
+      email: '',
+      profileImage: null,
+    };
+    const firstName = user.firstName || '';
+    const lastName = user.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim() || 'Learner';
+
+    return {
+      id: attempt.id,
+      learner: {
+        id: user.id || attempt.userId,
+        firstName,
+        lastName,
+        fullName,
+        email: user.email || '',
+        profileImage: user.profileImage || null,
+      },
+      cefrRating: attempt.estimatedLevel,
+      score: {
+        correct: score,
+        total: totalQuestions,
+        percentage,
+        formatted: `${score} / ${totalQuestions} (${percentage}%)`,
+      },
+      sectionBreakdown: {
+        grammar: {
+          correct: grammar.correct || 0,
+          total: grammar.total || 0,
+          percentage: grammar.percentage || 0,
+          formatted: `G: ${grammar.correct || 0}/${grammar.total || 0}`,
+        },
+        vocabulary: {
+          correct: vocabulary.correct || 0,
+          total: vocabulary.total || 0,
+          percentage: vocabulary.percentage || 0,
+          formatted: `V: ${vocabulary.correct || 0}/${vocabulary.total || 0}`,
+        },
+        reading: {
+          correct: reading.correct || 0,
+          total: reading.total || 0,
+          percentage: reading.percentage || 0,
+          formatted: `R: ${reading.correct || 0}/${reading.total || 0}`,
+        },
+      },
+      duration: {
+        timeSpentSeconds,
+        formatted: durationFormatted,
+      },
+      createdAt: attempt.createdAt,
+    };
+  }
+
+  /**
+   * Retrieves the most recent placement test submissions for live feed dashboard widget.
+   */
+  async getRecentSubmissions(limit = 5): Promise<SubmissionListItem[]> {
+    const take = limit > 0 ? limit : 5;
+    const attempts = await this.prisma.testAttempt.findMany({
+      take,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImage: true,
+          },
+        },
+        answers: true,
+      },
+    });
+
+    return attempts.map((attempt) => this.formatSubmissionListItem(attempt));
+  }
+
+  /**
+   * Retrieves paginated placement test submissions with search and level filters.
+   */
+  async getAllSubmissions(
+    query?: GetSubmissionsQueryDto,
+  ): Promise<SubmissionListResult> {
+    const page = query?.page && query.page > 0 ? query.page : 1;
+    const limit = query?.limit && query.limit > 0 ? query.limit : 10;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.TestAttemptWhereInput = {};
+
+    if (query?.level) {
+      where.estimatedLevel = query.level;
+    }
+
+    if (query?.search) {
+      where.user = {
+        OR: [
+          { firstName: { contains: query.search, mode: 'insensitive' } },
+          { lastName: { contains: query.search, mode: 'insensitive' } },
+          { email: { contains: query.search, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    const [total, attempts] = await Promise.all([
+      this.prisma.testAttempt.count({ where }),
+      this.prisma.testAttempt.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profileImage: true,
+            },
+          },
+          answers: true,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: attempts.map((attempt) => this.formatSubmissionListItem(attempt)),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Retrieves full details and AI report of a test attempt submission by ID.
+   */
+  async getSubmissionById(
+    id: string,
+    requesterUserId?: string,
+    requesterRole?: Role,
+  ) {
+    if (!this.isValidObjectId(id)) {
+      throw new BadRequestException(`Invalid submission ID format: '${id}'`);
+    }
+
+    const attempt = await this.prisma.testAttempt.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImage: true,
+          },
+        },
+        answers: {
+          include: {
+            question: {
+              include: {
+                questionOptions: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!attempt) {
+      throw new NotFoundException(`Test submission with ID '${id}' not found`);
+    }
+
+    if (
+      requesterRole !== Role.ADMIN &&
+      requesterUserId &&
+      attempt.userId !== requesterUserId
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to view this test submission report.',
+      );
+    }
+
+    const formatted = this.formatSubmissionListItem(attempt);
+
+    return {
+      ...formatted,
+      aiAnalysis: attempt.aiAnalysis,
+      answers: attempt.answers.map((ans, idx) => ({
+        number: idx + 1,
+        questionId: ans.questionId,
+        question: ans.question?.question,
+        passage: ans.question?.passage,
+        sectionType: ans.question?.sectionType,
+        level: ans.question?.level,
+        difficulty: ans.question?.difficulty,
+        userAnswer: ans.userAnswer,
+        correctAnswer: ans.question?.answer,
+        isCorrect: ans.isCorrect,
+        explanation: ans.question?.explanation,
+        options: ans.question?.questionOptions,
+      })),
+    };
+  }
+
+  /**
+   * Retrieves test attempts for a specific learner user.
+   */
+  async getUserSubmissions(userId: string): Promise<SubmissionListItem[]> {
+    if (!this.isValidObjectId(userId)) {
+      throw new BadRequestException(`Invalid user ID format: '${userId}'`);
+    }
+
+    const attempts = await this.prisma.testAttempt.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImage: true,
+          },
+        },
+        answers: true,
+      },
+    });
+
+    return attempts.map((attempt) => this.formatSubmissionListItem(attempt));
   }
 }

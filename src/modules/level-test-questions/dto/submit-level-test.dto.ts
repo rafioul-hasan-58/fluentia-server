@@ -2,12 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
-  IsInt,
   IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
-  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -57,10 +55,22 @@ export class SubmitLevelTestDto {
 
   @ApiPropertyOptional({
     description: 'Total time spent taking the test in seconds',
-    example: 1200,
+    example: 492,
   })
   @IsOptional()
-  @IsInt()
-  @Min(0)
   timeSpentSeconds?: number;
+
+  @ApiPropertyOptional({
+    description: 'Duration string (e.g. "8m 12s", "08:12") or time in seconds',
+    example: '8m 12s',
+  })
+  @IsOptional()
+  duration?: string | number;
+
+  @ApiPropertyOptional({
+    description: 'Alternative alias for time spent taking the test',
+    example: 492,
+  })
+  @IsOptional()
+  timeSpent?: string | number;
 }
