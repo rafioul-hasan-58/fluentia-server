@@ -9,7 +9,7 @@ import { UsersRepository } from '../modules/users/users.repository';
 import { RegisterDto } from './dto/register.dto';
 import bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
-import { Role, User } from '@prisma/client';
+import { RegistrationMethod, Role, User } from '@prisma/client';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../modules/mail';
@@ -219,6 +219,7 @@ export class AuthService {
       email,
       given_name: firstName,
       family_name: lastName,
+      picture: profileImage,
     } = payload;
 
     if (!email) {
@@ -230,8 +231,16 @@ export class AuthService {
       where: { googleId },
     });
 
-    // If not found, check by email (to link account if they registered with email previously)
-    if (!user) {
+    if (user) {
+      // If user doesn't have a profile image yet, update with Google profile image
+      if (profileImage && !user.profileImage) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { profileImage },
+        });
+      }
+    } else {
+      // If not found by googleId, check by email (to link account if they registered with email previously)
       user = await this.usersRepository.findByEmail(email);
 
       if (user) {
@@ -239,16 +248,19 @@ export class AuthService {
           where: { email },
           data: {
             googleId,
+            ...(profileImage && !user.profileImage ? { profileImage } : {}),
           },
         });
       } else {
-        // Create new user without password
+        // Create new user with Google profile information
         user = await this.usersRepository.create({
           email,
           googleId,
           firstName: firstName || '',
           lastName: lastName || '',
+          profileImage: profileImage || null,
           role: Role.USER,
+          registrationMethod: RegistrationMethod.GOOGLE,
         });
       }
     }
