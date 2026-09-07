@@ -1,5 +1,6 @@
 import { EnglishLevel, PrismaClient } from '@prisma/client';
 import { seedLevelTestQuestions } from './seeds/level-test-questions.seed';
+import { seedAdmin } from './seeds/admin.seed';
 
 const prisma = new PrismaClient();
 
@@ -84,7 +85,19 @@ const skills: {
 ];
 
 async function main() {
-  console.log('🌱 Starting skills seed...');
+  console.log('🌱 Starting Admin user seed...');
+  const adminResult = await seedAdmin(prisma);
+  if (adminResult.created) {
+    console.log(`✅ Created Admin user: ${adminResult.user.email}`);
+  } else if (adminResult.updatedRole) {
+    console.log(
+      `✅ Promoted existing user to Admin: ${adminResult.user.email}`,
+    );
+  } else {
+    console.log(`ℹ️ Admin user already exists: ${adminResult.user.email}`);
+  }
+
+  console.log('\n🌱 Starting skills seed...');
 
   for (const skill of skills) {
     const upserted = await prisma.skill.upsert({

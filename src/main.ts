@@ -8,6 +8,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { CustomLogger } from './core/logger/logger.service';
 import { API_DOCS_PATH, GLOBAL_PREFIX } from './core/constants';
+import { PrismaService } from './prisma/prisma.service';
+import { seedAdmin } from '../prisma/seeds/admin.seed';
 
 async function bootstrap() {
   const logger = new CustomLogger();
@@ -55,7 +57,47 @@ async function bootstrap() {
     );
 
     const configService = app.get(ConfigService<EnvConfig, true>);
+    const prismaService = app.get(PrismaService);
     const port = configService.get('PORT', { infer: true });
+
+    // Seed/verify default Admin account on bootstrap
+    try {
+      const adminEmail =
+        configService.get('ADMIN_EMAIL', { infer: true }) ||
+        'adminfluentia@gmail.com';
+      const adminPassword =
+        configService.get('ADMIN_PASSWORD', { infer: true }) || '12345678';
+
+      const seedResult = await seedAdmin(prismaService, {
+        email: adminEmail,
+        password: adminPassword,
+      });
+
+      if (seedResult.created) {
+        logger.log(
+          `👑 Default Admin created successfully: ${seedResult.user.email}`,
+          'Bootstrap',
+        );
+      } else if (seedResult.updatedRole) {
+        logger.log(
+          `👑 Existing user promoted to Admin: ${seedResult.user.email}`,
+          'Bootstrap',
+        );
+      } else {
+        logger.log(
+          `👑 Admin account verified: ${seedResult.user.email}`,
+          'Bootstrap',
+        );
+      }
+    } catch (adminSeedError) {
+      logger.error(
+        'Failed to seed/verify default admin user:',
+        adminSeedError instanceof Error
+          ? adminSeedError.stack
+          : String(adminSeedError),
+        'Bootstrap',
+      );
+    }
 
     const config = new DocumentBuilder()
       .setTitle('Fluentia API')

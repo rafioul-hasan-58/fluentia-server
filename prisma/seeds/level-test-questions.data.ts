@@ -1,4 +1,8 @@
-import { DifficultyType, EnglishLevel, TestQuestionSection } from '@prisma/client';
+import {
+  DifficultyType,
+  EnglishLevel,
+  TestQuestionSection,
+} from '@prisma/client';
 
 export interface QuestionOptionSeed {
   content: string;
@@ -538,7 +542,8 @@ export const levelTestQuestionsData: LevelTestQuestionSeed[] = [
 
   // 25. A1 - VOCABULARY (EASY)
   {
-    question: 'Can you please shut the ___? The cold wind is blowing into the room.',
+    question:
+      'Can you please shut the ___? The cold wind is blowing into the room.',
     passage: null,
     sectionType: TestQuestionSection.VOCABULARY,
     level: EnglishLevel.A1,
@@ -582,8 +587,7 @@ export const levelTestQuestionsData: LevelTestQuestionSeed[] = [
     sectionType: TestQuestionSection.READING,
     level: EnglishLevel.A2,
     difficulty: DifficultyType.MEDIUM,
-    answer:
-      'Ensure kitchen sinks and bathroom areas are clear and accessible',
+    answer: 'Ensure kitchen sinks and bathroom areas are clear and accessible',
     explanation:
       'The notice explicitly instructs residents to "ensure that kitchen sinks and bathroom plumbing fixtures are completely clear and accessible".',
     options: [
@@ -785,8 +789,7 @@ export const levelTestQuestionsData: LevelTestQuestionSeed[] = [
     level: EnglishLevel.A1,
     difficulty: DifficultyType.EASY,
     answer: 'niece',
-    explanation:
-      'A "niece" is the daughter of one\'s brother or sister.',
+    explanation: 'A "niece" is the daughter of one\'s brother or sister.',
     options: [
       { content: 'niece', isCorrect: true },
       { content: 'nephew', isCorrect: false },
