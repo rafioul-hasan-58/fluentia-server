@@ -12,6 +12,11 @@ describe('UsersController', () => {
     myProfile: jest.Mock;
     updateProfile: jest.Mock;
     uploadProfileImage: jest.Mock;
+    findAllUsers: jest.Mock;
+    findUserById: jest.Mock;
+    updateUserRole: jest.Mock;
+    toggleUserSuspension: jest.Mock;
+    adminUpdateUser: jest.Mock;
   };
 
   const mockUserProfile = {
@@ -49,6 +54,11 @@ describe('UsersController', () => {
       myProfile: jest.fn(),
       updateProfile: jest.fn(),
       uploadProfileImage: jest.fn(),
+      findAllUsers: jest.fn(),
+      findUserById: jest.fn(),
+      updateUserRole: jest.fn(),
+      toggleUserSuspension: jest.fn(),
+      adminUpdateUser: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -194,6 +204,37 @@ describe('UsersController', () => {
       await expect(
         controller.uploadProfileImage(undefined, mockFile),
       ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return learners and user directory wrapped in data key', async () => {
+      const mockDirResult = {
+        items: [mockUserProfile],
+        total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      };
+      service.findAllUsers.mockResolvedValue(mockDirResult);
+
+      const result = await controller.findAll({ page: 1, limit: 10 });
+      expect(result).toEqual({
+        message: 'Learners & user directory fetched successfully.',
+        data: mockDirResult,
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return user details', async () => {
+      service.findUserById.mockResolvedValue(mockUserProfile);
+
+      const result = await controller.findOne('665f1b2e1111111111111111');
+      expect(result).toEqual({
+        message: 'Learner details retrieved successfully.',
+        data: mockUserProfile,
+      });
     });
   });
 });

@@ -25,6 +25,7 @@ model User {
   email              String             @unique
   password           String?
   role               Role               @default(USER)
+  isSuspended        Boolean            @default(false)
   profileImage       String?
   bio                String?
   phoneNumber        String?

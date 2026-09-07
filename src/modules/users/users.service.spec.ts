@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { EnglishLevel } from '@prisma/client';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { EnglishLevel, Role } from '@prisma/client';
 import { UsersService } from './users.service';
 import { UsersRepository } from './users.repository';
+import { PrismaService } from '../../prisma/prisma.service';
 import { S3Service } from '../s3';
 
 describe('UsersService', () => {
@@ -16,6 +17,14 @@ describe('UsersService', () => {
     uploadFile: jest.Mock;
     deleteFile: jest.Mock;
   };
+  let prismaService: {
+    user: {
+      count: jest.Mock;
+      findMany: jest.Mock;
+      findUnique: jest.Mock;
+      update: jest.Mock;
+    };
+  };
 
   const mockUserProfile = {
     id: '665f1b2e1111111111111111',
@@ -28,6 +37,7 @@ describe('UsersService', () => {
     country: 'Bangladesh',
     timezone: 'Asia/Dhaka',
     role: 'USER',
+    isSuspended: false,
     registrationMethod: 'EMAIL',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -58,12 +68,25 @@ describe('UsersService', () => {
       deleteFile: jest.fn(),
     };
 
+    const mockPrismaService = {
+      user: {
+        count: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+      },
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         {
           provide: UsersRepository,
           useValue: mockUsersRepository,
+        },
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
         },
         {
           provide: S3Service,
@@ -75,6 +98,7 @@ describe('UsersService', () => {
     service = module.get<UsersService>(UsersService);
     repository = module.get(UsersRepository);
     s3Service = module.get(S3Service);
+    prismaService = module.get(PrismaService);
   });
 
   it('should be defined', () => {
@@ -275,6 +299,129 @@ describe('UsersService', () => {
       expect(result.user?.profileImage).toBe(
         'https://medsyst.s3.eu-north-1.amazonaws.com/avatars/avatar123.jpg',
       );
+    });
+  });
+
+  describe('findAllUsers', () => {
+    it('should return paginated user list with mapped fields', async () => {
+      prismaService.user.count.mockResolvedValue(1);
+      prismaService.user.findMany.mockResolvedValue([
+        {
+          ...mockUserProfile,
+          _count: { testAttempts: 3 },
+        },
+      ]);
+
+      const result = await service.findAllUsers({ page: 1, limit: 10 });
+
+      expect(result.total).toBe(1);
+      expect(result.items.length).toBe(1);
+      expect(result.items[0].testsCount).toBe(3);
+      expect(result.items[0].isSuspended).toBe(false);
+      expect(result.items[0].fullName).toBe('John Doe');
+    });
+  });
+
+  describe('findUserById', () => {
+    it('should throw BadRequestException for invalid objectId', async () => {
+      await expect(service.findUserById('invalid-id')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      prismaService.user.findUnique.mockResolvedValue(null);
+      await expect(
+        service.findUserById('665f1b2e1111111111111111'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return user details with stats', async () => {
+      prismaService.user.findUnique.mockResolvedValue({
+        ...mockUserProfile,
+        testAttempts: [],
+        _count: {
+          testAttempts: 2,
+          sessions: 1,
+          attempts: 2,
+          submissions: 1,
+        },
+      });
+
+      const result = await service.findUserById('665f1b2e1111111111111111');
+      expect(result.id).toBe('665f1b2e1111111111111111');
+      expect(result.testsCount).toBe(2);
+      expect(result.proficiency.level).toBe(EnglishLevel.B1);
+    });
+  });
+
+  describe('updateUserRole', () => {
+    it('should throw BadRequestException if admin tries to demote themselves', async () => {
+      prismaService.user.findUnique.mockResolvedValue(mockUserProfile);
+
+      await expect(
+        service.updateUserRole(
+          '665f1b2e1111111111111111',
+          Role.USER,
+          '665f1b2e1111111111111111',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should update role when valid', async () => {
+      prismaService.user.findUnique.mockResolvedValue(mockUserProfile);
+      prismaService.user.update.mockResolvedValue({
+        id: mockUserProfile.id,
+        firstName: mockUserProfile.firstName,
+        lastName: mockUserProfile.lastName,
+        email: mockUserProfile.email,
+        role: Role.ADMIN,
+      });
+
+      const result = await service.updateUserRole(
+        '665f1b2e1111111111111111',
+        Role.ADMIN,
+        '665f1b2e9999999999999999',
+      );
+
+      expect(result.user.role).toBe(Role.ADMIN);
+    });
+  });
+
+  describe('toggleUserSuspension', () => {
+    it('should throw BadRequestException if admin tries to suspend themselves', async () => {
+      prismaService.user.findUnique.mockResolvedValue(mockUserProfile);
+
+      await expect(
+        service.toggleUserSuspension(
+          '665f1b2e1111111111111111',
+          true,
+          '665f1b2e1111111111111111',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should toggle suspension state successfully', async () => {
+      prismaService.user.findUnique.mockResolvedValue({
+        ...mockUserProfile,
+        isSuspended: false,
+      });
+      prismaService.user.update.mockResolvedValue({
+        id: mockUserProfile.id,
+        firstName: mockUserProfile.firstName,
+        lastName: mockUserProfile.lastName,
+        email: mockUserProfile.email,
+        role: mockUserProfile.role,
+      });
+
+      const result = await service.toggleUserSuspension(
+        '665f1b2e1111111111111111',
+        true,
+        '665f1b2e9999999999999999',
+      );
+
+      expect(result.user.isSuspended).toBe(true);
+      expect(result.message).toContain('suspended');
     });
   });
 });

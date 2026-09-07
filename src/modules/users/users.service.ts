@@ -1,15 +1,43 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { EnglishLevel, Prisma, Role } from '@prisma/client';
 import { UsersRepository } from './users.repository';
+import { PrismaService } from '../../prisma/prisma.service';
 import { S3Service } from '../s3';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { GetUsersQueryDto, UserRoleFilter } from './dto/get-users-query.dto';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly usersRepository: UsersRepository,
+    private readonly prisma: PrismaService,
     private readonly s3Service: S3Service,
   ) {}
+
+  private isValidObjectId(id: string): boolean {
+    return /^[0-9a-fA-F]{24}$/.test(id);
+  }
+
+  private getProficiencyInfo(cefr?: EnglishLevel | null) {
+    const level = cefr || EnglishLevel.A2;
+    const map: Record<EnglishLevel, string> = {
+      A1: 'A1 Beginner',
+      A2: 'A2 Elementary',
+      B1: 'B1 Intermediate',
+      B2: 'B2 Upper Intermediate',
+      C1: 'C1 Advanced',
+      C2: 'C2 Mastery',
+    };
+    return {
+      level,
+      label: map[level] || `${level} Proficiency`,
+    };
+  }
 
   async myProfile(id: string) {
     const user = await this.usersRepository.findProfileById(id);
@@ -133,5 +161,342 @@ export class UsersService {
       profileImage: uploadResult.url,
       user,
     };
+  }
+
+  /**
+   * Retrieves all users with search, role filters, and pagination for Admin Learners & User Directory.
+   */
+  async findAllUsers(query?: GetUsersQueryDto) {
+    const page = query?.page && query.page > 0 ? query.page : 1;
+    const limit = query?.limit && query.limit > 0 ? query.limit : 10;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.UserWhereInput & { isSuspended?: boolean } = {};
+
+    if (query?.role && query.role !== UserRoleFilter.ALL) {
+      if (query.role === UserRoleFilter.ADMIN) {
+        where.role = Role.ADMIN;
+      } else if (
+        query.role === UserRoleFilter.USER ||
+        query.role === UserRoleFilter.STUDENT
+      ) {
+        where.role = Role.USER;
+      }
+    }
+
+    if (query?.isSuspended !== undefined) {
+      (where as Record<string, unknown>).isSuspended = query.isSuspended;
+    }
+
+    if (query?.search) {
+      where.OR = [
+        { firstName: { contains: query.search, mode: 'insensitive' } },
+        { lastName: { contains: query.search, mode: 'insensitive' } },
+        { email: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, users] = await Promise.all([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          profile: true,
+          _count: {
+            select: {
+              testAttempts: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    const items = users.map((u) => {
+      const uRecord = u as typeof u & { isSuspended?: boolean };
+      const proficiency = this.getProficiencyInfo(
+        uRecord.profile?.estimatedCEFR,
+      );
+      const fullName =
+        `${uRecord.firstName || ''} ${uRecord.lastName || ''}`.trim() ||
+        'Learner';
+      const testsCount = uRecord._count?.testAttempts || 0;
+      const lastActive =
+        uRecord.profile?.lastActiveAt || uRecord.updatedAt || uRecord.createdAt;
+
+      return {
+        id: uRecord.id,
+        firstName: uRecord.firstName,
+        lastName: uRecord.lastName,
+        fullName,
+        email: uRecord.email,
+        profileImage: uRecord.profileImage || null,
+        role: uRecord.role,
+        isSuspended: Boolean(uRecord.isSuspended),
+        proficiency,
+        authProvider: uRecord.registrationMethod,
+        testsTaken: `${testsCount} tests`,
+        testsCount,
+        lastActive,
+        createdAt: uRecord.createdAt,
+        updatedAt: uRecord.updatedAt,
+        profile: uRecord.profile,
+      };
+    });
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Retrieves single user details with profile and test stats for Admin.
+   */
+  async findUserById(id: string) {
+    if (!this.isValidObjectId(id)) {
+      throw new BadRequestException(`Invalid user ID format: '${id}'`);
+    }
+
+    const u = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        profile: true,
+        testAttempts: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        },
+        _count: {
+          select: {
+            testAttempts: true,
+            sessions: true,
+            attempts: true,
+            submissions: true,
+          },
+        },
+      },
+    });
+
+    if (!u) {
+      throw new NotFoundException(`User with ID '${id}' not found`);
+    }
+
+    const uRecord = u as typeof u & { isSuspended?: boolean };
+    const proficiency = this.getProficiencyInfo(uRecord.profile?.estimatedCEFR);
+    const fullName =
+      `${uRecord.firstName || ''} ${uRecord.lastName || ''}`.trim() ||
+      'Learner';
+    const testsCount = uRecord._count?.testAttempts || 0;
+    const lastActive =
+      uRecord.profile?.lastActiveAt || uRecord.updatedAt || uRecord.createdAt;
+
+    return {
+      id: uRecord.id,
+      firstName: uRecord.firstName,
+      lastName: uRecord.lastName,
+      fullName,
+      email: uRecord.email,
+      profileImage: uRecord.profileImage || null,
+      bio: uRecord.bio,
+      phoneNumber: uRecord.phoneNumber,
+      country: uRecord.country,
+      timezone: uRecord.timezone,
+      role: uRecord.role,
+      isSuspended: Boolean(uRecord.isSuspended),
+      proficiency,
+      authProvider: uRecord.registrationMethod,
+      testsTaken: `${testsCount} tests`,
+      testsCount,
+      lastActive,
+      createdAt: uRecord.createdAt,
+      updatedAt: uRecord.updatedAt,
+      profile: uRecord.profile,
+      recentTestAttempts: uRecord.testAttempts,
+      counts: uRecord._count,
+    };
+  }
+
+  /**
+   * Updates a user's administrative role (ADMIN or USER).
+   */
+  async updateUserRole(userId: string, newRole: Role, currentAdminId?: string) {
+    if (!this.isValidObjectId(userId)) {
+      throw new BadRequestException(`Invalid user ID format: '${userId}'`);
+    }
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID '${userId}' not found`);
+    }
+
+    // Safety: prevent admin from accidentally demoting themselves
+    if (userId === currentAdminId && newRole !== Role.ADMIN) {
+      throw new BadRequestException(
+        'You cannot demote your own admin account.',
+      );
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { role: newRole },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+      },
+    });
+
+    return {
+      message: `User role successfully updated to ${newRole}.`,
+      user: updated,
+    };
+  }
+
+  /**
+   * Toggles or sets suspension state for a user account.
+   */
+  async toggleUserSuspension(
+    userId: string,
+    targetState?: boolean,
+    currentAdminId?: string,
+  ) {
+    if (!this.isValidObjectId(userId)) {
+      throw new BadRequestException(`Invalid user ID format: '${userId}'`);
+    }
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID '${userId}' not found`);
+    }
+
+    // Safety: prevent admin from suspending themselves
+    if (userId === currentAdminId) {
+      throw new BadRequestException(
+        'You cannot suspend your own admin account.',
+      );
+    }
+
+    const currentSuspended = Boolean(
+      (existingUser as Record<string, unknown>).isSuspended,
+    );
+    const newSuspensionState =
+      targetState !== undefined ? targetState : !currentSuspended;
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { isSuspended: newSuspensionState } as Prisma.UserUpdateInput,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+      },
+    });
+
+    return {
+      message: newSuspensionState
+        ? `User account '${existingUser.email}' has been suspended.`
+        : `User account '${existingUser.email}' has been reactivated.`,
+      user: {
+        ...updated,
+        isSuspended: newSuspensionState,
+      },
+    };
+  }
+
+  /**
+   * Updates user attributes and learning profile by Admin.
+   */
+  async adminUpdateUser(
+    userId: string,
+    dto: AdminUpdateUserDto,
+    currentAdminId?: string,
+  ) {
+    if (!this.isValidObjectId(userId)) {
+      throw new BadRequestException(`Invalid user ID format: '${userId}'`);
+    }
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID '${userId}' not found`);
+    }
+
+    // Prevent demoting own account
+    if (dto.role && userId === currentAdminId && dto.role !== Role.ADMIN) {
+      throw new BadRequestException(
+        'You cannot demote your own admin account.',
+      );
+    }
+
+    // Prevent suspending own account
+    if (dto.isSuspended && userId === currentAdminId) {
+      throw new BadRequestException(
+        'You cannot suspend your own admin account.',
+      );
+    }
+
+    const updateData: Prisma.UserUpdateInput = {};
+
+    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
+    if (dto.email !== undefined) updateData.email = dto.email;
+    if (dto.role !== undefined) updateData.role = dto.role;
+    if (dto.isSuspended !== undefined) {
+      (updateData as Record<string, unknown>).isSuspended = dto.isSuspended;
+    }
+    if (dto.profileImage !== undefined) {
+      updateData.profileImage = dto.profileImage;
+    }
+    if (dto.bio !== undefined) updateData.bio = dto.bio;
+    if (dto.phoneNumber !== undefined) {
+      updateData.phoneNumber = dto.phoneNumber;
+    }
+    if (dto.country !== undefined) updateData.country = dto.country;
+    if (dto.timezone !== undefined) updateData.timezone = dto.timezone;
+
+    if (dto.estimatedCEFR !== undefined || dto.targetLevel !== undefined) {
+      updateData.profile = {
+        upsert: {
+          create: {
+            estimatedCEFR: dto.estimatedCEFR || EnglishLevel.A2,
+            targetLevel: dto.targetLevel,
+          },
+          update: {
+            ...(dto.estimatedCEFR !== undefined
+              ? { estimatedCEFR: dto.estimatedCEFR }
+              : {}),
+            ...(dto.targetLevel !== undefined
+              ? { targetLevel: dto.targetLevel }
+              : {}),
+          },
+        },
+      };
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+
+    return this.findUserById(userId);
   }
 }

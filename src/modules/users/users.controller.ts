@@ -4,8 +4,10 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
   Post,
+  Query,
   UnauthorizedException,
   UploadedFile,
   UseGuards,
@@ -16,20 +18,54 @@ import {
   ApiBody,
   ApiConsumes,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Role } from '@prisma/client';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import type { JwtPayload } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import {
+  AdminUpdateUserDto,
+  GetUsersQueryDto,
+  ToggleSuspendDto,
+  UpdateProfileDto,
+  UpdateUserRoleDto,
+} from './dto';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
+
+  @Get()
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Get all users with search, role filters, and pagination (Admin only)',
+    description:
+      'Retrieves a list of all registered learners & accounts with proficiency ratings, auth provider, test attempt counts, and last active timestamps.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Learners & user directory fetched successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  async findAll(@Query() query: GetUsersQueryDto) {
+    const data = await this.userService.findAllUsers(query);
+    return {
+      message: 'Learners & user directory fetched successfully.',
+      data,
+    };
+  }
 
   @Get('my-profile')
   @UseGuards(AuthGuard)
@@ -169,6 +205,149 @@ export class UsersController {
     const data = await this.userService.uploadProfileImage(user.id, file);
     return {
       message: 'Profile image uploaded successfully.',
+      data,
+    };
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get single learner/user details by ID (Admin only)',
+    description:
+      'Retrieves full user details including profile, recent test attempts, and overall statistics.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID (24-char MongoDB ObjectId)',
+    example: '67a3f8c4e09f5b2b34a1c789',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Learner details retrieved successfully.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request — Invalid ID format.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async findOne(@Param('id') id: string) {
+    const data = await this.userService.findUserById(id);
+    return {
+      message: 'Learner details retrieved successfully.',
+      data,
+    };
+  }
+
+  @Patch(':id/role')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update user role (Admin only)',
+    description:
+      'Allows an administrator to change a user role between ADMIN and USER. Administrators cannot demote themselves.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: '67a3f8c4e09f5b2b34a1c789',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User role updated successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid ID format or attempting self-demotion.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async updateRole(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserRoleDto,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    return this.userService.updateUserRole(id, dto.role, user?.id);
+  }
+
+  @Patch(':id/toggle-suspend')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Toggle account suspension (Admin only)',
+    description:
+      'Suspends or reactivates a user account. If isSuspended is omitted in the body, it toggles the current suspension status. Suspended users cannot log in. Administrators cannot suspend themselves.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: '67a3f8c4e09f5b2b34a1c789',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User suspension status updated successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad Request — Invalid ID format or attempting self-suspension.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async toggleSuspend(
+    @Param('id') id: string,
+    @Body() dto: ToggleSuspendDto,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    return this.userService.toggleUserSuspension(
+      id,
+      dto?.isSuspended,
+      user?.id,
+    );
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update user profile & status (Admin only)',
+    description:
+      'Allows an administrator to update user details, role, suspension status, and proficiency level.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: '67a3f8c4e09f5b2b34a1c789',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User updated successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad Request — Invalid ID format or invalid update parameters.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async adminUpdateUser(
+    @Param('id') id: string,
+    @Body() dto: AdminUpdateUserDto,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    const data = await this.userService.adminUpdateUser(id, dto, user?.id);
+    return {
+      message: 'User updated successfully.',
       data,
     };
   }

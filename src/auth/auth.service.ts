@@ -79,6 +79,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password!');
     }
 
+    if (user.isSuspended) {
+      throw new UnauthorizedException(
+        'Your account has been suspended. Please contact support for assistance.',
+      );
+    }
+
     const isMatch = await bcrypt.compare(payload.password, user.password);
     if (!isMatch) {
       throw new UnauthorizedException('Invalid email or password!');
@@ -263,6 +269,12 @@ export class AuthService {
           registrationMethod: RegistrationMethod.GOOGLE,
         });
       }
+    }
+
+    if (user.isSuspended) {
+      throw new UnauthorizedException(
+        'Your account has been suspended. Please contact support for assistance.',
+      );
     }
 
     return this.generateTokens(user);
