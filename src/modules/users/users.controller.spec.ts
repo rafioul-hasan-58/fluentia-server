@@ -17,6 +17,8 @@ describe('UsersController', () => {
     updateUserRole: jest.Mock;
     toggleUserSuspension: jest.Mock;
     adminUpdateUser: jest.Mock;
+    recordDailyStreak: jest.Mock;
+    getStreakStatus: jest.Mock;
   };
 
   const mockUserProfile = {
@@ -59,6 +61,8 @@ describe('UsersController', () => {
       updateUserRole: jest.fn(),
       toggleUserSuspension: jest.fn(),
       adminUpdateUser: jest.fn(),
+      recordDailyStreak: jest.fn(),
+      getStreakStatus: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -87,6 +91,69 @@ describe('UsersController', () => {
     expect(controller).toBeDefined();
   });
 
+  describe('streak endpoints', () => {
+    it('should record streak and return formatted response', async () => {
+      const streakData = {
+        currentStreak: 4,
+        streakUpdated: true,
+        isConsecutive: true,
+        message: "Awesome! You've extended your streak to 4 days in a row! 🔥",
+      };
+      service.recordDailyStreak.mockResolvedValue(streakData);
+
+      const user = {
+        id: '665f1b2e1111111111111111',
+        email: 'jane@example.com',
+        role: Role.USER,
+      };
+
+      const result = await controller.recordStreak(user, {
+        timezone: 'Asia/Dhaka',
+      });
+
+      expect(service.recordDailyStreak).toHaveBeenCalledWith(
+        '665f1b2e1111111111111111',
+        'Asia/Dhaka',
+      );
+      expect(result).toEqual({
+        message: streakData.message,
+        data: streakData,
+      });
+    });
+
+    it('should fetch streak status', async () => {
+      const statusData = {
+        currentStreak: 4,
+        isActiveToday: true,
+        isStreakAlive: true,
+      };
+      service.getStreakStatus.mockResolvedValue(statusData);
+
+      const user = {
+        id: '665f1b2e1111111111111111',
+        email: 'jane@example.com',
+        role: Role.USER,
+      };
+
+      const result = await controller.getStreak(user, 'Asia/Dhaka');
+
+      expect(service.getStreakStatus).toHaveBeenCalledWith(
+        '665f1b2e1111111111111111',
+        'Asia/Dhaka',
+      );
+      expect(result).toEqual({
+        message: 'Streak status fetched successfully.',
+        data: statusData,
+      });
+    });
+
+    it('should throw UnauthorizedException when recording streak without auth', async () => {
+      await expect(controller.recordStreak(undefined)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
+
   describe('myProfile', () => {
     it('should return user profile response when valid user is provided', async () => {
       service.myProfile.mockResolvedValue(mockUserProfile);
@@ -101,6 +168,7 @@ describe('UsersController', () => {
 
       expect(service.myProfile).toHaveBeenCalledWith(
         '665f1b2e1111111111111111',
+        undefined,
       );
       expect(result).toEqual({
         message: 'User profile fetched successfully.',

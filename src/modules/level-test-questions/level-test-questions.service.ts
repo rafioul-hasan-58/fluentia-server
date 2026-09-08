@@ -20,6 +20,7 @@ import {
   SubmissionListItem,
   SubmissionListResult,
 } from './interfaces/level-test-submission.interface';
+import { calculateActiveStreak } from '../users/utils/streak-calculator.util';
 
 @Injectable()
 export class LevelTestQuestionsService implements OnModuleInit {
@@ -539,15 +540,29 @@ export class LevelTestQuestionsService implements OnModuleInit {
         });
         savedAttemptId = attempt.id;
 
+        const existingProfile = await this.prisma.learningProfile.findUnique({
+          where: { userId: user.id },
+          select: { streakDays: true, lastActiveAt: true },
+        });
+
+        const streakResult = calculateActiveStreak({
+          currentStreak: existingProfile?.streakDays ?? 0,
+          lastActiveAt: existingProfile?.lastActiveAt ?? null,
+          now: new Date(),
+          timezone: user.timezone || 'UTC',
+        });
+
         await this.prisma.learningProfile.upsert({
           where: { userId: user.id },
           update: {
             estimatedCEFR: analysis.estimatedLevel,
+            streakDays: streakResult.streakDays,
             lastActiveAt: new Date(),
           },
           create: {
             userId: user.id,
             estimatedCEFR: analysis.estimatedLevel,
+            streakDays: streakResult.streakDays,
             lastActiveAt: new Date(),
           },
         });

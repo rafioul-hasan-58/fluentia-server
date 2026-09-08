@@ -24,6 +24,9 @@ describe('UsersService', () => {
       findUnique: jest.Mock;
       update: jest.Mock;
     };
+    learningProfile: {
+      upsert: jest.Mock;
+    };
   };
 
   const mockUserProfile = {
@@ -75,6 +78,9 @@ describe('UsersService', () => {
         findUnique: jest.fn(),
         update: jest.fn(),
       },
+      learningProfile: {
+        upsert: jest.fn(),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -98,7 +104,7 @@ describe('UsersService', () => {
     service = module.get<UsersService>(UsersService);
     repository = module.get(UsersRepository);
     s3Service = module.get(S3Service);
-    prismaService = module.get(PrismaService);
+    prismaService = module.get(PrismaService) as any;
   });
 
   it('should be defined', () => {
@@ -106,7 +112,7 @@ describe('UsersService', () => {
   });
 
   describe('myProfile', () => {
-    it('should return user profile without password when user exists', async () => {
+    it('should return user profile with streak info when user exists', async () => {
       repository.findProfileById.mockResolvedValue(mockUserProfile);
 
       const result = await service.myProfile('665f1b2e1111111111111111');
@@ -114,7 +120,14 @@ describe('UsersService', () => {
       expect(repository.findProfileById).toHaveBeenCalledWith(
         '665f1b2e1111111111111111',
       );
-      expect(result).toEqual(mockUserProfile);
+      expect(result).toMatchObject({
+        ...mockUserProfile,
+        streak: expect.objectContaining({
+          currentStreak: expect.any(Number),
+          isActiveToday: expect.any(Boolean),
+          isStreakAlive: expect.any(Boolean),
+        }),
+      });
       expect((result as Record<string, unknown>).password).toBeUndefined();
     });
 
@@ -127,6 +140,65 @@ describe('UsersService', () => {
       await expect(service.myProfile('non-existent-id')).rejects.toThrow(
         'User not found',
       );
+    });
+  });
+
+  describe('recordDailyStreak & getStreakStatus', () => {
+    it('should record daily streak and return streak result', async () => {
+      prismaService.user.findUnique.mockResolvedValue({
+        id: '665f1b2e1111111111111111',
+        timezone: 'Asia/Dhaka',
+        profile: {
+          id: '665f1b2e2222222222222222',
+          streakDays: 3,
+          lastActiveAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // yesterday
+        },
+      });
+
+      prismaService.learningProfile.upsert.mockResolvedValue({
+        id: '665f1b2e2222222222222222',
+        userId: '665f1b2e1111111111111111',
+        streakDays: 4,
+        lastActiveAt: new Date(),
+      });
+
+      const result = await service.recordDailyStreak(
+        '665f1b2e1111111111111111',
+        'Asia/Dhaka',
+      );
+
+      expect(result.currentStreak).toBe(4);
+      expect(result.streakUpdated).toBe(true);
+      expect(prismaService.learningProfile.upsert).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if user not found when recording streak', async () => {
+      prismaService.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.recordDailyStreak('non-existent-id'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return passive streak status without mutating db', async () => {
+      prismaService.user.findUnique.mockResolvedValue({
+        id: '665f1b2e1111111111111111',
+        timezone: 'Asia/Dhaka',
+        profile: {
+          id: '665f1b2e2222222222222222',
+          streakDays: 5,
+          lastActiveAt: new Date(),
+        },
+      });
+
+      const status = await service.getStreakStatus(
+        '665f1b2e1111111111111111',
+        'Asia/Dhaka',
+      );
+
+      expect(status.currentStreak).toBe(5);
+      expect(status.isActiveToday).toBe(true);
+      expect(status.isStreakAlive).toBe(true);
     });
   });
 

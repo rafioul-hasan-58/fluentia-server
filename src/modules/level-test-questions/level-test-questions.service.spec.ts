@@ -33,6 +33,7 @@ describe('LevelTestQuestionsService', () => {
       create: jest.Mock;
     };
     learningProfile: {
+      findUnique: jest.Mock;
       upsert: jest.Mock;
     };
   };
@@ -159,6 +160,7 @@ describe('LevelTestQuestionsService', () => {
         create: jest.fn(),
       },
       learningProfile: {
+        findUnique: jest.fn(),
         upsert: jest.fn(),
       },
     };
@@ -361,6 +363,7 @@ describe('LevelTestQuestionsService', () => {
         userId: mockUserId,
         score: 1,
       });
+      prismaService.learningProfile.findUnique.mockResolvedValue(null);
       prismaService.learningProfile.upsert.mockResolvedValue({});
       aiService.analyzeLevelTest.mockResolvedValue(mockAiAnalysis);
 
@@ -385,11 +388,13 @@ describe('LevelTestQuestionsService', () => {
         where: { userId: mockUserId },
         update: {
           estimatedCEFR: 'A1',
+          streakDays: 1,
           lastActiveAt: expect.any(Date),
         },
         create: {
           userId: mockUserId,
           estimatedCEFR: 'A1',
+          streakDays: 1,
           lastActiveAt: expect.any(Date),
         },
       });

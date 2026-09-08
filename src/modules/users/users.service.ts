@@ -11,13 +11,19 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersQueryDto, UserRoleFilter } from './dto/get-users-query.dto';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 
+import {
+  calculateActiveStreak,
+  calculateEffectiveStreak,
+  resolveTimezone,
+} from './utils/streak-calculator.util';
+
 @Injectable()
 export class UsersService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly prisma: PrismaService,
     private readonly s3Service: S3Service,
-  ) {}
+  ) { }
 
   private isValidObjectId(id: string): boolean {
     return /^[0-9a-fA-F]{24}$/.test(id);
@@ -39,12 +45,133 @@ export class UsersService {
     };
   }
 
-  async myProfile(id: string) {
+  /**
+   * Records a user's daily visit/check-in and calculates/updates streak in an ultra-efficient O(1) way.
+   */
+  async recordDailyStreak(userId: string, requestedTimezone?: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        timezone: true,
+        profile: {
+          select: {
+            id: true,
+            streakDays: true,
+            lastActiveAt: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const resolvedTz = resolveTimezone(requestedTimezone, user.timezone);
+    const now = new Date();
+
+    const streakResult = calculateActiveStreak({
+      currentStreak: user.profile?.streakDays ?? 0,
+      lastActiveAt: user.profile?.lastActiveAt ?? null,
+      now,
+      timezone: resolvedTz,
+    });
+
+    const updatedProfile = await this.prisma.learningProfile.upsert({
+      where: { userId },
+      update: {
+        streakDays: streakResult.streakDays,
+        lastActiveAt: now,
+      },
+      create: {
+        userId,
+        streakDays: streakResult.streakDays,
+        lastActiveAt: now,
+      },
+    });
+
+    return {
+      currentStreak: updatedProfile.streakDays,
+      streakUpdated: streakResult.streakUpdated,
+      isSameDay: streakResult.isSameDay,
+      isConsecutive: streakResult.isConsecutive,
+      isReset: streakResult.isReset,
+      isFirstDay: streakResult.isFirstDay,
+      message: streakResult.message,
+      timezone: resolvedTz,
+      lastActiveAt: updatedProfile.lastActiveAt,
+    };
+  }
+
+  /**
+   * Gets passive streak metrics for the user without mutating database state.
+   */
+  async getStreakStatus(userId: string, requestedTimezone?: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        timezone: true,
+        profile: {
+          select: {
+            id: true,
+            streakDays: true,
+            lastActiveAt: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const resolvedTz = resolveTimezone(requestedTimezone, user.timezone);
+    const effective = calculateEffectiveStreak({
+      currentStreak: user.profile?.streakDays ?? 0,
+      lastActiveAt: user.profile?.lastActiveAt ?? null,
+      now: new Date(),
+      timezone: resolvedTz,
+    });
+
+    return {
+      currentStreak: effective.currentStreak,
+      isActiveToday: effective.isActiveToday,
+      isStreakAlive: effective.isStreakAlive,
+      daysSinceLastActive: effective.daysSinceLastActive,
+      lastActiveDate: effective.lastActiveDate,
+      todayDate: effective.todayDate,
+      timezone: resolvedTz,
+    };
+  }
+
+  async myProfile(id: string, requestedTimezone?: string) {
     const user = await this.usersRepository.findProfileById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+
+    const resolvedTz = resolveTimezone(requestedTimezone, user.timezone);
+    const effectiveStreak = calculateEffectiveStreak({
+      currentStreak: user.profile?.streakDays ?? 0,
+      lastActiveAt: user.profile?.lastActiveAt ?? null,
+      now: new Date(),
+      timezone: resolvedTz,
+    });
+
+    return {
+      ...user,
+      streak: {
+        currentStreak: effectiveStreak.currentStreak,
+        isActiveToday: effectiveStreak.isActiveToday,
+        isStreakAlive: effectiveStreak.isStreakAlive,
+        daysSinceLastActive: effectiveStreak.daysSinceLastActive,
+        lastActiveDate: effectiveStreak.lastActiveDate,
+        todayDate: effectiveStreak.todayDate,
+        timezone: resolvedTz,
+      },
+    };
   }
 
   async updateProfile(
@@ -499,4 +626,5 @@ export class UsersService {
 
     return this.findUserById(userId);
   }
+
 }
