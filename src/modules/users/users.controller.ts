@@ -155,6 +155,31 @@ export class UsersController {
     };
   }
 
+  @Get('dashboard-data')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get User dashboard data',
+    description: 'Retrieves learner CEFR level and key dashboard metrics.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard data fetched successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async getUserDashboardData(@CurrentUser() user?: JwtPayload) {
+    if (!user?.id) {
+      throw new UnauthorizedException('Invalid token');
+    }
+    const data = await this.userService.getUserDashboardData(user.id);
+    return {
+      message: 'Dashboard data fetched successfully.',
+      data,
+    };
+  }
+
   @Patch('my-profile')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()

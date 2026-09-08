@@ -23,7 +23,7 @@ export class UsersService {
     private readonly usersRepository: UsersRepository,
     private readonly prisma: PrismaService,
     private readonly s3Service: S3Service,
-  ) { }
+  ) {}
 
   private isValidObjectId(id: string): boolean {
     return /^[0-9a-fA-F]{24}$/.test(id);
@@ -627,4 +627,22 @@ export class UsersService {
     return this.findUserById(userId);
   }
 
+  async getUserDashboardData(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found!');
+    }
+
+    return {
+      currentLevel: user.profile?.estimatedCEFR ?? 'A2',
+    };
+  }
 }
