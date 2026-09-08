@@ -33,7 +33,6 @@ import {
   AdminUpdateUserDto,
   GetUsersQueryDto,
   RecordStreakDto,
-  ToggleSuspendDto,
   UpdateProfileDto,
   UpdateUserRoleDto,
 } from './dto';
@@ -390,15 +389,10 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async toggleSuspend(
-    @Param('id') id: string,
-    @Body() dto: ToggleSuspendDto,
-    @CurrentUser() user?: JwtPayload,
+    @Param('id') targetUserId: string,
+    @CurrentUser() admin: JwtPayload,
   ) {
-    return this.userService.toggleUserSuspension(
-      id,
-      dto?.isSuspended,
-      user?.id,
-    );
+    return this.userService.toggleUserSuspension(targetUserId, admin.id);
   }
 
   @Patch(':id')

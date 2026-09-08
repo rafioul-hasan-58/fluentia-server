@@ -10,12 +10,7 @@ import { S3Service } from '../s3';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUsersQueryDto, UserRoleFilter } from './dto/get-users-query.dto';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
-
-import {
-  calculateActiveStreak,
-  calculateEffectiveStreak,
-  resolveTimezone,
-} from './utils/streak-calculator.util';
+import { calculateActiveStreak } from './utils/streak-calculator.util';
 
 @Injectable()
 export class UsersService {
@@ -45,133 +40,12 @@ export class UsersService {
     };
   }
 
-  /**
-   * Records a user's daily visit/check-in and calculates/updates streak in an ultra-efficient O(1) way.
-   */
-  async recordDailyStreak(userId: string, requestedTimezone?: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        timezone: true,
-        profile: {
-          select: {
-            id: true,
-            streakDays: true,
-            lastActiveAt: true,
-          },
-        },
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const resolvedTz = resolveTimezone(requestedTimezone, user.timezone);
-    const now = new Date();
-
-    const streakResult = calculateActiveStreak({
-      currentStreak: user.profile?.streakDays ?? 0,
-      lastActiveAt: user.profile?.lastActiveAt ?? null,
-      now,
-      timezone: resolvedTz,
-    });
-
-    const updatedProfile = await this.prisma.learningProfile.upsert({
-      where: { userId },
-      update: {
-        streakDays: streakResult.streakDays,
-        lastActiveAt: now,
-      },
-      create: {
-        userId,
-        streakDays: streakResult.streakDays,
-        lastActiveAt: now,
-      },
-    });
-
-    return {
-      currentStreak: updatedProfile.streakDays,
-      streakUpdated: streakResult.streakUpdated,
-      isSameDay: streakResult.isSameDay,
-      isConsecutive: streakResult.isConsecutive,
-      isReset: streakResult.isReset,
-      isFirstDay: streakResult.isFirstDay,
-      message: streakResult.message,
-      timezone: resolvedTz,
-      lastActiveAt: updatedProfile.lastActiveAt,
-    };
-  }
-
-  /**
-   * Gets passive streak metrics for the user without mutating database state.
-   */
-  async getStreakStatus(userId: string, requestedTimezone?: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        timezone: true,
-        profile: {
-          select: {
-            id: true,
-            streakDays: true,
-            lastActiveAt: true,
-          },
-        },
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const resolvedTz = resolveTimezone(requestedTimezone, user.timezone);
-    const effective = calculateEffectiveStreak({
-      currentStreak: user.profile?.streakDays ?? 0,
-      lastActiveAt: user.profile?.lastActiveAt ?? null,
-      now: new Date(),
-      timezone: resolvedTz,
-    });
-
-    return {
-      currentStreak: effective.currentStreak,
-      isActiveToday: effective.isActiveToday,
-      isStreakAlive: effective.isStreakAlive,
-      daysSinceLastActive: effective.daysSinceLastActive,
-      lastActiveDate: effective.lastActiveDate,
-      todayDate: effective.todayDate,
-      timezone: resolvedTz,
-    };
-  }
-
-  async myProfile(id: string, requestedTimezone?: string) {
+  async myProfile(id: string) {
     const user = await this.usersRepository.findProfileById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    const resolvedTz = resolveTimezone(requestedTimezone, user.timezone);
-    const effectiveStreak = calculateEffectiveStreak({
-      currentStreak: user.profile?.streakDays ?? 0,
-      lastActiveAt: user.profile?.lastActiveAt ?? null,
-      now: new Date(),
-      timezone: resolvedTz,
-    });
-
-    return {
-      ...user,
-      streak: {
-        currentStreak: effectiveStreak.currentStreak,
-        isActiveToday: effectiveStreak.isActiveToday,
-        isStreakAlive: effectiveStreak.isStreakAlive,
-        daysSinceLastActive: effectiveStreak.daysSinceLastActive,
-        lastActiveDate: effectiveStreak.lastActiveDate,
-        todayDate: effectiveStreak.todayDate,
-        timezone: resolvedTz,
-      },
-    };
+    return user;
   }
 
   async updateProfile(
@@ -290,9 +164,7 @@ export class UsersService {
     };
   }
 
-  /**
-   * Retrieves all users with search, role filters, and pagination for Admin Learners & User Directory.
-   */
+  //  get all users (Admin only)
   async findAllUsers(query?: GetUsersQueryDto) {
     const page = query?.page && query.page > 0 ? query.page : 1;
     const limit = query?.limit && query.limit > 0 ? query.limit : 10;
@@ -343,35 +215,37 @@ export class UsersService {
 
     const totalPages = Math.ceil(total / limit);
 
-    const items = users.map((u) => {
-      const uRecord = u as typeof u & { isSuspended?: boolean };
+    const items = users.map((user) => {
+      const userRecord = user;
       const proficiency = this.getProficiencyInfo(
-        uRecord.profile?.estimatedCEFR,
+        userRecord.profile?.estimatedCEFR,
       );
       const fullName =
-        `${uRecord.firstName || ''} ${uRecord.lastName || ''}`.trim() ||
+        `${userRecord.firstName || ''} ${userRecord.lastName || ''}`.trim() ||
         'Learner';
-      const testsCount = uRecord._count?.testAttempts || 0;
+      const testsCount = userRecord._count?.testAttempts || 0;
       const lastActive =
-        uRecord.profile?.lastActiveAt || uRecord.updatedAt || uRecord.createdAt;
+        userRecord.profile?.lastActiveAt ||
+        userRecord.updatedAt ||
+        userRecord.createdAt;
 
       return {
-        id: uRecord.id,
-        firstName: uRecord.firstName,
-        lastName: uRecord.lastName,
+        id: userRecord.id,
+        firstName: userRecord.firstName,
+        lastName: userRecord.lastName,
         fullName,
-        email: uRecord.email,
-        profileImage: uRecord.profileImage || null,
-        role: uRecord.role,
-        isSuspended: Boolean(uRecord.isSuspended),
+        email: userRecord.email,
+        profileImage: userRecord.profileImage || null,
+        role: userRecord.role,
+        isSuspended: Boolean(userRecord.isSuspended),
         proficiency,
-        authProvider: uRecord.registrationMethod,
+        authProvider: userRecord.registrationMethod,
         testsTaken: `${testsCount} tests`,
         testsCount,
         lastActive,
-        createdAt: uRecord.createdAt,
-        updatedAt: uRecord.updatedAt,
-        profile: uRecord.profile,
+        createdAt: userRecord.createdAt,
+        updatedAt: userRecord.updatedAt,
+        profile: userRecord.profile,
       };
     });
 
@@ -392,7 +266,7 @@ export class UsersService {
       throw new BadRequestException(`Invalid user ID format: '${id}'`);
     }
 
-    const u = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
         profile: true,
@@ -411,11 +285,11 @@ export class UsersService {
       },
     });
 
-    if (!u) {
+    if (!user) {
       throw new NotFoundException(`User with ID '${id}' not found`);
     }
 
-    const uRecord = u as typeof u & { isSuspended?: boolean };
+    const uRecord = user;
     const proficiency = this.getProficiencyInfo(uRecord.profile?.estimatedCEFR);
     const fullName =
       `${uRecord.firstName || ''} ${uRecord.lastName || ''}`.trim() ||
@@ -491,65 +365,37 @@ export class UsersService {
     };
   }
 
-  /**
-   * Toggles or sets suspension state for a user account.
-   */
-  async toggleUserSuspension(
-    userId: string,
-    targetState?: boolean,
-    currentAdminId?: string,
-  ) {
-    if (!this.isValidObjectId(userId)) {
-      throw new BadRequestException(`Invalid user ID format: '${userId}'`);
-    }
+  // toggle user suspention
+  async toggleUserSuspension(userId: string, adminId: string) {
+    const user = await this.usersRepository.findById(userId);
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!existingUser) {
+    if (!user) {
       throw new NotFoundException(`User with ID '${userId}' not found`);
     }
 
     // Safety: prevent admin from suspending themselves
-    if (userId === currentAdminId) {
+    if (userId === adminId) {
       throw new BadRequestException(
         'You cannot suspend your own admin account.',
       );
     }
 
-    const currentSuspended = Boolean(
-      (existingUser as Record<string, unknown>).isSuspended,
-    );
-    const newSuspensionState =
-      targetState !== undefined ? targetState : !currentSuspended;
-
-    const updated = await this.prisma.user.update({
+    const result = await this.prisma.user.update({
       where: { id: userId },
-      data: { isSuspended: newSuspensionState } as Prisma.UserUpdateInput,
+      data: { isSuspended: !user.isSuspended },
       select: {
         id: true,
         firstName: true,
         lastName: true,
-        email: true,
-        role: true,
+        isSuspended: true,
       },
     });
 
     return {
-      message: newSuspensionState
-        ? `User account '${existingUser.email}' has been suspended.`
-        : `User account '${existingUser.email}' has been reactivated.`,
-      user: {
-        ...updated,
-        isSuspended: newSuspensionState,
-      },
+      message: `${result.firstName} ${result.isSuspended ? 'suspended' : 'unsuspend'} successfully`,
     };
   }
 
-  /**
-   * Updates user attributes and learning profile by Admin.
-   */
   async adminUpdateUser(
     userId: string,
     dto: AdminUpdateUserDto,
@@ -640,7 +486,7 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException('User not found!');
     }
-
+    await calculateActiveStreak(this.prisma, userId);
     return {
       currentLevel: user.profile?.estimatedCEFR ?? 'A2',
     };

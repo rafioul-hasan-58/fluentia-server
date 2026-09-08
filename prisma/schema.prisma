@@ -176,6 +176,7 @@ model LearningProfile {
   learningGoals    String[]      @default([])
   dailyGoalMinutes Int?          @default(15)
   streakDays       Int           @default(0)
+  longestStreak    Int           @default(0)
   lastActiveAt     DateTime?
   createdAt        DateTime?     @default(now())
   updatedAt        DateTime?     @updatedAt
