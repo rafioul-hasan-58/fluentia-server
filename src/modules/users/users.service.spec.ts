@@ -104,7 +104,7 @@ describe('UsersService', () => {
     service = module.get<UsersService>(UsersService);
     repository = module.get(UsersRepository);
     s3Service = module.get(S3Service);
-    prismaService = module.get(PrismaService) as any;
+    prismaService = module.get(PrismaService);
   });
 
   it('should be defined', () => {

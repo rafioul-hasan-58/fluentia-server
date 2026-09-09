@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import {
@@ -384,17 +383,17 @@ describe('LevelTestQuestionsService', () => {
       });
       expect(aiService.analyzeLevelTest).toHaveBeenCalled();
       expect(prismaService.testAttempt.create).toHaveBeenCalled();
-      expect(prismaService.learningProfile.upsert).toHaveBeenCalledWith({
+      expect(prismaService.learningProfile.upsert).toHaveBeenLastCalledWith({
         where: { userId: mockUserId },
         update: {
           estimatedCEFR: 'A1',
-          streakDays: 1,
           lastActiveAt: expect.any(Date),
         },
         create: {
           userId: mockUserId,
           estimatedCEFR: 'A1',
           streakDays: 1,
+          longestStreak: 1,
           lastActiveAt: expect.any(Date),
         },
       });

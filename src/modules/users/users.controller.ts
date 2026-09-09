@@ -32,7 +32,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import {
   AdminUpdateUserDto,
   GetUsersQueryDto,
-  RecordStreakDto,
   UpdateProfileDto,
   UpdateUserRoleDto,
 } from './dto';
@@ -67,64 +66,64 @@ export class UsersController {
     };
   }
 
-  @Post('streak/record')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Record daily app visit/check-in and calculate user streak',
-    description:
-      'Calculates and updates user streak based on consecutive calendar day visits in user local timezone in O(1) time. Call this when the app loads or user opens the dashboard.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Daily streak calculated and recorded successfully.',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async recordStreak(
-    @CurrentUser() user?: JwtPayload,
-    @Body() dto?: RecordStreakDto,
-  ) {
-    if (!user?.id) {
-      throw new UnauthorizedException('Invalid token');
-    }
-    const data = await this.userService.recordDailyStreak(
-      user.id,
-      dto?.timezone,
-    );
-    return {
-      message: data.message,
-      data,
-    };
-  }
+  // @Post('streak/record')
+  // @UseGuards(AuthGuard)
+  // @ApiBearerAuth()
+  // @HttpCode(HttpStatus.OK)
+  // @ApiOperation({
+  //   summary: 'Record daily app visit/check-in and calculate user streak',
+  //   description:
+  //     'Calculates and updates user streak based on consecutive calendar day visits in user local timezone in O(1) time. Call this when the app loads or user opens the dashboard.',
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Daily streak calculated and recorded successfully.',
+  // })
+  // @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  // async recordStreak(
+  //   @CurrentUser() user?: JwtPayload,
+  //   @Body() dto?: RecordStreakDto,
+  // ) {
+  //   if (!user?.id) {
+  //     throw new UnauthorizedException('Invalid token');
+  //   }
+  //   const data = await this.userService.recordDailyStreak(
+  //     user.id,
+  //     dto?.timezone,
+  //   );
+  //   return {
+  //     message: data.message,
+  //     data,
+  //   };
+  // }
 
-  @Get('streak')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Get current user streak status',
-    description:
-      'Retrieves current streak metrics, active status today, and last active date without mutating database state.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Streak status fetched successfully.',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getStreak(
-    @CurrentUser() user?: JwtPayload,
-    @Query('timezone') timezone?: string,
-  ) {
-    if (!user?.id) {
-      throw new UnauthorizedException('Invalid token');
-    }
-    const data = await this.userService.getStreakStatus(user.id, timezone);
-    return {
-      message: 'Streak status fetched successfully.',
-      data,
-    };
-  }
+  // @Get('streak')
+  // @UseGuards(AuthGuard)
+  // @ApiBearerAuth()
+  // @HttpCode(HttpStatus.OK)
+  // @ApiOperation({
+  //   summary: 'Get current user streak status',
+  //   description:
+  //     'Retrieves current streak metrics, active status today, and last active date without mutating database state.',
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Streak status fetched successfully.',
+  // })
+  // @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  // async getStreak(
+  //   @CurrentUser() user?: JwtPayload,
+  //   @Query('timezone') timezone?: string,
+  // ) {
+  //   if (!user?.id) {
+  //     throw new UnauthorizedException('Invalid token');
+  //   }
+  //   const data = await this.userService.getStreakStatus(user.id, timezone);
+  //   return {
+  //     message: 'Streak status fetched successfully.',
+  //     data,
+  //   };
+  // }
 
   @Get('my-profile')
   @UseGuards(AuthGuard)
@@ -140,14 +139,11 @@ export class UsersController {
     description: 'Unauthorized — Invalid or missing token.',
   })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  async myProfile(
-    @CurrentUser() user?: JwtPayload,
-    @Query('timezone') timezone?: string,
-  ) {
+  async myProfile(@CurrentUser() user?: JwtPayload) {
     if (!user?.id) {
       throw new UnauthorizedException('Invalid token');
     }
-    const data = await this.userService.myProfile(user.id, timezone);
+    const data = await this.userService.myProfile(user.id);
     return {
       message: 'User profile fetched successfully.',
       data,

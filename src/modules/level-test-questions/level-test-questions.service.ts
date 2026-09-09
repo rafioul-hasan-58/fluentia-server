@@ -17,9 +17,14 @@ import { GetSubmissionsQueryDto } from './dto/get-submissions-query.dto';
 import {
   GradedQuestionItem,
   LevelTestSubmitResult,
+  RawAiAnalysisSummary,
+  RawSectionMetricItem,
+  SectionMetric,
   SubmissionListItem,
   SubmissionListResult,
+  TestAttemptEntityInput,
 } from './interfaces/level-test-submission.interface';
+import { LevelTestAnalysis } from '../ai/schemas/level-test-analysis.schema';
 import { calculateActiveStreak } from '../users/utils/streak-calculator.util';
 
 @Injectable()
@@ -35,8 +40,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
         include: { answers: { include: { question: true } } },
       });
 
-      for (const a of attempts) {
-        const attempt = a as Record<string, any>;
+      for (const attempt of attempts) {
         const bd = attempt.sectionBreakdown as Record<
           string,
           { total?: number }
@@ -81,14 +85,14 @@ export class LevelTestQuestionsService implements OnModuleInit {
             }
           }
 
-          await this.prisma.testAttempt.update({
-            where: { id: attempt.id as string },
-            data: {
-              sectionBreakdown: sectionStats,
-              totalQuestions:
-                answers.length || (attempt.totalQuestions as number) || 0,
-            } as Prisma.TestAttemptUpdateInput,
-          });
+          // await this.prisma.testAttempt.update({
+          //   where: { id: attempt.id as string },
+          //   data: {
+          //     sectionBreakdown: sectionStats,
+          //     totalQuestions:
+          //       answers.length || (attempt.totalQuestions as number) || 0,
+          //   } as Prisma.TestAttemptUpdateInput,
+          // });
         }
       }
     } catch {
@@ -540,29 +544,19 @@ export class LevelTestQuestionsService implements OnModuleInit {
         });
         savedAttemptId = attempt.id;
 
-        const existingProfile = await this.prisma.learningProfile.findUnique({
-          where: { userId: user.id },
-          select: { streakDays: true, lastActiveAt: true },
-        });
-
-        const streakResult = calculateActiveStreak({
-          currentStreak: existingProfile?.streakDays ?? 0,
-          lastActiveAt: existingProfile?.lastActiveAt ?? null,
-          now: new Date(),
-          timezone: user.timezone || 'UTC',
-        });
+        await calculateActiveStreak(this.prisma, user.id);
 
         await this.prisma.learningProfile.upsert({
           where: { userId: user.id },
           update: {
             estimatedCEFR: analysis.estimatedLevel,
-            streakDays: streakResult.streakDays,
             lastActiveAt: new Date(),
           },
           create: {
             userId: user.id,
             estimatedCEFR: analysis.estimatedLevel,
-            streakDays: streakResult.streakDays,
+            streakDays: 1,
+            longestStreak: 1,
             lastActiveAt: new Date(),
           },
         });
@@ -638,14 +632,15 @@ export class LevelTestQuestionsService implements OnModuleInit {
    * Transforms raw Prisma TestAttempt entity with user & answers into clean frontend submission item.
    */
   private formatSubmissionListItem(
-    attempt: Record<string, any>,
+    attempt: TestAttemptEntityInput,
   ): SubmissionListItem {
-    const rawBreakdown = (attempt.sectionBreakdown || {}) as Record<
-      string,
-      { correct?: number; total?: number; percentage?: number }
-    >;
+    const rawBreakdown =
+      typeof attempt.sectionBreakdown === 'object' &&
+      attempt.sectionBreakdown !== null
+        ? (attempt.sectionBreakdown as Record<string, RawSectionMetricItem>)
+        : {};
 
-    const grammar = {
+    const grammar: SectionMetric = {
       correct:
         rawBreakdown.grammar?.correct ?? rawBreakdown.GRAMMAR?.correct ?? 0,
       total: rawBreakdown.grammar?.total ?? rawBreakdown.GRAMMAR?.total ?? 0,
@@ -654,7 +649,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
         rawBreakdown.GRAMMAR?.percentage ??
         0,
     };
-    const vocabulary = {
+    const vocabulary: SectionMetric = {
       correct:
         rawBreakdown.vocabulary?.correct ??
         rawBreakdown.VOCABULARY?.correct ??
@@ -666,7 +661,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
         rawBreakdown.VOCABULARY?.percentage ??
         0,
     };
-    const reading = {
+    const reading: SectionMetric = {
       correct:
         rawBreakdown.reading?.correct ?? rawBreakdown.READING?.correct ?? 0,
       total: rawBreakdown.reading?.total ?? rawBreakdown.READING?.total ?? 0,
@@ -715,14 +710,17 @@ export class LevelTestQuestionsService implements OnModuleInit {
     }
 
     // Fallback 2: Parse from AI Analysis scoreText if still 0
+    const aiAnalysis = attempt.aiAnalysis as
+      RawAiAnalysisSummary | LevelTestAnalysis | null | undefined;
+    const aiSec = aiAnalysis?.sectionBreakdown;
+
     if (
       grammar.total === 0 &&
       vocabulary.total === 0 &&
       reading.total === 0 &&
-      attempt.aiAnalysis?.sectionBreakdown
+      aiSec
     ) {
-      const aiSec = attempt.aiAnalysis.sectionBreakdown;
-      const parseScoreText = (scoreText?: string) => {
+      const parseScoreText = (scoreText?: string): SectionMetric => {
         if (!scoreText) return { correct: 0, total: 0, percentage: 0 };
         const match = scoreText.match(/(\d+)\s*\/\s*(\d+)/);
         if (match) {
