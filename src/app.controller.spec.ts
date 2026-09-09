@@ -8,13 +8,20 @@ import type { Request, Response } from 'express';
 
 describe('AppController', () => {
   let appController: AppController;
-  let appService: AppService;
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [
-        AppService,
+        {
+          provide: AppService,
+          useValue: {
+            getHello: jest.fn().mockResolvedValue('Hello World! 1'),
+            getWelcomeHtml: jest
+              .fn()
+              .mockReturnValue('<h1>Welcome to Fluentia Server</h1>'),
+          },
+        },
         {
           provide: PrismaService,
           useValue: {
@@ -34,7 +41,6 @@ describe('AppController', () => {
     }).compile();
 
     appController = app.get<AppController>(AppController);
-    appService = app.get<AppService>(AppService);
   });
 
   describe('root', () => {
@@ -51,16 +57,18 @@ describe('AppController', () => {
         headers: { accept: 'text/html,application/xhtml+xml' },
       } as unknown as Request;
 
+      const typeSpy = jest.fn().mockReturnThis();
+      const sendSpy = jest.fn().mockReturnThis();
       const mockRes = {
-        type: jest.fn().mockReturnThis(),
-        send: jest.fn().mockImplementation((content) => content),
+        type: typeSpy,
+        send: sendSpy,
         json: jest.fn(),
       } as unknown as Response;
 
       appController.getWelcome(mockReq, mockRes);
 
-      expect(mockRes.type).toHaveBeenCalledWith('html');
-      expect(mockRes.send).toHaveBeenCalledWith(
+      expect(typeSpy).toHaveBeenCalledWith('html');
+      expect(sendSpy).toHaveBeenCalledWith(
         expect.stringContaining('Welcome to Fluentia Server'),
       );
     });
@@ -70,15 +78,16 @@ describe('AppController', () => {
         headers: { accept: 'application/json' },
       } as unknown as Request;
 
+      const jsonSpy = jest.fn().mockReturnThis();
       const mockRes = {
         type: jest.fn().mockReturnThis(),
         send: jest.fn(),
-        json: jest.fn().mockImplementation((content) => content),
+        json: jsonSpy,
       } as unknown as Response;
 
       appController.getWelcome(mockReq, mockRes);
 
-      expect(mockRes.json).toHaveBeenCalledWith(
+      expect(jsonSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
           message: 'Welcome to Fluentia Server API!',

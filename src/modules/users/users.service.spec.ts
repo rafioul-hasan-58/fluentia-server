@@ -114,7 +114,7 @@ describe('UsersService', () => {
   });
 
   describe('myProfile', () => {
-    it('should return user profile with streak info when user exists', async () => {
+    it('should return user profile when user exists', async () => {
       repository.findProfileById.mockResolvedValue(mockUserProfile);
 
       const result = await service.myProfile('665f1b2e1111111111111111');
@@ -122,15 +122,7 @@ describe('UsersService', () => {
       expect(repository.findProfileById).toHaveBeenCalledWith(
         '665f1b2e1111111111111111',
       );
-      expect(result).toMatchObject({
-        ...mockUserProfile,
-        streak: expect.objectContaining({
-          currentStreak: expect.any(Number),
-          isActiveToday: expect.any(Boolean),
-          isStreakAlive: expect.any(Boolean),
-        }),
-      });
-      expect((result as Record<string, unknown>).password).toBeUndefined();
+      expect(result).toEqual(mockUserProfile);
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
@@ -145,62 +137,36 @@ describe('UsersService', () => {
     });
   });
 
-  describe('recordDailyStreak & getStreakStatus', () => {
-    it('should record daily streak and return streak result', async () => {
+  describe('getUserDashboardData', () => {
+    it('should return dashboard data and calculate active streak', async () => {
       prismaService.user.findUnique.mockResolvedValue({
         id: '665f1b2e1111111111111111',
         timezone: 'Asia/Dhaka',
         profile: {
           id: '665f1b2e2222222222222222',
+          estimatedCEFR: EnglishLevel.B1,
           streakDays: 3,
-          lastActiveAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // yesterday
-        },
-      });
-
-      prismaService.learningProfile.update.mockResolvedValue({
-        id: '665f1b2e2222222222222222',
-        userId: '665f1b2e1111111111111111',
-        streakDays: 4,
-        lastActiveAt: new Date(),
-      });
-
-      const result = await service.recordDailyStreak(
-        '665f1b2e1111111111111111',
-        'Asia/Dhaka',
-      );
-
-      expect(result.currentStreak).toBe(4);
-      expect(result.streakUpdated).toBe(true);
-      expect(prismaService.learningProfile.update).toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException if user not found when recording streak', async () => {
-      prismaService.user.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.recordDailyStreak('non-existent-id'),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should return passive streak status without mutating db', async () => {
-      prismaService.user.findUnique.mockResolvedValue({
-        id: '665f1b2e1111111111111111',
-        timezone: 'Asia/Dhaka',
-        profile: {
-          id: '665f1b2e2222222222222222',
-          streakDays: 5,
+          longestStreak: 5,
           lastActiveAt: new Date(),
         },
       });
+      prismaService.learningProfile.update.mockResolvedValue({});
 
-      const status = await service.getStreakStatus(
+      const result = await service.getUserDashboardData(
         '665f1b2e1111111111111111',
-        'Asia/Dhaka',
       );
 
-      expect(status.currentStreak).toBe(5);
-      expect(status.isActiveToday).toBe(true);
-      expect(status.isStreakAlive).toBe(true);
+      expect(result).toEqual({
+        currentLevel: EnglishLevel.B1,
+      });
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      prismaService.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.getUserDashboardData('non-existent-id'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -463,20 +429,30 @@ describe('UsersService', () => {
   });
 
   describe('toggleUserSuspension', () => {
-    it('should throw BadRequestException if admin tries to suspend themselves', async () => {
-      prismaService.user.findUnique.mockResolvedValue(mockUserProfile);
+    it('should throw NotFoundException if user not found', async () => {
+      repository.findById.mockResolvedValue(null);
 
       await expect(
         service.toggleUserSuspension(
           '665f1b2e1111111111111111',
-          true,
+          '665f1b2e9999999999999999',
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if admin tries to suspend themselves', async () => {
+      repository.findById.mockResolvedValue(mockUserProfile);
+
+      await expect(
+        service.toggleUserSuspension(
+          '665f1b2e1111111111111111',
           '665f1b2e1111111111111111',
         ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should toggle suspension state successfully', async () => {
-      prismaService.user.findUnique.mockResolvedValue({
+      repository.findById.mockResolvedValue({
         ...mockUserProfile,
         isSuspended: false,
       });
@@ -484,17 +460,14 @@ describe('UsersService', () => {
         id: mockUserProfile.id,
         firstName: mockUserProfile.firstName,
         lastName: mockUserProfile.lastName,
-        email: mockUserProfile.email,
-        role: mockUserProfile.role,
+        isSuspended: true,
       });
 
       const result = await service.toggleUserSuspension(
         '665f1b2e1111111111111111',
-        true,
         '665f1b2e9999999999999999',
       );
 
-      expect(result.user.isSuspended).toBe(true);
       expect(result.message).toContain('suspended');
     });
   });

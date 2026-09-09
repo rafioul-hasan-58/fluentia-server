@@ -17,8 +17,7 @@ describe('UsersController', () => {
     updateUserRole: jest.Mock;
     toggleUserSuspension: jest.Mock;
     adminUpdateUser: jest.Mock;
-    recordDailyStreak: jest.Mock;
-    getStreakStatus: jest.Mock;
+    getUserDashboardData: jest.Mock;
   };
 
   const mockUserProfile = {
@@ -61,8 +60,7 @@ describe('UsersController', () => {
       updateUserRole: jest.fn(),
       toggleUserSuspension: jest.fn(),
       adminUpdateUser: jest.fn(),
-      recordDailyStreak: jest.fn(),
-      getStreakStatus: jest.fn(),
+      getUserDashboardData: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -91,15 +89,12 @@ describe('UsersController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('streak endpoints', () => {
-    it('should record streak and return formatted response', async () => {
-      const streakData = {
-        currentStreak: 4,
-        streakUpdated: true,
-        isConsecutive: true,
-        message: "Awesome! You've extended your streak to 4 days in a row! 🔥",
+  describe('getUserDashboardData', () => {
+    it('should return dashboard data for authenticated user', async () => {
+      const dashboardData = {
+        currentLevel: EnglishLevel.B1,
       };
-      service.recordDailyStreak.mockResolvedValue(streakData);
+      service.getUserDashboardData.mockResolvedValue(dashboardData);
 
       const user = {
         id: '665f1b2e1111111111111111',
@@ -107,48 +102,19 @@ describe('UsersController', () => {
         role: Role.USER,
       };
 
-      const result = await controller.recordStreak(user, {
-        timezone: 'Asia/Dhaka',
-      });
+      const result = await controller.getUserDashboardData(user);
 
-      expect(service.recordDailyStreak).toHaveBeenCalledWith(
+      expect(service.getUserDashboardData).toHaveBeenCalledWith(
         '665f1b2e1111111111111111',
-        'Asia/Dhaka',
       );
       expect(result).toEqual({
-        message: streakData.message,
-        data: streakData,
+        message: 'Dashboard data fetched successfully.',
+        data: dashboardData,
       });
     });
 
-    it('should fetch streak status', async () => {
-      const statusData = {
-        currentStreak: 4,
-        isActiveToday: true,
-        isStreakAlive: true,
-      };
-      service.getStreakStatus.mockResolvedValue(statusData);
-
-      const user = {
-        id: '665f1b2e1111111111111111',
-        email: 'jane@example.com',
-        role: Role.USER,
-      };
-
-      const result = await controller.getStreak(user, 'Asia/Dhaka');
-
-      expect(service.getStreakStatus).toHaveBeenCalledWith(
-        '665f1b2e1111111111111111',
-        'Asia/Dhaka',
-      );
-      expect(result).toEqual({
-        message: 'Streak status fetched successfully.',
-        data: statusData,
-      });
-    });
-
-    it('should throw UnauthorizedException when recording streak without auth', async () => {
-      await expect(controller.recordStreak(undefined)).rejects.toThrow(
+    it('should throw UnauthorizedException when fetching dashboard data without auth', async () => {
+      await expect(controller.getUserDashboardData(undefined)).rejects.toThrow(
         UnauthorizedException,
       );
     });
@@ -168,7 +134,6 @@ describe('UsersController', () => {
 
       expect(service.myProfile).toHaveBeenCalledWith(
         '665f1b2e1111111111111111',
-        undefined,
       );
       expect(result).toEqual({
         message: 'User profile fetched successfully.',
