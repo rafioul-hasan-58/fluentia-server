@@ -26,15 +26,9 @@ export async function calculateActiveStreak(
     formatInTimeZone(user.profile.lastActiveAt, timezone, 'yyyy-MM-dd');
 
   if (!user.profile?.lastActiveAt) {
-    return prisma.learningProfile.upsert({
+    return prisma.learningProfile.update({
       where: { userId },
-      create: {
-        userId,
-        lastActiveAt: now,
-        streakDays: 1,
-        longestStreak: 1,
-      },
-      update: {
+      data: {
         lastActiveAt: now,
         streakDays: 1,
         longestStreak: Math.max(1, user.profile?.longestStreak ?? 1),

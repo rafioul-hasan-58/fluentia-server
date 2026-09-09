@@ -33,6 +33,7 @@ describe('LevelTestQuestionsService', () => {
     };
     learningProfile: {
       findUnique: jest.Mock;
+      update: jest.Mock;
       upsert: jest.Mock;
     };
   };
@@ -160,6 +161,7 @@ describe('LevelTestQuestionsService', () => {
       },
       learningProfile: {
         findUnique: jest.fn(),
+        update: jest.fn(),
         upsert: jest.fn(),
       },
     };
@@ -363,7 +365,7 @@ describe('LevelTestQuestionsService', () => {
         score: 1,
       });
       prismaService.learningProfile.findUnique.mockResolvedValue(null);
-      prismaService.learningProfile.upsert.mockResolvedValue({});
+      prismaService.learningProfile.update.mockResolvedValue({});
       aiService.analyzeLevelTest.mockResolvedValue(mockAiAnalysis);
 
       const submitDto = {
@@ -383,17 +385,10 @@ describe('LevelTestQuestionsService', () => {
       });
       expect(aiService.analyzeLevelTest).toHaveBeenCalled();
       expect(prismaService.testAttempt.create).toHaveBeenCalled();
-      expect(prismaService.learningProfile.upsert).toHaveBeenLastCalledWith({
+      expect(prismaService.learningProfile.update).toHaveBeenLastCalledWith({
         where: { userId: mockUserId },
-        update: {
+        data: {
           estimatedCEFR: 'A1',
-          lastActiveAt: expect.any(Date),
-        },
-        create: {
-          userId: mockUserId,
-          estimatedCEFR: 'A1',
-          streakDays: 1,
-          longestStreak: 1,
           lastActiveAt: expect.any(Date),
         },
       });

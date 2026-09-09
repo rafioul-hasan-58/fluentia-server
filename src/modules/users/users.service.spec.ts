@@ -25,6 +25,7 @@ describe('UsersService', () => {
       update: jest.Mock;
     };
     learningProfile: {
+      update: jest.Mock;
       upsert: jest.Mock;
     };
   };
@@ -79,6 +80,7 @@ describe('UsersService', () => {
         update: jest.fn(),
       },
       learningProfile: {
+        update: jest.fn(),
         upsert: jest.fn(),
       },
     };
@@ -155,7 +157,7 @@ describe('UsersService', () => {
         },
       });
 
-      prismaService.learningProfile.upsert.mockResolvedValue({
+      prismaService.learningProfile.update.mockResolvedValue({
         id: '665f1b2e2222222222222222',
         userId: '665f1b2e1111111111111111',
         streakDays: 4,
@@ -169,7 +171,7 @@ describe('UsersService', () => {
 
       expect(result.currentStreak).toBe(4);
       expect(result.streakUpdated).toBe(true);
-      expect(prismaService.learningProfile.upsert).toHaveBeenCalled();
+      expect(prismaService.learningProfile.update).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if user not found when recording streak', async () => {

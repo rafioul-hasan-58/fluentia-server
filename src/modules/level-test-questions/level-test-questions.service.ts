@@ -546,17 +546,10 @@ export class LevelTestQuestionsService implements OnModuleInit {
 
         await calculateActiveStreak(this.prisma, user.id);
 
-        await this.prisma.learningProfile.upsert({
+        await this.prisma.learningProfile.update({
           where: { userId: user.id },
-          update: {
+          data: {
             estimatedCEFR: analysis.estimatedLevel,
-            lastActiveAt: new Date(),
-          },
-          create: {
-            userId: user.id,
-            estimatedCEFR: analysis.estimatedLevel,
-            streakDays: 1,
-            longestStreak: 1,
             lastActiveAt: new Date(),
           },
         });
