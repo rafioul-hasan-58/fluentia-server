@@ -216,8 +216,8 @@ export class AuthService {
     let user = await this.usersRepository.findByGoogleId(googleId);
 
     if (user) {
-      // If user doesn't have a profile image yet, update with Google profile image
-      if (profileImage && !user.profileImage) {
+      // If user doesn't have a profile image yet or it updated, update with Google profile image
+      if (profileImage && user.profileImage !== profileImage) {
         user = await this.usersRepository.update(user.id, {
           profileImage,
         });
@@ -229,7 +229,7 @@ export class AuthService {
       if (user) {
         user = await this.usersRepository.updateByEmail(email, {
           googleId,
-          profileImage: profileImage || null,
+          profileImage: profileImage || user.profileImage || null,
         });
       } else {
         // Create new user with Google profile information

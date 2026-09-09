@@ -12,23 +12,10 @@ export class UsersRepository implements IBaseRepository<
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: Prisma.UserCreateInput): Promise<User> {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      googleId,
-      registrationMethod,
-    } = data;
     return this.prisma.user.create({
       data: {
-        firstName,
-        lastName,
-        email,
-        password,
-        googleId,
-        registrationMethod,
-        profile: {
+        ...data,
+        profile: data.profile ?? {
           create: {
             streakDays: 1,
             longestStreak: 1,
