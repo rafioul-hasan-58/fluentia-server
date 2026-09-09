@@ -7,8 +7,8 @@ import {
 } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
-import { LevelTestQuestionsController } from './level-test-questions.controller';
-import { LevelTestQuestionsService } from './level-test-questions.service';
+import { LevelTestQuestionsController } from './levelTest.controller';
+import { LevelTestQuestionsService } from './levelTest.service';
 
 describe('LevelTestQuestionsController', () => {
   let controller: LevelTestQuestionsController;

@@ -20,7 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { LevelTestQuestionsService } from './level-test-questions.service';
+import { LevelTestQuestionsService } from './levelTest.service';
 import { CreateLevelTestQuestionDto } from './dto/create-level-test-question.dto';
 import { UpdateLevelTestQuestionDto } from './dto/update-level-test-question.dto';
 import { GetLevelTestQuestionsQueryDto } from './dto/get-level-test-questions-query.dto';

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { LevelTestQuestionsController } from './level-test-questions.controller';
-import { LevelTestQuestionsService } from './level-test-questions.service';
+import { LevelTestQuestionsController } from './levelTest.controller';
+import { LevelTestQuestionsService } from './levelTest.service';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { AiModule } from '../ai/ai.module';
 

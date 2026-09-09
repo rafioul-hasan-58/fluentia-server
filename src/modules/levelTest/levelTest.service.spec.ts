@@ -5,7 +5,7 @@ import {
   EnglishLevel,
   TestQuestionSection,
 } from '@prisma/client';
-import { LevelTestQuestionsService } from './level-test-questions.service';
+import { LevelTestQuestionsService } from './levelTest.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { LevelTestAnalysis } from '../ai/schemas/level-test-analysis.schema';
