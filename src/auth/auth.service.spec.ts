@@ -1,9 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersRepository } from '../modules/users/users.repository';
+import { OtpRepository } from './otp.repository';
 import { JwtService } from '@nestjs/jwt';
-
-import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../modules/mail';
 import { ConfigService } from '@nestjs/config';
 
@@ -19,21 +18,32 @@ describe('AuthService', () => {
           useValue: {
             findByEmail: jest.fn(),
             create: jest.fn(),
+            findById: jest.fn(),
+            update: jest.fn(),
+            updateByEmail: jest.fn(),
+            findByGoogleId: jest.fn(),
+          },
+        },
+        {
+          provide: OtpRepository,
+          useValue: {
+            upsert: jest.fn(),
+            findByEmail: jest.fn(),
+            deleteByEmail: jest.fn(),
           },
         },
         {
           provide: JwtService,
           useValue: {
             sign: jest.fn().mockReturnValue('mock-jwt-token'),
+            signAsync: jest.fn().mockResolvedValue('mock-jwt-token'),
           },
         },
         {
-          provide: PrismaService,
-          useValue: {},
-        },
-        {
           provide: MailService,
-          useValue: {},
+          useValue: {
+            sendPasswordResetOtp: jest.fn(),
+          },
         },
         {
           provide: ConfigService,

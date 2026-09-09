@@ -6,12 +6,12 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersRepository } from '../modules/users/users.repository';
+import { OtpRepository } from './otp.repository';
 import { RegisterDto } from './dto/register.dto';
 import bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
-import { RegistrationMethod, Role, User } from '@prisma/client';
+import { RegistrationMethod, User } from '@prisma/client';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
-import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../modules/mail';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
 import { ConfigService } from '@nestjs/config';
@@ -22,8 +22,8 @@ import { OAuth2Client } from 'google-auth-library';
 export class AuthService {
   constructor(
     private readonly usersRepository: UsersRepository,
+    private readonly otpRepository: OtpRepository,
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
@@ -111,20 +111,7 @@ export class AuthService {
     const otpCode = Math.floor(10000 + Math.random() * 90000).toString();
     const otpExpireAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    await this.prisma.otp.upsert({
-      where: {
-        email: payload.email,
-      },
-      update: {
-        otp: otpCode,
-        expiresAt: otpExpireAt,
-      },
-      create: {
-        email: payload.email,
-        otp: otpCode,
-        expiresAt: otpExpireAt,
-      },
-    });
+    await this.otpRepository.upsert(payload.email, otpCode, otpExpireAt);
 
     await this.mailService.sendPasswordResetOtp(payload.email, otpCode);
     return {
@@ -134,9 +121,7 @@ export class AuthService {
     };
   }
   async verifyResetOtp(payload: VerifyResetOtpDto) {
-    const otpRecord = await this.prisma.otp.findUnique({
-      where: { email: payload.email },
-    });
+    const otpRecord = await this.otpRepository.findByEmail(payload.email);
 
     if (!otpRecord) {
       throw new UnauthorizedException(
@@ -157,9 +142,7 @@ export class AuthService {
       throw new NotFoundException('User with this email does not exist');
     }
 
-    await this.prisma.otp.delete({
-      where: { email: payload.email },
-    });
+    await this.otpRepository.deleteByEmail(payload.email);
 
     const resetToken = await this.jwtService.signAsync(
       {
@@ -186,11 +169,8 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        password: hashedPassword,
-      },
+    await this.usersRepository.update(userId, {
+      password: hashedPassword,
     });
 
     return {
@@ -233,16 +213,13 @@ export class AuthService {
     }
 
     // Check if user exists by googleId first
-    let user = await this.prisma.user.findFirst({
-      where: { googleId },
-    });
+    let user = await this.usersRepository.findByGoogleId(googleId);
 
     if (user) {
       // If user doesn't have a profile image yet, update with Google profile image
       if (profileImage && !user.profileImage) {
-        user = await this.prisma.user.update({
-          where: { id: user.id },
-          data: { profileImage },
+        user = await this.usersRepository.update(user.id, {
+          profileImage,
         });
       }
     } else {
@@ -250,12 +227,9 @@ export class AuthService {
       user = await this.usersRepository.findByEmail(email);
 
       if (user) {
-        user = await this.prisma.user.update({
-          where: { email },
-          data: {
-            googleId,
-            ...(profileImage && !user.profileImage ? { profileImage } : {}),
-          },
+        user = await this.usersRepository.updateByEmail(email, {
+          googleId,
+          profileImage: profileImage || null,
         });
       } else {
         // Create new user with Google profile information
@@ -265,7 +239,6 @@ export class AuthService {
           firstName: firstName || '',
           lastName: lastName || '',
           profileImage: profileImage || null,
-          role: Role.USER,
           registrationMethod: RegistrationMethod.GOOGLE,
         });
       }

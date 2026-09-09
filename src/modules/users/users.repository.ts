@@ -12,7 +12,31 @@ export class UsersRepository implements IBaseRepository<
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: Prisma.UserCreateInput): Promise<User> {
-    return this.prisma.user.create({ data });
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      googleId,
+      registrationMethod,
+    } = data;
+    return this.prisma.user.create({
+      data: {
+        firstName,
+        lastName,
+        email,
+        password,
+        googleId,
+        registrationMethod,
+        profile: {
+          create: {
+            streakDays: 1,
+            longestStreak: 1,
+            lastActiveAt: new Date(),
+          },
+        },
+      },
+    });
   }
 
   async findAll(): Promise<User[]> {
@@ -53,6 +77,20 @@ export class UsersRepository implements IBaseRepository<
     return this.prisma.user.update({
       where: { id },
       data,
+    });
+  }
+  async updateByEmail(
+    email: string,
+    data: Prisma.UserUpdateInput,
+  ): Promise<User> {
+    return this.prisma.user.update({
+      where: { email },
+      data,
+    });
+  }
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.prisma.user.findFirst({
+      where: { googleId },
     });
   }
 

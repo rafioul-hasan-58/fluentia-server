@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EnvConfig } from '../config/env.schema';
 import { UsersModule } from '../modules/users';
 import { MailModule } from '../modules/mail';
+import { OtpRepository } from './otp.repository';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { MailModule } from '../modules/mail';
       }),
     }),
   ],
-  providers: [AuthService],
+  providers: [AuthService, OtpRepository],
   controllers: [AuthController],
   exports: [JwtModule],
 })
