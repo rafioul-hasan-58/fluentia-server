@@ -2,17 +2,19 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { EnvConfig } from '../../config/env.schema';
-import { Lesson, LessonSchema } from './schemas/lesson.schema';
-import {
-  LevelTestAnalysis,
-  LevelTestAnalysisSchema,
-} from './schemas/level-test-analysis.schema';
+import { Lesson } from './schemas/lesson.schema';
+import { LevelTestAnalysis } from './schemas/level-test-analysis.schema';
 import { buildTeachPrompt } from './prompts/teach.prompt';
 import {
   buildLevelTestAnalysisPrompt,
   LevelTestEvaluationInput,
 } from './prompts/level-test-analysis.prompt';
 import { AiServiceError, AiValidationError } from './errors/ai.errors';
+import {
+  parseAndValidateLesson,
+  parseAndValidateLevelTestAnalysis,
+} from './utils/validateAiOutput';
+import { callOpenAi } from './utils/ai.config';
 
 @Injectable()
 export class AiService implements OnModuleInit {
@@ -39,10 +41,7 @@ export class AiService implements OnModuleInit {
     });
   }
 
-  /**
-   * Generates a structured grammar lesson (title, rule, examples, common mistakes)
-   * for a given skill using OpenAI, validating the result against the LessonSchema.
-   */
+  //  generate lesson.
   async generateLesson(
     skillName: string,
     userPrompt?: string,
@@ -60,7 +59,7 @@ export class AiService implements OnModuleInit {
       throw new AiServiceError('Failed to communicate with AI service', error);
     }
 
-    const validationResult = this.parseAndValidateLesson(rawContent);
+    const validationResult = parseAndValidateLesson(rawContent);
     if (validationResult.success) {
       return validationResult.data;
     }
@@ -85,7 +84,7 @@ export class AiService implements OnModuleInit {
       );
     }
 
-    const retryValidationResult = this.parseAndValidateLesson(retryRawContent);
+    const retryValidationResult = parseAndValidateLesson(retryRawContent);
     if (retryValidationResult.success) {
       return retryValidationResult.data;
     }
@@ -99,11 +98,7 @@ export class AiService implements OnModuleInit {
     );
   }
 
-  /**
-   * Analyzes completed English Level Test answers with OpenAI,
-   * determining CEFR placement, strengths, weaknesses, section breakdowns,
-   * and personalized learning roadmap.
-   */
+  // analyse user enlish cefr level
   async analyzeLevelTest(
     evaluationInput: LevelTestEvaluationInput,
   ): Promise<LevelTestAnalysis> {
@@ -122,7 +117,7 @@ export class AiService implements OnModuleInit {
       );
     }
 
-    const validationResult = this.parseAndValidateLevelTestAnalysis(rawContent);
+    const validationResult = parseAndValidateLevelTestAnalysis(rawContent);
     if (validationResult.success) {
       return validationResult.data;
     }
@@ -147,7 +142,7 @@ export class AiService implements OnModuleInit {
     }
 
     const retryValidationResult =
-      this.parseAndValidateLevelTestAnalysis(retryRawContent);
+      parseAndValidateLevelTestAnalysis(retryRawContent);
     if (retryValidationResult.success) {
       return retryValidationResult.data;
     }
@@ -163,118 +158,8 @@ export class AiService implements OnModuleInit {
 
   /**
    * Executes a chat completion call with OpenAI requesting JSON output format.
-   *
-   * @param prompt - The prompt content for the user message.
-   * @returns Raw string content returned from OpenAI.
    */
   private async callOpenAi(prompt: string): Promise<string | null> {
-    const completion = await this.openai.chat.completions.create({
-      model: this.model,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an expert English Language Assessment and Pedagogical AI Tutor. You must only output valid JSON.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.5,
-    });
-
-    return completion.choices[0]?.message?.content ?? null;
-  }
-
-  /**
-   * Parses JSON string and validates it against LessonSchema.
-   */
-  private parseAndValidateLesson(
-    rawContent: string | null,
-  ):
-    | { success: true; data: Lesson }
-    | { success: false; error: string; cause: unknown } {
-    if (!rawContent || !rawContent.trim()) {
-      return {
-        success: false,
-        error: 'Empty response content received from AI',
-        cause: null,
-      };
-    }
-
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(rawContent);
-    } catch (parseError) {
-      return {
-        success: false,
-        error: `Invalid JSON syntax: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-        cause: parseError,
-      };
-    }
-
-    const zodResult = LessonSchema.safeParse(parsedJson);
-    if (!zodResult.success) {
-      const formattedErrors = zodResult.error.issues
-        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
-        .join(', ');
-      return {
-        success: false,
-        error: `Schema validation failed: ${formattedErrors}`,
-        cause: zodResult.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: zodResult.data,
-    };
-  }
-
-  /**
-   * Parses JSON string and validates it against LevelTestAnalysisSchema.
-   */
-  private parseAndValidateLevelTestAnalysis(
-    rawContent: string | null,
-  ):
-    | { success: true; data: LevelTestAnalysis }
-    | { success: false; error: string; cause: unknown } {
-    if (!rawContent || !rawContent.trim()) {
-      return {
-        success: false,
-        error: 'Empty response content received from AI',
-        cause: null,
-      };
-    }
-
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(rawContent);
-    } catch (parseError) {
-      return {
-        success: false,
-        error: `Invalid JSON syntax: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-        cause: parseError,
-      };
-    }
-
-    const zodResult = LevelTestAnalysisSchema.safeParse(parsedJson);
-    if (!zodResult.success) {
-      const formattedErrors = zodResult.error.issues
-        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
-        .join(', ');
-      return {
-        success: false,
-        error: `Schema validation failed: ${formattedErrors}`,
-        cause: zodResult.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: zodResult.data,
-    };
+    return callOpenAi(this.openai, prompt, this.model);
   }
 }

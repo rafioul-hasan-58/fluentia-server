@@ -1,6 +1,4 @@
-/**
- * Thrown when the AI response fails schema validation even after a retry.
- */
+//Thrown when the AI response fails schema validation even after a retry.
 export class AiValidationError extends Error {
   constructor(
     message: string,
@@ -12,9 +10,7 @@ export class AiValidationError extends Error {
   }
 }
 
-/**
- * Thrown when an underlying OpenAI API or network error occurs.
- */
+//Thrown when an underlying OpenAI API or network error occurs.
 export class AiServiceError extends Error {
   constructor(
     message: string,
