@@ -186,6 +186,7 @@ describe('AiService', () => {
     ];
 
     const validStoryJson = JSON.stringify({
+      title: 'The Exam Challenge',
       storyBangla:
         'রাফির জন্য এই পরীক্ষাটি বেশ challenging ছিল। কিন্তু তার confidence তাকে সফল হতে সাহায্য করল।',
       storyEnglish:
@@ -199,6 +200,7 @@ describe('AiService', () => {
     });
 
     const missingWordStoryJson = JSON.stringify({
+      title: 'The Exam Challenge',
       storyBangla:
         'রাফির জন্য এই পরীক্ষাটি বেশ challenging ছিল। কিন্তু সে সফল হলো।',
       storyEnglish:
@@ -216,6 +218,7 @@ describe('AiService', () => {
         'Give me an exam situation',
       );
 
+      expect(result.title).toBe('The Exam Challenge');
       expect(result.storyBangla).toContain('challenging');
       expect(result.storyBangla).toContain('confidence');
       expect(result.storyEnglish).toContain('challenging');

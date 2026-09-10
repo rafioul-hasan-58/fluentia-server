@@ -53,19 +53,22 @@ CEFR ${targetLevel} level (Clear, accessible sentence structures, natural everyd
 
 ### MANDATORY STORY REQUIREMENTS:
 
-1. **Story 1: "storyBangla" (Bangla-English Mixed Story)**
+1. **"title" (Story Title)**
+   - A creative, catchy, and meaningful title in English that captures the central theme or essence of the narrative (e.g., "The Crucial Over", "A Step into Tomorrow", "The Architect's Confidence").
+
+2. **Story 1: "storyBangla" (Bangla-English Mixed Story)**
    - The primary narrative and grammatical structure MUST be natural, authentic Bengali (বাংলা).
    - CRITICAL RULE: Every single target vocabulary word (${targetWordsList.map((w) => `"${w}"`).join(', ')}) MUST appear in ENGLISH script inside the Bengali sentences.
    - NEVER translate any target vocabulary word to Bengali (e.g., write "before", NOT "আগে"; write "confidence", NOT "আত্মবিশ্বাস"; write "challenging", NOT "চ্যালেঞ্জিং").
    - Example pattern: "ম্যাচ শুরু হওয়ার before সে খুব nervous ছিল, কিন্তু তার confidence তাকে motivate করেছিল।"
    - The surrounding Bengali sentence context must vividly reveal and reinforce the meaning of each English vocabulary word so a Bengali learner can easily infer what it means.
 
-2. **Story 2: "storyEnglish" (Full English Story)**
+3. **Story 2: "storyEnglish" (Full English Story)**
    - A natural, fluent, and captivating English story that conveys the same situation and narrative arc as Story 1.
    - Every single target vocabulary word (${targetWordsList.map((w) => `"${w}"`).join(', ')}) MUST be seamlessly and meaningfully integrated.
    - Use natural collocations and a complete narrative structure (beginning, middle, and resolution).
 
-3. **"usedVocabulary" Array**
+4. **"usedVocabulary" Array**
    - An array containing the exact lowercase strings of all ${words.length} target vocabulary words: [${targetWordsList.map((w) => `"${w}"`).join(', ')}].
 
 ---
@@ -77,6 +80,7 @@ CEFR ${targetLevel} level (Clear, accessible sentence structures, natural everyd
 
 ### JSON Structure:
 {
+  "title": "Creative Story Title in English",
   "storyBangla": "সম্পূর্ণ বাংলা-ইংরেজি মিশ্রিত গল্প...",
   "storyEnglish": "Full natural English story...",
   "usedVocabulary": [${targetWordsList.map((w) => `"${w}"`).join(', ')}]

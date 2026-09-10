@@ -46,6 +46,7 @@ describe('VocabStoryService', () => {
   const mockStory = {
     id: mockStoryId,
     userId: mockUserId,
+    title: 'The Cricket Triumph',
     storyEnglish:
       'The match was challenging, but his confidence led to victory.',
     storyBangla:
@@ -101,6 +102,7 @@ describe('VocabStoryService', () => {
         mockVocab2,
       ]);
       aiService.generateVocabStory.mockResolvedValue({
+        title: 'The Cricket Triumph',
         storyEnglish: mockStory.storyEnglish,
         storyBangla: mockStory.storyBangla,
         usedVocabulary: ['challenging', 'confidence'],
@@ -139,6 +141,7 @@ describe('VocabStoryService', () => {
       expect(prismaService.vocabStory.create).toHaveBeenCalledWith({
         data: {
           userId: mockUserId,
+          title: 'The Cricket Triumph',
           storyEnglish: mockStory.storyEnglish,
           storyBangla: mockStory.storyBangla,
           usedVocabulary: ['challenging', 'confidence'],
@@ -203,6 +206,7 @@ describe('VocabStoryService', () => {
         where: {
           userId: mockUserId,
           OR: [
+            { title: { contains: 'cricket', mode: 'insensitive' } },
             { storyEnglish: { contains: 'cricket', mode: 'insensitive' } },
             { storyBangla: { contains: 'cricket', mode: 'insensitive' } },
             { usedVocabulary: { has: 'cricket' } },

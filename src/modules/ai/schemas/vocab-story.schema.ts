@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
 export const VocabStorySchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(2, 'Story title must be at least 2 characters long')
+    .default('Vocabulary Story'),
   storyBangla: z
     .string()
     .min(10, 'Bangla-English mixed story must be at least 10 characters long'),

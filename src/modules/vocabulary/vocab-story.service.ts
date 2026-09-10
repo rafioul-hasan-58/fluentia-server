@@ -117,6 +117,7 @@ export class VocabStoryService {
     const createdStory = await this.prisma.vocabStory.create({
       data: {
         userId,
+        title: aiStory.title || 'Vocabulary Story',
         storyEnglish: aiStory.storyEnglish,
         storyBangla: aiStory.storyBangla,
         usedVocabulary,
@@ -141,6 +142,7 @@ export class VocabStoryService {
     if (query.search && query.search.trim()) {
       const searchTerm = query.search.trim();
       where.OR = [
+        { title: { contains: searchTerm, mode: 'insensitive' } },
         { storyEnglish: { contains: searchTerm, mode: 'insensitive' } },
         { storyBangla: { contains: searchTerm, mode: 'insensitive' } },
         { usedVocabulary: { has: searchTerm.toLowerCase() } },
