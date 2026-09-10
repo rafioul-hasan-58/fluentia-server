@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   DifficultyType,
   EnglishLevel,
@@ -9,16 +13,27 @@ import { LevelTestQuestionsService } from './levelTest.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { LevelTestAnalysis } from '../ai/schemas/level-test-analysis.schema';
+import { ManageSetQuestionsDto } from './dto';
 
 describe('LevelTestQuestionsService', () => {
   let service: LevelTestQuestionsService;
   let prismaService: {
+    levelTestSet: {
+      create: jest.Mock;
+      findUnique: jest.Mock;
+      findFirst: jest.Mock;
+      findMany: jest.Mock;
+      count: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+    };
     levelTestQuestion: {
       create: jest.Mock;
       findMany: jest.Mock;
       findUnique: jest.Mock;
       count: jest.Mock;
       update: jest.Mock;
+      updateMany: jest.Mock;
       delete: jest.Mock;
     };
     questionOption: {
@@ -33,6 +48,7 @@ describe('LevelTestQuestionsService', () => {
     };
     learningProfile: {
       findUnique: jest.Mock;
+      create: jest.Mock;
       update: jest.Mock;
       upsert: jest.Mock;
     };
@@ -43,6 +59,21 @@ describe('LevelTestQuestionsService', () => {
 
   const mockQuestionId = '665f1b2e2222222222222222';
   const mockUserId = '665f1b2e1111111111111111';
+  const mockSetId = '665f1b2e1111111111111111';
+
+  const mockSet = {
+    id: mockSetId,
+    name: 'Set 1',
+    description: 'General placement set',
+    isActive: true,
+    questions: [],
+    _count: {
+      questions: 1,
+      attempts: 0,
+    },
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+  };
 
   const mockQuestion = {
     id: mockQuestionId,
@@ -141,12 +172,22 @@ describe('LevelTestQuestionsService', () => {
 
   beforeEach(async () => {
     prismaService = {
+      levelTestSet: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        findMany: jest.fn(),
+        count: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
       levelTestQuestion: {
         create: jest.fn(),
         findMany: jest.fn(),
         findUnique: jest.fn(),
         count: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn(),
         delete: jest.fn(),
       },
       questionOption: {
@@ -161,6 +202,7 @@ describe('LevelTestQuestionsService', () => {
       },
       learningProfile: {
         findUnique: jest.fn(),
+        create: jest.fn(),
         update: jest.fn(),
         upsert: jest.fn(),
       },
@@ -365,6 +407,7 @@ describe('LevelTestQuestionsService', () => {
         score: 1,
       });
       prismaService.learningProfile.findUnique.mockResolvedValue(null);
+      prismaService.learningProfile.create.mockResolvedValue({});
       prismaService.learningProfile.update.mockResolvedValue({});
       aiService.analyzeLevelTest.mockResolvedValue(mockAiAnalysis);
 
@@ -436,6 +479,289 @@ describe('LevelTestQuestionsService', () => {
           answers: [{ questionId: mockQuestionId, answerOptionId: 'opt1' }],
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('createSet', () => {
+    it('should create a new set and link questions if provided', async () => {
+      prismaService.levelTestSet.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSet);
+      prismaService.levelTestSet.create.mockResolvedValue({
+        id: mockSetId,
+        name: 'Set 1',
+        description: 'General placement set',
+        isActive: true,
+      });
+      prismaService.levelTestQuestion.updateMany.mockResolvedValue({
+        count: 1,
+      });
+
+      const createDto = {
+        name: 'Set 1',
+        description: 'General placement set',
+        isActive: true,
+        questionIds: [mockQuestionId],
+      };
+
+      const result = await service.createSet(createDto);
+
+      expect(prismaService.levelTestSet.create).toHaveBeenCalledWith({
+        data: {
+          name: 'Set 1',
+          description: 'General placement set',
+          isActive: true,
+        },
+      });
+      expect(prismaService.levelTestQuestion.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: [mockQuestionId] } },
+        data: { setId: mockSetId },
+      });
+      expect(result.id).toBe(mockSetId);
+    });
+
+    it('should throw BadRequestException if set name is empty or only whitespace', async () => {
+      await expect(service.createSet({ name: '   ' })).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw ConflictException if set with the same name exists', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+
+      await expect(service.createSet({ name: 'Set 1' })).rejects.toThrow(
+        ConflictException,
+      );
+    });
+  });
+
+  describe('findAllSets', () => {
+    it('should return paginated sets with search and active status filters', async () => {
+      prismaService.levelTestSet.count.mockResolvedValue(1);
+      prismaService.levelTestSet.findMany.mockResolvedValue([mockSet]);
+
+      const result = await service.findAllSets({
+        search: 'Set',
+        isActive: true,
+        page: 1,
+        limit: 10,
+      });
+
+      expect(prismaService.levelTestSet.count).toHaveBeenCalled();
+      expect(prismaService.levelTestSet.findMany).toHaveBeenCalled();
+      expect(result).toEqual({
+        items: [
+          {
+            id: mockSetId,
+            name: 'Set 1',
+            description: 'General placement set',
+            isActive: true,
+            questionsCount: 1,
+            attemptsCount: 0,
+            createdAt: mockSet.createdAt,
+            updatedAt: mockSet.updatedAt,
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      });
+    });
+  });
+
+  describe('findSetById', () => {
+    it('should return set with questions when found', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+
+      const result = await service.findSetById(mockSetId);
+
+      expect(prismaService.levelTestSet.findUnique).toHaveBeenCalledWith({
+        where: { id: mockSetId },
+        include: {
+          questions: {
+            include: { questionOptions: true },
+            orderBy: [{ level: 'asc' }, { createdAt: 'asc' }],
+          },
+          _count: {
+            select: { questions: true, attempts: true },
+          },
+        },
+      });
+      expect(result.id).toBe(mockSetId);
+      expect(result.name).toBe('Set 1');
+    });
+
+    it('should throw BadRequestException for invalid set ObjectId', async () => {
+      await expect(service.findSetById('invalid-id')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw NotFoundException if set does not exist', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(null);
+
+      await expect(service.findSetById(mockSetId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('updateSet', () => {
+    it('should update set name, description, and status', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+      prismaService.levelTestSet.findFirst.mockResolvedValue(null);
+      prismaService.levelTestSet.update.mockResolvedValue({
+        ...mockSet,
+        name: 'Set 1 Updated',
+      });
+
+      const updateDto = {
+        name: 'Set 1 Updated',
+        description: 'New description',
+        isActive: false,
+      };
+
+      const result = await service.updateSet(mockSetId, updateDto);
+
+      expect(prismaService.levelTestSet.update).toHaveBeenCalledWith({
+        where: { id: mockSetId },
+        data: {
+          name: 'Set 1 Updated',
+          description: 'New description',
+          isActive: false,
+        },
+      });
+      expect(result.id).toBe(mockSetId);
+    });
+
+    it('should throw BadRequestException if update name is empty', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+
+      await expect(
+        service.updateSet(mockSetId, { name: '   ' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ConflictException if updated name belongs to another set', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+      prismaService.levelTestSet.findFirst.mockResolvedValue({
+        id: '665f1b2e9999999999999999',
+        name: 'Duplicate Set',
+      });
+
+      await expect(
+        service.updateSet(mockSetId, { name: 'Duplicate Set' }),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('deleteSet', () => {
+    it('should unlink questions and delete the set', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+      prismaService.levelTestQuestion.updateMany.mockResolvedValue({
+        count: 1,
+      });
+      prismaService.levelTestSet.delete.mockResolvedValue(mockSet);
+
+      const result = await service.deleteSet(mockSetId);
+
+      expect(prismaService.levelTestQuestion.updateMany).toHaveBeenCalledWith({
+        where: { setId: mockSetId },
+        data: { setId: null },
+      });
+      expect(prismaService.levelTestSet.delete).toHaveBeenCalledWith({
+        where: { id: mockSetId },
+      });
+      expect(result).toEqual({
+        message: "Level test set 'Set 1' deleted successfully",
+        id: mockSetId,
+      });
+    });
+  });
+
+  describe('addQuestionsToSet', () => {
+    it('should add question to set using questionId or questionIds', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+      prismaService.levelTestQuestion.findMany.mockResolvedValue([
+        { id: mockQuestionId },
+      ]);
+      prismaService.levelTestQuestion.updateMany.mockResolvedValue({
+        count: 1,
+      });
+
+      const dto = new ManageSetQuestionsDto();
+      dto.questionIds = [mockQuestionId];
+
+      const result = await service.addQuestionsToSet(mockSetId, dto);
+
+      expect(prismaService.levelTestQuestion.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: [mockQuestionId] } },
+        data: { setId: mockSetId },
+      });
+      expect(result.addedCount).toBe(1);
+    });
+
+    it('should throw BadRequestException if no question IDs provided', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+
+      const dto = new ManageSetQuestionsDto();
+      await expect(service.addQuestionsToSet(mockSetId, dto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException for invalid question ID format', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+
+      const dto = new ManageSetQuestionsDto();
+      dto.questionId = 'invalid-question-id';
+      await expect(service.addQuestionsToSet(mockSetId, dto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw NotFoundException if none of the provided questions exist', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+      prismaService.levelTestQuestion.findMany.mockResolvedValue([]);
+
+      const dto = new ManageSetQuestionsDto();
+      dto.questionId = mockQuestionId;
+      await expect(service.addQuestionsToSet(mockSetId, dto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('removeQuestionsFromSet', () => {
+    it('should unlink questions from set', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+      prismaService.levelTestQuestion.updateMany.mockResolvedValue({
+        count: 1,
+      });
+
+      const dto = new ManageSetQuestionsDto();
+      dto.questionId = mockQuestionId;
+
+      const result = await service.removeQuestionsFromSet(mockSetId, dto);
+
+      expect(prismaService.levelTestQuestion.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: [mockQuestionId] },
+          setId: mockSetId,
+        },
+        data: { setId: null },
+      });
+      expect(result.removedCount).toBe(1);
+    });
+
+    it('should throw BadRequestException if no question IDs provided to remove', async () => {
+      prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
+
+      const dto = new ManageSetQuestionsDto();
+      await expect(
+        service.removeQuestionsFromSet(mockSetId, dto),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

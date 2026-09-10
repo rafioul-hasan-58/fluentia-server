@@ -1,0 +1,47 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { IsArray, IsOptional, IsString } from 'class-validator';
+
+export class ManageSetQuestionsDto {
+  @ApiPropertyOptional({
+    description: 'Single question ID to add or remove',
+    example: '665f1b2e1111111111111111',
+  })
+  @IsOptional()
+  @IsString({ message: 'questionId must be a string' })
+  questionId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of question IDs to add or remove in bulk',
+    example: ['665f1b2e1111111111111111', '665f1b2e2222222222222222'],
+    type: [String],
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value === 'string') return [value];
+    if (Array.isArray(value)) return value as string[];
+    return [];
+  })
+  @IsArray({ message: 'questionIds must be an array of strings' })
+  @IsString({ each: true, message: 'Each question ID must be a string' })
+  questionIds?: string[];
+
+  getNormalizedQuestionIds(): string[] {
+    const ids = new Set<string>();
+    if (
+      this.questionId &&
+      typeof this.questionId === 'string' &&
+      this.questionId.trim()
+    ) {
+      ids.add(this.questionId.trim());
+    }
+    if (Array.isArray(this.questionIds)) {
+      this.questionIds.forEach((id) => {
+        if (typeof id === 'string' && id.trim()) {
+          ids.add(id.trim());
+        }
+      });
+    }
+    return Array.from(ids);
+  }
+}

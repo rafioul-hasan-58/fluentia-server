@@ -21,14 +21,18 @@ import {
 } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { LevelTestQuestionsService } from './levelTest.service';
-import { CreateLevelTestQuestionDto } from './dto/create-level-test-question.dto';
-import { UpdateLevelTestQuestionDto } from './dto/update-level-test-question.dto';
-import { GetLevelTestQuestionsQueryDto } from './dto/get-level-test-questions-query.dto';
-import { SubmitLevelTestDto } from './dto/submit-level-test.dto';
 import {
+  CreateLevelTestQuestionDto,
+  UpdateLevelTestQuestionDto,
+  GetLevelTestQuestionsQueryDto,
+  SubmitLevelTestDto,
   GetRecentSubmissionsQueryDto,
   GetSubmissionsQueryDto,
-} from './dto/get-submissions-query.dto';
+  CreateLevelTestSetDto,
+  UpdateLevelTestSetDto,
+  GetLevelTestSetsQueryDto,
+  ManageSetQuestionsDto,
+} from './dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { OptionalAuthGuard } from '../../common/guards/optional-auth.guard';
 import type { JwtPayload } from '../../common/guards/auth.guard';
@@ -143,13 +147,24 @@ export class LevelTestQuestionsController {
     example: 40,
     description: 'Number of test questions to fetch (default: 40)',
   })
+  @ApiQuery({
+    name: 'setId',
+    required: false,
+    example: '665f1b2e1111111111111111',
+    description:
+      'Optional ID of the specific LevelTestSet to fetch questions from',
+  })
   @ApiResponse({
     status: 200,
     description: 'Placement test set retrieved successfully.',
   })
-  async getTestSet(@Query('limit') limit?: number) {
+  async getTestSet(
+    @Query('limit') limit?: number,
+    @Query('setId') setId?: string,
+  ) {
     const data = await this.levelTestQuestionsService.getTestSet(
       limit ? Number(limit) : 40,
+      setId,
     );
     return {
       message: 'Placement test set retrieved successfully.',
@@ -278,6 +293,272 @@ export class LevelTestQuestionsController {
       message: 'Placement test report retrieved successfully.',
       data,
     };
+  }
+
+  // ==========================================
+  // LEVEL TEST SETS ENDPOINTS
+  // ==========================================
+
+  @Post('sets')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create a new level test set (Admin only)',
+    description:
+      'Creates a new question set for level testing, optionally linking existing questions.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Level test set created successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid input or set name is empty.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict — A set with this name already exists.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  async createSet(@Body() dto: CreateLevelTestSetDto) {
+    const data = await this.levelTestQuestionsService.createSet(dto);
+    return {
+      message: 'Level test set created successfully.',
+      data,
+    };
+  }
+
+  @Get('sets')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get all level test sets with pagination & search',
+    description:
+      'Retrieves a paginated list of test sets including question and attempt counts.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Level test sets retrieved successfully.',
+  })
+  async findAllSets(@Query() query: GetLevelTestSetsQueryDto) {
+    const result = await this.levelTestQuestionsService.findAllSets(query);
+    return {
+      message: 'Level test sets retrieved successfully.',
+      ...result,
+    };
+  }
+
+  @Get('sets/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get level test set details with questions by ID',
+    description:
+      'Retrieves set metadata, question count, and all assigned questions with options.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ObjectId of the set',
+    example: '665f1b2e1111111111111111',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Level test set retrieved successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid set ID format.',
+  })
+  @ApiResponse({ status: 404, description: 'Level test set not found.' })
+  async findSetById(@Param('id') id: string) {
+    const data = await this.levelTestQuestionsService.findSetById(id);
+    return {
+      message: 'Level test set retrieved successfully.',
+      data,
+    };
+  }
+
+  @Patch('sets/:id')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update level test set details (Admin only)',
+    description: 'Updates set name, description, or active status.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ObjectId of the set to update',
+    example: '665f1b2e1111111111111111',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Level test set updated successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid input or set name.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict — A set with this name already exists.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  @ApiResponse({ status: 404, description: 'Level test set not found.' })
+  async updateSet(@Param('id') id: string, @Body() dto: UpdateLevelTestSetDto) {
+    const data = await this.levelTestQuestionsService.updateSet(id, dto);
+    return {
+      message: 'Level test set updated successfully.',
+      data,
+    };
+  }
+
+  @Delete('sets/:id')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Delete a level test set (Admin only)',
+    description:
+      'Deletes a level test set and unlinks (setId: null) all questions belonging to it.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ObjectId of the set to delete',
+    example: '665f1b2e1111111111111111',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Level test set deleted successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid ID format.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  @ApiResponse({ status: 404, description: 'Level test set not found.' })
+  async deleteSet(@Param('id') id: string) {
+    const data = await this.levelTestQuestionsService.deleteSet(id);
+    return data;
+  }
+
+  @Post('sets/:id/questions')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Add question(s) to a level test set (Admin only)',
+    description:
+      'Assigns single or multiple questions in bulk to the specified test set.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ObjectId of the set',
+    example: '665f1b2e1111111111111111',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Questions added to set successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid question IDs or no question provided.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Set or questions not found.',
+  })
+  async addQuestionsToSet(
+    @Param('id') id: string,
+    @Body() dto: ManageSetQuestionsDto,
+  ) {
+    const data = await this.levelTestQuestionsService.addQuestionsToSet(
+      id,
+      dto,
+    );
+    return data;
+  }
+
+  @Post('sets/:id/questions/remove')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Remove question(s) from a level test set via POST (Admin only)',
+    description:
+      'Unlinks single or multiple questions from the specified test set.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ObjectId of the set',
+    example: '665f1b2e1111111111111111',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Questions removed from set successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid question IDs or no question provided.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  @ApiResponse({ status: 404, description: 'Set not found.' })
+  async removeQuestionsFromSetPost(
+    @Param('id') id: string,
+    @Body() dto: ManageSetQuestionsDto,
+  ) {
+    const data = await this.levelTestQuestionsService.removeQuestionsFromSet(
+      id,
+      dto,
+    );
+    return data;
+  }
+
+  @Delete('sets/:id/questions')
+  @UseGuards(AuthGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Remove question(s) from a level test set via DELETE (Admin only)',
+    description:
+      'Unlinks single or multiple questions from the specified test set.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ObjectId of the set',
+    example: '665f1b2e1111111111111111',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Questions removed from set successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid question IDs or no question provided.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin only.' })
+  @ApiResponse({ status: 404, description: 'Set not found.' })
+  async removeQuestionsFromSet(
+    @Param('id') id: string,
+    @Body() dto: ManageSetQuestionsDto,
+  ) {
+    const data = await this.levelTestQuestionsService.removeQuestionsFromSet(
+      id,
+      dto,
+    );
+    return data;
   }
 
   @Get(':id')

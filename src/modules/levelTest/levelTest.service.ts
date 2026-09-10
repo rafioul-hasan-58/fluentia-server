@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -14,6 +15,10 @@ import { UpdateLevelTestQuestionDto } from './dto/update-level-test-question.dto
 import { GetLevelTestQuestionsQueryDto } from './dto/get-level-test-questions-query.dto';
 import { SubmitLevelTestDto } from './dto/submit-level-test.dto';
 import { GetSubmissionsQueryDto } from './dto/get-submissions-query.dto';
+import { CreateLevelTestSetDto } from './dto/create-level-test-set.dto';
+import { UpdateLevelTestSetDto } from './dto/update-level-test-set.dto';
+import { ManageSetQuestionsDto } from './dto/manage-set-questions.dto';
+import { GetLevelTestSetsQueryDto } from './dto/get-level-test-sets-query.dto';
 import {
   GradedQuestionItem,
   LevelTestSubmitResult,
@@ -118,6 +123,20 @@ export class LevelTestQuestionsService implements OnModuleInit {
       );
     }
 
+    if (dto.setId) {
+      if (!this.isValidObjectId(dto.setId)) {
+        throw new BadRequestException(`Invalid set ID format: '${dto.setId}'`);
+      }
+      const setExists = await this.prisma.levelTestSet.findUnique({
+        where: { id: dto.setId },
+      });
+      if (!setExists) {
+        throw new NotFoundException(
+          `Level test set with ID '${dto.setId}' not found`,
+        );
+      }
+    }
+
     const answer = dto.answer?.trim() || correctOptions[0].content.trim();
 
     return this.prisma.levelTestQuestion.create({
@@ -129,6 +148,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
         difficulty: dto.difficulty,
         answer,
         explanation: dto.explanation?.trim() || null,
+        setId: dto.setId || null,
         questionOptions: {
           create: dto.options.map((opt) => ({
             content: opt.content.trim(),
@@ -138,6 +158,12 @@ export class LevelTestQuestionsService implements OnModuleInit {
       },
       include: {
         questionOptions: true,
+        set: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
   }
@@ -160,6 +186,15 @@ export class LevelTestQuestionsService implements OnModuleInit {
       where.difficulty = query.difficulty;
     }
 
+    if (query?.setId) {
+      if (!this.isValidObjectId(query.setId)) {
+        throw new BadRequestException(
+          `Invalid set ID format: '${query.setId}'`,
+        );
+      }
+      where.setId = query.setId;
+    }
+
     if (query?.search) {
       where.OR = [
         { question: { contains: query.search, mode: 'insensitive' } },
@@ -180,6 +215,12 @@ export class LevelTestQuestionsService implements OnModuleInit {
         orderBy: [{ level: 'asc' }, { createdAt: 'desc' }],
         include: {
           questionOptions: true,
+          set: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       }),
     ]);
@@ -198,8 +239,17 @@ export class LevelTestQuestionsService implements OnModuleInit {
   /**
    * Retrieves a curated test question set for student placement evaluation.
    */
-  async getTestSet(limit = 40) {
+  async getTestSet(limit = 40, setId?: string) {
+    const where: Prisma.LevelTestQuestionWhereInput = {};
+    if (setId) {
+      if (!this.isValidObjectId(setId)) {
+        throw new BadRequestException(`Invalid set ID format: '${setId}'`);
+      }
+      where.setId = setId;
+    }
+
     return this.prisma.levelTestQuestion.findMany({
+      where,
       take: limit,
       include: {
         questionOptions: {
@@ -210,6 +260,313 @@ export class LevelTestQuestionsService implements OnModuleInit {
         },
       },
     });
+  }
+
+  /**
+   * Creates a new level test set.
+   */
+  async createSet(dto: CreateLevelTestSetDto) {
+    const trimmedName = dto.name.trim();
+    if (!trimmedName) {
+      throw new BadRequestException('Set name cannot be empty');
+    }
+
+    const existing = await this.prisma.levelTestSet.findUnique({
+      where: { name: trimmedName },
+    });
+    if (existing) {
+      throw new ConflictException(
+        `A level test set with the name '${trimmedName}' already exists`,
+      );
+    }
+
+    const questionIds = Array.isArray(dto.questionIds)
+      ? Array.from(
+          new Set(
+            dto.questionIds.filter((id) => this.isValidObjectId(id.trim())),
+          ),
+        )
+      : [];
+
+    const set = await this.prisma.levelTestSet.create({
+      data: {
+        name: trimmedName,
+        description: dto.description?.trim() || null,
+        isActive: dto.isActive ?? true,
+      },
+    });
+
+    if (questionIds.length > 0) {
+      await this.prisma.levelTestQuestion.updateMany({
+        where: { id: { in: questionIds } },
+        data: { setId: set.id },
+      });
+    }
+
+    return this.findSetById(set.id);
+  }
+
+  /**
+   * Retrieves all level test sets with pagination, search, and question counters.
+   */
+  async findAllSets(query?: GetLevelTestSetsQueryDto) {
+    const page = query?.page && query.page > 0 ? query.page : 1;
+    const limit = query?.limit && query.limit > 0 ? query.limit : 20;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.LevelTestSetWhereInput = {};
+
+    if (query?.isActive !== undefined) {
+      where.isActive = query.isActive;
+    }
+
+    if (query?.search) {
+      where.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { description: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, sets] = await Promise.all([
+      this.prisma.levelTestSet.count({ where }),
+      this.prisma.levelTestSet.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: {
+            select: {
+              questions: true,
+              attempts: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: sets.map((s) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        isActive: s.isActive,
+        questionsCount: s._count?.questions ?? 0,
+        attemptsCount: s._count?.attempts ?? 0,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+      })),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Retrieves a single level test set by ID along with its questions.
+   */
+  async findSetById(id: string) {
+    if (!this.isValidObjectId(id)) {
+      throw new BadRequestException(`Invalid set ID format: '${id}'`);
+    }
+
+    const set = await this.prisma.levelTestSet.findUnique({
+      where: { id },
+      include: {
+        questions: {
+          include: {
+            questionOptions: true,
+          },
+          orderBy: [{ level: 'asc' }, { createdAt: 'asc' }],
+        },
+        _count: {
+          select: {
+            questions: true,
+            attempts: true,
+          },
+        },
+      },
+    });
+
+    if (!set) {
+      throw new NotFoundException(`Level test set with ID '${id}' not found`);
+    }
+
+    return {
+      id: set.id,
+      name: set.name,
+      description: set.description,
+      isActive: set.isActive,
+      questionsCount: set._count?.questions ?? set.questions.length,
+      attemptsCount: set._count?.attempts ?? 0,
+      questions: set.questions,
+      createdAt: set.createdAt,
+      updatedAt: set.updatedAt,
+    };
+  }
+
+  /**
+   * Updates a level test set's name, description, or active status.
+   */
+  async updateSet(id: string, dto: UpdateLevelTestSetDto) {
+    await this.findSetById(id);
+
+    const updateData: Prisma.LevelTestSetUpdateInput = {};
+
+    if (dto.name !== undefined) {
+      const trimmedName = dto.name.trim();
+      if (!trimmedName) {
+        throw new BadRequestException('Set name cannot be empty');
+      }
+
+      const duplicate = await this.prisma.levelTestSet.findFirst({
+        where: {
+          name: trimmedName,
+          id: { not: id },
+        },
+      });
+
+      if (duplicate) {
+        throw new ConflictException(
+          `A level test set with the name '${trimmedName}' already exists`,
+        );
+      }
+
+      updateData.name = trimmedName;
+    }
+
+    if (dto.description !== undefined) {
+      updateData.description = dto.description?.trim() || null;
+    }
+
+    if (dto.isActive !== undefined) {
+      updateData.isActive = dto.isActive;
+    }
+
+    await this.prisma.levelTestSet.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return this.findSetById(id);
+  }
+
+  /**
+   * Deletes a level test set and unlinks all questions belonging to it.
+   */
+  async deleteSet(id: string) {
+    const existing = await this.findSetById(id);
+
+    await this.prisma.levelTestQuestion.updateMany({
+      where: { setId: id },
+      data: { setId: null },
+    });
+
+    await this.prisma.levelTestSet.delete({
+      where: { id },
+    });
+
+    return {
+      message: `Level test set '${existing.name}' deleted successfully`,
+      id,
+    };
+  }
+
+  /**
+   * Adds single or multiple questions in bulk to a test set.
+   */
+  async addQuestionsToSet(setId: string, dto: ManageSetQuestionsDto) {
+    await this.findSetById(setId);
+
+    const questionIds = dto.getNormalizedQuestionIds
+      ? dto.getNormalizedQuestionIds()
+      : [
+          ...(dto.questionId ? [dto.questionId] : []),
+          ...(Array.isArray(dto.questionIds) ? dto.questionIds : []),
+        ];
+
+    if (questionIds.length === 0) {
+      throw new BadRequestException(
+        'Please provide at least one question ID to add to the set',
+      );
+    }
+
+    const invalidIds = questionIds.filter((id) => !this.isValidObjectId(id));
+    if (invalidIds.length > 0) {
+      throw new BadRequestException(
+        `Invalid question ID format: ${invalidIds.join(', ')}`,
+      );
+    }
+
+    const existingQuestions = await this.prisma.levelTestQuestion.findMany({
+      where: { id: { in: questionIds } },
+      select: { id: true },
+    });
+
+    if (existingQuestions.length === 0) {
+      throw new NotFoundException('None of the provided questions were found');
+    }
+
+    const validIds = existingQuestions.map((q) => q.id);
+
+    const updateResult = await this.prisma.levelTestQuestion.updateMany({
+      where: { id: { in: validIds } },
+      data: { setId },
+    });
+
+    const setDetails = await this.findSetById(setId);
+
+    return {
+      message: `Successfully added ${updateResult.count} question(s) to set '${setDetails.name}'`,
+      addedCount: updateResult.count,
+      set: setDetails,
+    };
+  }
+
+  /**
+   * Removes single or multiple questions in bulk from a test set.
+   */
+  async removeQuestionsFromSet(setId: string, dto: ManageSetQuestionsDto) {
+    await this.findSetById(setId);
+
+    const questionIds = dto.getNormalizedQuestionIds
+      ? dto.getNormalizedQuestionIds()
+      : [
+          ...(dto.questionId ? [dto.questionId] : []),
+          ...(Array.isArray(dto.questionIds) ? dto.questionIds : []),
+        ];
+
+    if (questionIds.length === 0) {
+      throw new BadRequestException(
+        'Please provide at least one question ID to remove from the set',
+      );
+    }
+
+    const invalidIds = questionIds.filter((id) => !this.isValidObjectId(id));
+    if (invalidIds.length > 0) {
+      throw new BadRequestException(
+        `Invalid question ID format: ${invalidIds.join(', ')}`,
+      );
+    }
+
+    const updateResult = await this.prisma.levelTestQuestion.updateMany({
+      where: {
+        id: { in: questionIds },
+        setId,
+      },
+      data: { setId: null },
+    });
+
+    const setDetails = await this.findSetById(setId);
+
+    return {
+      message: `Successfully removed ${updateResult.count} question(s) from set '${setDetails.name}'`,
+      removedCount: updateResult.count,
+      set: setDetails,
+    };
   }
 
   /**
@@ -263,6 +620,27 @@ export class LevelTestQuestionsService implements OnModuleInit {
       updateData.explanation = dto.explanation?.trim() || null;
     }
 
+    if (dto.setId !== undefined) {
+      if (!dto.setId) {
+        updateData.set = { disconnect: true };
+      } else {
+        if (!this.isValidObjectId(dto.setId)) {
+          throw new BadRequestException(
+            `Invalid set ID format: '${dto.setId}'`,
+          );
+        }
+        const setExists = await this.prisma.levelTestSet.findUnique({
+          where: { id: dto.setId },
+        });
+        if (!setExists) {
+          throw new NotFoundException(
+            `Level test set with ID '${dto.setId}' not found`,
+          );
+        }
+        updateData.set = { connect: { id: dto.setId } };
+      }
+    }
+
     if (dto.options && dto.options.length > 0) {
       const correctOptions = dto.options.filter(
         (opt) => opt.isCorrect === true,
@@ -297,6 +675,12 @@ export class LevelTestQuestionsService implements OnModuleInit {
       data: updateData,
       include: {
         questionOptions: true,
+        set: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
   }

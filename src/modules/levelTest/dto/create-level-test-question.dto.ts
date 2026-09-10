@@ -91,4 +91,12 @@ export class CreateLevelTestQuestionDto {
   @ValidateNested({ each: true })
   @Type(() => QuestionOptionDto)
   options: QuestionOptionDto[];
+
+  @ApiPropertyOptional({
+    description: 'Optional ID of the LevelTestSet this question belongs to',
+    example: '665f1b2e1111111111111111',
+  })
+  @IsOptional()
+  @IsString({ message: 'setId must be a string' })
+  setId?: string;
 }

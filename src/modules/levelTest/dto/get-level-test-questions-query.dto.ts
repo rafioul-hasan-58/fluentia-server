@@ -45,6 +45,14 @@ export class GetLevelTestQuestionsQueryDto {
   difficulty?: DifficultyType;
 
   @ApiPropertyOptional({
+    description: 'Filter questions belonging to a specific LevelTestSet ID',
+    example: '665f1b2e1111111111111111',
+  })
+  @IsOptional()
+  @IsString()
+  setId?: string;
+
+  @ApiPropertyOptional({
     description: 'Search keyword matching within question text or passage',
     example: 'Spain',
   })

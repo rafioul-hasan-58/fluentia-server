@@ -4,3 +4,7 @@ export * from './update-level-test-question.dto';
 export * from './get-level-test-questions-query.dto';
 export * from './get-submissions-query.dto';
 export * from './submit-level-test.dto';
+export * from './create-level-test-set.dto';
+export * from './update-level-test-set.dto';
+export * from './manage-set-questions.dto';
+export * from './get-level-test-sets-query.dto';

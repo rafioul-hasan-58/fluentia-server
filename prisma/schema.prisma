@@ -190,8 +190,21 @@ model Otp {
   expiresAt DateTime
 }
 
+model LevelTestSet {
+  id          String              @id @default(auto()) @map("_id") @db.ObjectId
+  name        String              @unique
+  description String?
+  isActive    Boolean             @default(true)
+  questions   LevelTestQuestion[]
+  attempts    TestAttempt[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
 model LevelTestQuestion {
   id                 String              @id @default(auto()) @map("_id") @db.ObjectId
+  setId              String?             @db.ObjectId
+  set                LevelTestSet?       @relation(fields: [setId], references: [id], onDelete: SetNull)
   question           String
   passage            String?
   sectionType        TestQuestionSection
@@ -218,6 +231,8 @@ model TestAttempt {
   id               String              @id @default(auto()) @map("_id") @db.ObjectId
   userId           String              @db.ObjectId
   user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  setId            String?             @db.ObjectId
+  set              LevelTestSet?       @relation(fields: [setId], references: [id], onDelete: SetNull)
   score            Int
   totalQuestions   Int?                @default(0)
   percentage       Float?              @default(0)
