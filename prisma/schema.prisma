@@ -45,6 +45,7 @@ model User {
   reviews        ReviewSchedule[]
   testAttempts   TestAttempt[]
   myVocabularies MyVocabulary[]
+  vocabStories   VocabStory[]
 }
 
 // The curated taxonomy — seeded by you, not created by the AI at runtime.
@@ -292,6 +293,17 @@ model MyVocabulary {
   updatedAt        DateTime         @updatedAt
 
   @@unique([userId, wordId])
+}
+
+model VocabStory {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storyEnglish   String
+  storyBangla    String
+  usedVocabulary String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 enum TestQuestionSection {
