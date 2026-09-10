@@ -444,7 +444,7 @@ export class LevelTestQuestionsController {
     return data;
   }
 
-  @Post('sets/:id/questions')
+  @Post('sets/:id/add-questions')
   @UseGuards(AuthGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
