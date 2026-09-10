@@ -24,26 +24,18 @@ export class VocabularyService {
     private readonly prisma: PrismaService,
     private readonly aiService: AiService,
   ) {}
-
-  /**
-   * Normalizes a vocabulary word by trimming surrounding whitespace and converting to lowercase.
-   * Internal spaces for collocations/phrases are preserved.
-   */
+  // normalize a word
   normalizeWord(word: string): string {
     if (!word || typeof word !== 'string') return '';
     return word.trim().toLowerCase();
   }
 
-  /**
-   * Validates if a string is a 24-character hexadecimal MongoDB ObjectId.
-   */
+  // check valid mongo db id
   isValidObjectId(id: string): boolean {
     return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
   }
 
-  /**
-   * Retrieves an existing vocabulary or generates a new one via AI and persists it.
-   */
+  //  get or generate word
   async getOrGenerateVocabulary(dto: GenerateVocabularyDto) {
     const normalizedWord = this.normalizeWord(dto.word);
 

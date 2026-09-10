@@ -34,7 +34,7 @@ import {
 export class MyVocabularyController {
   constructor(private readonly vocabularyService: VocabularyService) {}
 
-  @Post()
+  @Post('save')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Add a vocabulary word to personal collection',
@@ -134,7 +134,7 @@ export class MyVocabularyController {
     };
   }
 
-  @Patch(':id')
+  @Patch(':id/update')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Update personal vocabulary notes, sentences, status, or mastery',
@@ -174,7 +174,7 @@ export class MyVocabularyController {
     };
   }
 
-  @Delete(':id')
+  @Delete(':id/remove')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Remove vocabulary from personal collection',
