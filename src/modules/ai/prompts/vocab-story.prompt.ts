@@ -75,8 +75,8 @@ CEFR ${targetLevel} level (Clear, accessible sentence structures, natural everyd
    - An array of objects, one per target vocabulary word, explaining how that word was specifically used and what role/purpose it serves in THIS story's context.
    - Each object must contain:
      - "word": the exact lowercase target vocabulary word.
-     - "explanation": 1-2 clear, concise English sentences explaining what the word means AND how/why it was used in this particular story (referring to the story's narrative context, character, or situation). Written for an ESL learner who wants to understand the word's real-world usage.
-   - Example: { "word": "confidence", "explanation": "In this story, 'confidence' describes the inner belief Rahim had in his batting ability before the crucial over. It shows how self-assurance can change the outcome of a high-pressure situation." }
+     - "explanation": 1-2 sentences written in NATURAL BANGLA-ENGLISH MIXED style (exactly like "storyBangla") — the sentence structure and grammar must be authentic Bengali (বাংলা), but the target vocabulary word itself MUST appear in English script. The explanation should describe what the word means AND how/why it was used in this particular story's context (referring to the narrative, character, or situation), so a Bengali learner can easily understand the word's real-world usage.
+   - CRITICAL: The explanation MUST be in Bangla-English mixed style. Do NOT write it in pure English. Example: { "word": "confidence", "explanation": "এই গল্পে 'confidence' শব্দটি রাহিমের সেই মানসিক শক্তিকে বোঝায় যা তাকে চাপের মুহূর্তেও স্থির রেখেছিল। এটি দেখায় যে নিজের উপর বিশ্বাস রাখলে যেকোনো কঠিন পরিস্থিতি মোকাবেলা করা সম্ভব।" }
 
 ---
 
