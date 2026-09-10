@@ -106,9 +106,15 @@ describe('AiService', () => {
       exampleSentences: [
         'Technology has had a significant impact on education.',
       ],
-      wordFamily: ['significance', 'significantly'],
-      synonyms: ['important', 'substantial'],
-      antonyms: ['insignificant'],
+      wordFamily: [
+        { word: 'significance', partOfSpeech: 'NOUN' },
+        { word: 'significantly', partOfSpeech: 'ADVERB' },
+      ],
+      synonyms: [
+        { word: 'important', partOfSpeech: 'ADJECTIVE' },
+        { word: 'substantial', partOfSpeech: 'ADJECTIVE' },
+      ],
+      antonyms: [{ word: 'insignificant', partOfSpeech: 'ADJECTIVE' }],
       englishLevel: 'B1',
     });
 

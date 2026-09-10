@@ -17,9 +17,9 @@ Generate accurate, structured dictionary data formatted strictly as a single JSO
    - "NOUN", "PRONOUN", "VERB", "ADJECTIVE", "ADVERB", "PREPOSITION", "CONJUNCTION", "INTERJECTION", "DETERMINER", "NUMERAL", "PARTICLE"
 5. "collocations": Array of 2-5 natural English collocations / frequent word pairings (e.g. ["significant increase", "significant impact"]).
 6. "exampleSentences": Array of 2-3 realistic, high-quality example sentences showcasing standard contextual usage.
-7. "wordFamily": Array of closely related morphological word forms (e.g. noun/verb/adverb derivatives like ["significance", "significantly"]).
-8. "synonyms": Array of 2-5 direct English synonyms.
-9. "antonyms": Array of 1-4 direct English antonyms (or empty array if none apply).
+7. "wordFamily": Array of 1-4 closely related morphological word forms with their parts of speech (e.g. [{"word": "significance", "partOfSpeech": "NOUN"}, {"word": "significantly", "partOfSpeech": "ADVERB"}]).
+8. "synonyms": Array of 2-5 direct English synonyms with their parts of speech (e.g. [{"word": "important", "partOfSpeech": "ADJECTIVE"}, {"word": "considerable", "partOfSpeech": "ADJECTIVE"}]).
+9. "antonyms": Array of 1-4 direct English antonyms with their parts of speech (or empty array if none apply) (e.g. [{"word": "insignificant", "partOfSpeech": "ADJECTIVE"}, {"word": "minor", "partOfSpeech": "ADJECTIVE"}]).
 10. "englishLevel": CEFR proficiency level (EXACTLY one of: "A1", "A2", "B1", "B2", "C1", "C2") based on Oxford/Cambridge standards.
 
 ### Output Format:
@@ -41,17 +41,17 @@ Example:
     "There has been a significant increase in online learning."
   ],
   "wordFamily": [
-    "significance",
-    "significantly"
+    { "word": "significance", "partOfSpeech": "NOUN" },
+    { "word": "significantly", "partOfSpeech": "ADVERB" }
   ],
   "synonyms": [
-    "important",
-    "considerable",
-    "substantial"
+    { "word": "important", "partOfSpeech": "ADJECTIVE" },
+    { "word": "considerable", "partOfSpeech": "ADJECTIVE" },
+    { "word": "substantial", "partOfSpeech": "ADJECTIVE" }
   ],
   "antonyms": [
-    "insignificant",
-    "minor"
+    { "word": "insignificant", "partOfSpeech": "ADJECTIVE" },
+    { "word": "minor", "partOfSpeech": "ADJECTIVE" }
   ],
   "englishLevel": "B1"
 }`;

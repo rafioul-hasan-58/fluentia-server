@@ -32,9 +32,15 @@ describe('VocabularyService', () => {
     partOfSpeech: PartOfSpeech.ADJECTIVE,
     collocations: ['significant increase', 'significant impact'],
     exampleSentences: ['Technology has had a significant impact.'],
-    wordFamily: ['significance', 'significantly'],
-    synonyms: ['important', 'substantial'],
-    antonyms: ['insignificant'],
+    wordFamily: [
+      { word: 'significance', partOfSpeech: PartOfSpeech.NOUN },
+      { word: 'significantly', partOfSpeech: PartOfSpeech.ADVERB },
+    ],
+    synonyms: [
+      { word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE },
+      { word: 'substantial', partOfSpeech: PartOfSpeech.ADJECTIVE },
+    ],
+    antonyms: [{ word: 'insignificant', partOfSpeech: PartOfSpeech.ADJECTIVE }],
     englishLevel: EnglishLevel.B1,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -137,9 +143,9 @@ describe('VocabularyService', () => {
         partOfSpeech: PartOfSpeech.ADJECTIVE,
         collocations: ['significant increase'],
         exampleSentences: ['A significant change occurred.'],
-        wordFamily: ['significance'],
-        synonyms: ['important'],
-        antonyms: ['minor'],
+        wordFamily: [{ word: 'significance', partOfSpeech: PartOfSpeech.NOUN }],
+        synonyms: [{ word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE }],
+        antonyms: [{ word: 'minor', partOfSpeech: PartOfSpeech.ADJECTIVE }],
         englishLevel: EnglishLevel.B1,
       });
       prismaService.vocabulary.create.mockResolvedValue(mockVocabulary);

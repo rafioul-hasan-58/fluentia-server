@@ -24,7 +24,11 @@ export class CustomLogger implements LoggerService {
                   typeof info.message === 'string'
                     ? info.message
                     : JSON.stringify(info.message);
-                return `[Nest] - ${timestamp} ${level} [${context}] ${message}`;
+                const trace =
+                  typeof info.trace === 'string' && info.trace
+                    ? `\n${info.trace}`
+                    : '';
+                return `[Nest] - ${timestamp} ${level} [${context}] ${message}${trace}`;
               }),
             ),
       ),

@@ -268,9 +268,9 @@ model Vocabulary {
   partOfSpeech     PartOfSpeech
   collocations     String[]
   exampleSentences String[]
-  wordFamily       String[]
-  synonyms         String[]
-  antonyms         String[]
+  wordFamily       Json?
+  synonyms         Json?
+  antonyms         Json?
   englishLevel     EnglishLevel
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
