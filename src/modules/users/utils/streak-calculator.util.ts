@@ -25,24 +25,33 @@ export async function calculateActiveStreak(
     user.profile?.lastActiveAt &&
     formatInTimeZone(user.profile.lastActiveAt, timezone, 'yyyy-MM-dd');
 
-  if (!user.profile?.lastActiveAt) {
+  if (!user.profile) {
+    return prisma.learningProfile.create({
+      data: {
+        userId,
+        lastActiveAt: now,
+        streakDays: 1,
+        longestStreak: 1,
+      },
+    });
+  } else if (!user.profile.lastActiveAt) {
     return prisma.learningProfile.update({
       where: { userId },
       data: {
         lastActiveAt: now,
         streakDays: 1,
-        longestStreak: Math.max(1, user.profile?.longestStreak ?? 1),
+        longestStreak: Math.max(1, user.profile.longestStreak ?? 1),
       },
     });
   } else if (lastActiveKey === todayKey) {
     return user.profile;
   } else if (lastActiveKey === yesterdayKey) {
-    const newStreak = user.profile.streakDays + 1;
+    const newStreak = (user.profile.streakDays ?? 0) + 1;
     return prisma.learningProfile.update({
       where: { userId },
       data: {
         streakDays: { increment: 1 },
-        longestStreak: Math.max(newStreak, user.profile.longestStreak),
+        longestStreak: Math.max(newStreak, user.profile.longestStreak ?? 0),
         lastActiveAt: now,
       },
     });

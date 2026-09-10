@@ -17,6 +17,8 @@ import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '../config/env.schema';
 import { OAuth2Client } from 'google-auth-library';
+import { PrismaService } from '../prisma/prisma.service';
+import { calculateActiveStreak } from '../modules/users/utils/streak-calculator.util';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +28,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService<EnvConfig, true>,
+    private readonly prisma: PrismaService,
   ) {}
 
   async register(payload: RegisterDto) {
@@ -89,6 +92,8 @@ export class AuthService {
     if (!isMatch) {
       throw new UnauthorizedException('Invalid email or password!');
     }
+
+    await this.calculateActiveStreak(user.id);
 
     const tokenPayload = {
       id: user.id,
@@ -250,6 +255,12 @@ export class AuthService {
       );
     }
 
+    await this.calculateActiveStreak(user.id);
+
     return this.generateTokens(user);
+  }
+
+  async calculateActiveStreak(userId: string) {
+    return calculateActiveStreak(this.prisma, userId);
   }
 }
