@@ -36,14 +36,15 @@ model User {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  profile       LearningProfile?
-  sessions      LearningSession[]
-  attempts      ExerciseAttempt[]
-  submissions   SentenceSubmission[]
-  skillProgress SkillProgress[]
-  weaknesses    Weakness[]
-  reviews       ReviewSchedule[]
-  testAttempts  TestAttempt[]
+  profile        LearningProfile?
+  sessions       LearningSession[]
+  attempts       ExerciseAttempt[]
+  submissions    SentenceSubmission[]
+  skillProgress  SkillProgress[]
+  weaknesses     Weakness[]
+  reviews        ReviewSchedule[]
+  testAttempts   TestAttempt[]
+  myVocabularies MyVocabulary[]
 }
 
 // The curated taxonomy — seeded by you, not created by the AI at runtime.
@@ -259,6 +260,39 @@ model TestAttemptAnswer {
   @@unique([attemptId, questionId])
 }
 
+model Vocabulary {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  word             String         @unique
+  meaning          String
+  banglaMeaning    String
+  partOfSpeech     PartOfSpeech
+  collocations     String[]
+  exampleSentences String[]
+  wordFamily       String[]
+  synonyms         String[]
+  antonyms         String[]
+  englishLevel     EnglishLevel
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  myVocabularies   MyVocabulary[]
+}
+
+model MyVocabulary {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String           @db.ObjectId
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordId           String           @db.ObjectId
+  word             Vocabulary       @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  mySentences      String[]
+  notes            String?
+  masteryLevel     Int              @default(0)
+  vocabularyStatus VocabularyStatus
+  isFavourate      Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([userId, wordId])
+}
 
 enum TestQuestionSection {
   GRAMMAR
@@ -286,3 +320,22 @@ enum RegistrationMethod {
   GOOGLE
 }
 
+enum PartOfSpeech {
+  NOUN
+  PRONOUN
+  VERB
+  ADJECTIVE
+  ADVERB
+  PREPOSITION
+  CONJUNCTION
+  INTERJECTION
+  DETERMINER
+  NUMERAL
+  PARTICLE
+}
+
+enum VocabularyStatus {
+  LEARNING
+  LEARNED
+  MASTERED
+}

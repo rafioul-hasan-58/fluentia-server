@@ -4,15 +4,18 @@ import OpenAI from 'openai';
 import { EnvConfig } from '../../config/env.schema';
 import { Lesson } from './schemas/lesson.schema';
 import { LevelTestAnalysis } from './schemas/level-test-analysis.schema';
+import { AiVocabulary } from './schemas/vocabulary.schema';
 import { buildTeachPrompt } from './prompts/teach.prompt';
 import {
   buildLevelTestAnalysisPrompt,
   LevelTestEvaluationInput,
 } from './prompts/level-test-analysis.prompt';
+import { buildVocabularyPrompt } from './prompts/vocabulary.prompt';
 import { AiServiceError, AiValidationError } from './errors/ai.errors';
 import {
   parseAndValidateLesson,
   parseAndValidateLevelTestAnalysis,
+  parseAndValidateVocabulary,
 } from './utils/validateAiOutput';
 import { callOpenAi } from './utils/ai.config';
 
@@ -152,6 +155,62 @@ export class AiService implements OnModuleInit {
     );
     throw new AiValidationError(
       `Level test AI analysis failed schema validation: ${retryValidationResult.error}`,
+      retryValidationResult.cause,
+    );
+  }
+
+  // generate structured vocabulary metadata
+  async generateVocabulary(word: string): Promise<AiVocabulary> {
+    const normalizedWord = word.trim().toLowerCase();
+    const basePrompt = buildVocabularyPrompt(normalizedWord);
+
+    let rawContent: string | null;
+    try {
+      rawContent = await this.callOpenAi(basePrompt);
+    } catch (error) {
+      this.logger.error(
+        `OpenAI API call failed for vocabulary "${normalizedWord}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new AiServiceError(
+        'Failed to communicate with AI service during vocabulary generation',
+        error,
+      );
+    }
+
+    const validationResult = parseAndValidateVocabulary(rawContent);
+    if (validationResult.success) {
+      return validationResult.data;
+    }
+
+    this.logger.warn(
+      `AI vocabulary output failed validation on first attempt for "${normalizedWord}". Retrying once... Error: ${validationResult.error}`,
+    );
+
+    const retryPrompt = `${basePrompt}\n\nCRITICAL FIX: Your previous output was invalid or did not conform to the schema. Validation error:\n${validationResult.error}\n\nPlease output strictly valid JSON matching the schema with all required fields.`;
+
+    let retryRawContent: string | null;
+    try {
+      retryRawContent = await this.callOpenAi(retryPrompt);
+    } catch (error) {
+      this.logger.error(
+        `OpenAI API call failed on retry for vocabulary "${normalizedWord}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new AiServiceError(
+        'Failed to communicate with AI service on retry during vocabulary generation',
+        error,
+      );
+    }
+
+    const retryValidationResult = parseAndValidateVocabulary(retryRawContent);
+    if (retryValidationResult.success) {
+      return retryValidationResult.data;
+    }
+
+    this.logger.error(
+      `AI vocabulary output failed validation after retry for "${normalizedWord}". Error: ${retryValidationResult.error}`,
+    );
+    throw new AiValidationError(
+      `AI vocabulary response failed schema validation: ${retryValidationResult.error}`,
       retryValidationResult.cause,
     );
   }

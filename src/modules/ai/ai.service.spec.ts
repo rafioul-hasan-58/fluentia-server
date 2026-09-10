@@ -95,4 +95,71 @@ describe('AiService', () => {
       );
     });
   });
+
+  describe('generateVocabulary', () => {
+    const validVocabularyJson = JSON.stringify({
+      word: 'significant',
+      meaning: 'important or large enough to matter',
+      banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
+      partOfSpeech: 'ADJECTIVE',
+      collocations: ['significant increase', 'significant impact'],
+      exampleSentences: [
+        'Technology has had a significant impact on education.',
+      ],
+      wordFamily: ['significance', 'significantly'],
+      synonyms: ['important', 'substantial'],
+      antonyms: ['insignificant'],
+      englishLevel: 'B1',
+    });
+
+    const invalidVocabularyJson = JSON.stringify({
+      word: 'significant',
+      // Missing meaning, banglaMeaning, partOfSpeech, etc.
+    });
+
+    it('should return validated vocabulary on successful first attempt', async () => {
+      jest
+        .spyOn<any, any>(service, 'callOpenAi')
+        .mockResolvedValue(validVocabularyJson);
+
+      const result = await service.generateVocabulary('significant');
+
+      expect(result.word).toBe('significant');
+      expect(result.meaning).toBe('important or large enough to matter');
+      expect(result.partOfSpeech).toBe('ADJECTIVE');
+      expect(result.englishLevel).toBe('B1');
+    });
+
+    it('should retry once when first attempt fails validation and succeed on second attempt', async () => {
+      const callOpenAiSpy = jest
+        .spyOn<any, any>(service, 'callOpenAi')
+        .mockResolvedValueOnce(invalidVocabularyJson)
+        .mockResolvedValueOnce(validVocabularyJson);
+
+      const result = await service.generateVocabulary('significant');
+
+      expect(callOpenAiSpy).toHaveBeenCalledTimes(2);
+      expect(result.word).toBe('significant');
+    });
+
+    it('should throw AiValidationError when validation fails twice', async () => {
+      jest
+        .spyOn<any, any>(service, 'callOpenAi')
+        .mockResolvedValue(invalidVocabularyJson);
+
+      await expect(service.generateVocabulary('significant')).rejects.toThrow(
+        AiValidationError,
+      );
+    });
+
+    it('should throw AiServiceError when API call fails', async () => {
+      jest
+        .spyOn<any, any>(service, 'callOpenAi')
+        .mockRejectedValue(new Error('API failure'));
+
+      await expect(service.generateVocabulary('significant')).rejects.toThrow(
+        AiServiceError,
+      );
+    });
+  });
 });

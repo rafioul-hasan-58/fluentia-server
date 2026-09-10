@@ -13,6 +13,7 @@ import { GrammarModule } from './modules/grammar';
 import { MailModule } from './modules/mail';
 import { S3Module } from './modules/s3';
 import { LevelTestQuestionsModule } from './modules/levelTest';
+import { VocabularyModule } from './modules/vocabulary';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LevelTestQuestionsModule } from './modules/levelTest';
     MailModule,
     S3Module,
     LevelTestQuestionsModule,
+    VocabularyModule,
   ],
   controllers: [AppController],
   providers: [AppService],
