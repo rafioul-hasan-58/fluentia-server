@@ -89,15 +89,6 @@ export class LevelTestQuestionsService implements OnModuleInit {
               );
             }
           }
-
-          // await this.prisma.testAttempt.update({
-          //   where: { id: attempt.id as string },
-          //   data: {
-          //     sectionBreakdown: sectionStats,
-          //     totalQuestions:
-          //       answers.length || (attempt.totalQuestions as number) || 0,
-          //   } as Prisma.TestAttemptUpdateInput,
-          // });
         }
       }
     } catch {
@@ -112,9 +103,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
     return /^[0-9a-fA-F]{24}$/.test(id);
   }
 
-  /**
-   * Creates a new level test question with nested options.
-   */
+  //  create testLevel question
   async create(dto: CreateLevelTestQuestionDto) {
     const correctOptions = dto.options.filter((opt) => opt.isCorrect === true);
     if (correctOptions.length !== 1) {
@@ -168,9 +157,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
     });
   }
 
-  /**
-   * Retrieves paginated level test questions with optional filters.
-   */
+  // get all questions
   async findAll(query?: GetLevelTestQuestionsQueryDto) {
     const where: Prisma.LevelTestQuestionWhereInput = {};
 
@@ -236,9 +223,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
     };
   }
 
-  /**
-   * Retrieves a curated test question set for student placement evaluation.
-   */
+  // get a test set
   async getTestSet(limit = 40, setId?: string) {
     const where: Prisma.LevelTestQuestionWhereInput = {};
     if (setId) {
@@ -262,9 +247,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
     });
   }
 
-  /**
-   * Creates a new level test set.
-   */
+  // create set
   async createSet(dto: CreateLevelTestSetDto) {
     const trimmedName = dto.name.trim();
     if (!trimmedName) {
@@ -306,9 +289,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
     return this.findSetById(set.id);
   }
 
-  /**
-   * Retrieves all level test sets with pagination, search, and question counters.
-   */
+  // get all test sets
   async findAllSets(query?: GetLevelTestSetsQueryDto) {
     const page = query?.page && query.page > 0 ? query.page : 1;
     const limit = query?.limit && query.limit > 0 ? query.limit : 20;
@@ -483,10 +464,9 @@ export class LevelTestQuestionsService implements OnModuleInit {
 
     const questionIds = dto.getNormalizedQuestionIds
       ? dto.getNormalizedQuestionIds()
-      : [
-          ...(dto.questionId ? [dto.questionId] : []),
-          ...(Array.isArray(dto.questionIds) ? dto.questionIds : []),
-        ];
+      : Array.isArray(dto.questionIds)
+        ? dto.questionIds
+        : [];
 
     if (questionIds.length === 0) {
       throw new BadRequestException(
@@ -534,10 +514,9 @@ export class LevelTestQuestionsService implements OnModuleInit {
 
     const questionIds = dto.getNormalizedQuestionIds
       ? dto.getNormalizedQuestionIds()
-      : [
-          ...(dto.questionId ? [dto.questionId] : []),
-          ...(Array.isArray(dto.questionIds) ? dto.questionIds : []),
-        ];
+      : Array.isArray(dto.questionIds)
+        ? dto.questionIds
+        : [];
 
     if (questionIds.length === 0) {
       throw new BadRequestException(

@@ -212,7 +212,7 @@ describe('LevelTestQuestionsController', () => {
 
       const result = await controller.getTestSet(40);
 
-      expect(service.getTestSet).toHaveBeenCalledWith(40);
+      expect(service.getTestSet).toHaveBeenCalledWith(40, undefined);
       expect(result).toEqual({
         message: 'Placement test set retrieved successfully.',
         count: 1,

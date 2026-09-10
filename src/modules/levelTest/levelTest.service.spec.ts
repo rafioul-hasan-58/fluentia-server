@@ -253,6 +253,7 @@ describe('LevelTestQuestionsService', () => {
           difficulty: createDto.difficulty,
           answer: 'is',
           explanation: createDto.explanation,
+          setId: null,
           questionOptions: {
             create: [
               { content: 'is', isCorrect: true },
@@ -262,7 +263,15 @@ describe('LevelTestQuestionsService', () => {
             ],
           },
         },
-        include: { questionOptions: true },
+        include: {
+          questionOptions: true,
+          set: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       });
       expect(result).toEqual(mockQuestion);
     });
@@ -305,7 +314,15 @@ describe('LevelTestQuestionsService', () => {
         skip: 0,
         take: 10,
         orderBy: [{ level: 'asc' }, { createdAt: 'desc' }],
-        include: { questionOptions: true },
+        include: {
+          questionOptions: true,
+          set: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       });
       expect(result).toEqual({
         items: [mockQuestion],
@@ -715,7 +732,7 @@ describe('LevelTestQuestionsService', () => {
       prismaService.levelTestSet.findUnique.mockResolvedValue(mockSet);
 
       const dto = new ManageSetQuestionsDto();
-      dto.questionId = 'invalid-question-id';
+      dto.questionIds = ['invalid-question-id'];
       await expect(service.addQuestionsToSet(mockSetId, dto)).rejects.toThrow(
         BadRequestException,
       );
@@ -726,7 +743,7 @@ describe('LevelTestQuestionsService', () => {
       prismaService.levelTestQuestion.findMany.mockResolvedValue([]);
 
       const dto = new ManageSetQuestionsDto();
-      dto.questionId = mockQuestionId;
+      dto.questionIds = [mockQuestionId];
       await expect(service.addQuestionsToSet(mockSetId, dto)).rejects.toThrow(
         NotFoundException,
       );
@@ -741,7 +758,7 @@ describe('LevelTestQuestionsService', () => {
       });
 
       const dto = new ManageSetQuestionsDto();
-      dto.questionId = mockQuestionId;
+      dto.questionIds = [mockQuestionId];
 
       const result = await service.removeQuestionsFromSet(mockSetId, dto);
 

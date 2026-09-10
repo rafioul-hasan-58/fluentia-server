@@ -295,11 +295,8 @@ export class LevelTestQuestionsController {
     };
   }
 
-  // ==========================================
   // LEVEL TEST SETS ENDPOINTS
-  // ==========================================
-
-  @Post('sets')
+  @Post('create-set')
   @UseGuards(AuthGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -331,7 +328,7 @@ export class LevelTestQuestionsController {
     };
   }
 
-  @Get('sets')
+  @Get('sets/get-all')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get all level test sets with pagination & search',
@@ -350,7 +347,7 @@ export class LevelTestQuestionsController {
     };
   }
 
-  @Get('sets/:id')
+  @Get('sets/get-single/:id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get level test set details with questions by ID',
@@ -379,7 +376,7 @@ export class LevelTestQuestionsController {
     };
   }
 
-  @Patch('sets/:id')
+  @Patch('sets/update/:id')
   @UseGuards(AuthGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
@@ -416,7 +413,7 @@ export class LevelTestQuestionsController {
     };
   }
 
-  @Delete('sets/:id')
+  @Delete('sets/delete/:id')
   @UseGuards(AuthGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
