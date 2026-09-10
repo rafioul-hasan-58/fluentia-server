@@ -45,8 +45,8 @@ describe('VocabularyController', () => {
     it('should call getOrGenerateVocabulary and return the result', async () => {
       const generateResult = {
         isNew: true,
-        message: 'Vocabulary generated successfully.',
-        vocabulary: mockVocabulary,
+        message: 'new word generated',
+        data: mockVocabulary,
       };
       service.getOrGenerateVocabulary.mockResolvedValue(generateResult);
 

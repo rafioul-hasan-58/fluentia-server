@@ -60,7 +60,7 @@ export class VocabularyService {
       return {
         isNew: false,
         message: 'Vocabulary retrieved from shared catalog.',
-        vocabulary: existingVocabulary,
+        data: existingVocabulary,
       };
     }
 
@@ -73,7 +73,7 @@ export class VocabularyService {
 
     // 3. Save to Vocabulary collection with race-condition handling
     try {
-      const createdVocabulary = await this.prisma.vocabulary.create({
+      const result = await this.prisma.vocabulary.create({
         data: {
           word: finalWord,
           meaning: aiData.meaning,
@@ -90,8 +90,8 @@ export class VocabularyService {
 
       return {
         isNew: true,
-        message: 'Vocabulary generated successfully.',
-        vocabulary: createdVocabulary,
+        message: 'new word generated',
+        data: result,
       };
     } catch (error) {
       // Handle concurrent creation race condition gracefully
@@ -110,7 +110,7 @@ export class VocabularyService {
           return {
             isNew: false,
             message: 'Vocabulary retrieved from shared catalog.',
-            vocabulary: concurrentVocabulary,
+            data: concurrentVocabulary,
           };
         }
       }

@@ -131,7 +131,8 @@ describe('VocabularyService', () => {
       });
       expect(aiService.generateVocabulary).not.toHaveBeenCalled();
       expect(result.isNew).toBe(false);
-      expect(result.vocabulary).toEqual(mockVocabulary);
+      expect(result.data).toEqual(mockVocabulary);
+      expect(result.message).toBe('Vocabulary retrieved from shared catalog.');
     });
 
     it('should call AI service and save new vocabulary when not found in DB', async () => {
@@ -165,7 +166,8 @@ describe('VocabularyService', () => {
         }),
       });
       expect(result.isNew).toBe(true);
-      expect(result.vocabulary).toEqual(mockVocabulary);
+      expect(result.data).toEqual(mockVocabulary);
+      expect(result.message).toBe('new word generated');
     });
 
     it('should handle P2002 race condition by falling back to findUnique', async () => {
@@ -197,7 +199,8 @@ describe('VocabularyService', () => {
       });
 
       expect(result.isNew).toBe(false);
-      expect(result.vocabulary).toEqual(mockVocabulary);
+      expect(result.data).toEqual(mockVocabulary);
+      expect(result.message).toBe('Vocabulary retrieved from shared catalog.');
     });
 
     it('should throw BadRequestException when word is empty', async () => {
