@@ -192,6 +192,18 @@ describe('AiService', () => {
       storyEnglish:
         'The exam was challenging for Rafi, but his confidence helped him succeed.',
       usedVocabulary: ['challenging', 'confidence'],
+      keywordExplanations: [
+        {
+          word: 'challenging',
+          explanation:
+            "In this story, 'challenging' describes how difficult the exam was for Rafi. It shows that overcoming a hard situation requires determination.",
+        },
+        {
+          word: 'confidence',
+          explanation:
+            "In this story, 'confidence' represents Rafi's self-belief that helped him succeed despite the difficulty of the exam.",
+        },
+      ],
     });
 
     const invalidStoryJson = JSON.stringify({
@@ -206,6 +218,13 @@ describe('AiService', () => {
       storyEnglish:
         'The exam was challenging for Rafi, but he finally passed the test.',
       usedVocabulary: ['challenging'], // Missing 'confidence'
+      keywordExplanations: [
+        {
+          word: 'challenging',
+          explanation:
+            "In this story, 'challenging' describes how difficult the exam was for Rafi.",
+        },
+      ],
     });
 
     it('should return validated story on successful first attempt', async () => {

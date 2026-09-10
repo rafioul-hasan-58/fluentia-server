@@ -71,6 +71,13 @@ CEFR ${targetLevel} level (Clear, accessible sentence structures, natural everyd
 4. **"usedVocabulary" Array**
    - An array containing the exact lowercase strings of all ${words.length} target vocabulary words: [${targetWordsList.map((w) => `"${w}"`).join(', ')}].
 
+5. **"keywordExplanations" Array**
+   - An array of objects, one per target vocabulary word, explaining how that word was specifically used and what role/purpose it serves in THIS story's context.
+   - Each object must contain:
+     - "word": the exact lowercase target vocabulary word.
+     - "explanation": 1-2 clear, concise English sentences explaining what the word means AND how/why it was used in this particular story (referring to the story's narrative context, character, or situation). Written for an ESL learner who wants to understand the word's real-world usage.
+   - Example: { "word": "confidence", "explanation": "In this story, 'confidence' describes the inner belief Rahim had in his batting ability before the crucial over. It shows how self-assurance can change the outcome of a high-pressure situation." }
+
 ---
 
 ### Strict Output Constraints:
@@ -83,6 +90,10 @@ CEFR ${targetLevel} level (Clear, accessible sentence structures, natural everyd
   "title": "Creative Story Title in English",
   "storyBangla": "সম্পূর্ণ বাংলা-ইংরেজি মিশ্রিত গল্প...",
   "storyEnglish": "Full natural English story...",
-  "usedVocabulary": [${targetWordsList.map((w) => `"${w}"`).join(', ')}]
+  "usedVocabulary": [${targetWordsList.map((w) => `"${w}"`).join(', ')}],
+  "keywordExplanations": [
+    { "word": "word1", "explanation": "How and why 'word1' was used in this story..." },
+    { "word": "word2", "explanation": "How and why 'word2' was used in this story..." }
+  ]
 }`;
 }

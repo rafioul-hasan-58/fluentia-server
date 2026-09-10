@@ -121,6 +121,7 @@ export class VocabStoryService {
         storyEnglish: aiStory.storyEnglish,
         storyBangla: aiStory.storyBangla,
         usedVocabulary,
+        keywordExplanations: aiStory.keywordExplanations,
       },
     });
 

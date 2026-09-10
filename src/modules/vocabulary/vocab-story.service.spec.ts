@@ -43,6 +43,19 @@ describe('VocabStoryService', () => {
     englishLevel: EnglishLevel.B1,
   };
 
+  const mockKeywordExplanations = [
+    {
+      word: 'challenging',
+      explanation:
+        "In this story, 'challenging' describes how difficult the cricket match was for the team. It conveys that the situation required great skill and determination to overcome.",
+    },
+    {
+      word: 'confidence',
+      explanation:
+        "In this story, 'confidence' refers to the self-belief the player had despite the pressure. It shows how a positive mindset helped him perform under difficult circumstances.",
+    },
+  ];
+
   const mockStory = {
     id: mockStoryId,
     userId: mockUserId,
@@ -52,6 +65,7 @@ describe('VocabStoryService', () => {
     storyBangla:
       'ম্যাচটি বেশ challenging ছিল, কিন্তু তার confidence তাকে জয় এনে দিল।',
     usedVocabulary: ['challenging', 'confidence'],
+    keywordExplanations: mockKeywordExplanations,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -106,6 +120,7 @@ describe('VocabStoryService', () => {
         storyEnglish: mockStory.storyEnglish,
         storyBangla: mockStory.storyBangla,
         usedVocabulary: ['challenging', 'confidence'],
+        keywordExplanations: mockKeywordExplanations,
       });
       prismaService.vocabStory.create.mockResolvedValue(mockStory);
 
@@ -145,6 +160,7 @@ describe('VocabStoryService', () => {
           storyEnglish: mockStory.storyEnglish,
           storyBangla: mockStory.storyBangla,
           usedVocabulary: ['challenging', 'confidence'],
+          keywordExplanations: mockKeywordExplanations,
         },
       });
       expect(result).toEqual(mockStory);
