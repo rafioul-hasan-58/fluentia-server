@@ -168,4 +168,91 @@ describe('AiService', () => {
       );
     });
   });
+
+  describe('generateVocabStory', () => {
+    const mockWords = [
+      {
+        word: 'challenging',
+        meaning: 'difficult in an interesting way',
+        partOfSpeech: 'ADJECTIVE',
+        englishLevel: 'B1',
+      },
+      {
+        word: 'confidence',
+        meaning: 'belief in oneself',
+        partOfSpeech: 'NOUN',
+        englishLevel: 'B1',
+      },
+    ];
+
+    const validStoryJson = JSON.stringify({
+      storyBangla:
+        'রাফির জন্য এই পরীক্ষাটি বেশ challenging ছিল। কিন্তু তার confidence তাকে সফল হতে সাহায্য করল।',
+      storyEnglish:
+        'The exam was challenging for Rafi, but his confidence helped him succeed.',
+      usedVocabulary: ['challenging', 'confidence'],
+    });
+
+    const invalidStoryJson = JSON.stringify({
+      storyBangla: 'ছোট গল্প',
+      // Missing storyEnglish and usedVocabulary
+    });
+
+    const missingWordStoryJson = JSON.stringify({
+      storyBangla:
+        'রাফির জন্য এই পরীক্ষাটি বেশ challenging ছিল। কিন্তু সে সফল হলো।',
+      storyEnglish:
+        'The exam was challenging for Rafi, but he finally passed the test.',
+      usedVocabulary: ['challenging'], // Missing 'confidence'
+    });
+
+    it('should return validated story on successful first attempt', async () => {
+      jest
+        .spyOn<any, any>(service, 'callOpenAi')
+        .mockResolvedValue(validStoryJson);
+
+      const result = await service.generateVocabStory(
+        mockWords,
+        'Give me an exam situation',
+      );
+
+      expect(result.storyBangla).toContain('challenging');
+      expect(result.storyBangla).toContain('confidence');
+      expect(result.storyEnglish).toContain('challenging');
+      expect(result.storyEnglish).toContain('confidence');
+      expect(result.usedVocabulary).toEqual(['challenging', 'confidence']);
+    });
+
+    it('should retry once if target words are missing and succeed on second attempt', async () => {
+      const callOpenAiSpy = jest
+        .spyOn<any, any>(service, 'callOpenAi')
+        .mockResolvedValueOnce(missingWordStoryJson)
+        .mockResolvedValueOnce(validStoryJson);
+
+      const result = await service.generateVocabStory(mockWords);
+
+      expect(callOpenAiSpy).toHaveBeenCalledTimes(2);
+      expect(result.usedVocabulary).toEqual(['challenging', 'confidence']);
+    });
+
+    it('should throw AiValidationError when schema validation fails after retry', async () => {
+      jest
+        .spyOn<any, any>(service, 'callOpenAi')
+        .mockResolvedValue(invalidStoryJson);
+
+      await expect(service.generateVocabStory(mockWords)).rejects.toThrow(
+        AiValidationError,
+      );
+    });
+
+    it('should throw AiServiceError when callOpenAi throws', async () => {
+      jest
+        .spyOn<any, any>(service, 'callOpenAi')
+        .mockRejectedValue(new Error('Network error'));
+
+      await expect(service.generateVocabStory(mockWords)).rejects.toThrow(
+        AiServiceError,
+      );
+    });
+  });
 });

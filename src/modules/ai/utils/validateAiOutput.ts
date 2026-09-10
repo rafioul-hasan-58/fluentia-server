@@ -5,6 +5,10 @@ import {
 } from '../schemas/level-test-analysis.schema';
 import { Lesson, LessonSchema } from '../schemas/lesson.schema';
 import { AiVocabulary, AiVocabularySchema } from '../schemas/vocabulary.schema';
+import {
+  VocabStoryAiOutput,
+  VocabStorySchema,
+} from '../schemas/vocab-story.schema';
 
 export type ValidationResult<T> =
   | { success: true; data: T }
@@ -79,4 +83,13 @@ export function parseAndValidateVocabulary(
   rawContent: string | null,
 ): ValidationResult<AiVocabulary> {
   return validateAiOutput(rawContent, AiVocabularySchema);
+}
+
+/**
+ * Parses JSON string and validates it against VocabStorySchema.
+ */
+export function parseAndValidateVocabStory(
+  rawContent: string | null,
+): ValidationResult<VocabStoryAiOutput> {
+  return validateAiOutput(rawContent, VocabStorySchema);
 }
