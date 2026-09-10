@@ -296,15 +296,16 @@ model MyVocabulary {
 }
 
 model VocabStory {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @db.ObjectId
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title          String?  @default("Vocabulary Story")
-  storyEnglish   String
-  storyBangla    String
-  usedVocabulary String[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String   @db.ObjectId
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title               String?  @default("Vocabulary Story")
+  storyEnglish        String
+  storyBangla         String
+  usedVocabulary      String[]
+  keywordExplanations Json?    // Array of { word: string, explanation: string }
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 enum TestQuestionSection {
