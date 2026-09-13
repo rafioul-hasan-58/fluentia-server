@@ -41,10 +41,14 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env.local
+keys.txt
+gemini-keys.txt
 
 # temp directory
 .temp
 .tmp
+update-*.js
+test-*.js
 
 # Runtime data
 pids

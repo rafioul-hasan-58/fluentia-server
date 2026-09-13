@@ -14,6 +14,14 @@ export type ValidationResult<T> =
   | { success: true; data: T }
   | { success: false; error: string; cause: unknown };
 
+export function cleanRawJson(content: string): string {
+  let cleaned = content.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+  }
+  return cleaned.trim();
+}
+
 /**
  * Generic helper to parse raw JSON from AI and validate it against a Zod schema.
  */
@@ -29,9 +37,11 @@ export function validateAiOutput<T>(
     };
   }
 
+  const cleanedContent = cleanRawJson(rawContent);
+
   let parsedJson: unknown;
   try {
-    parsedJson = JSON.parse(rawContent);
+    parsedJson = JSON.parse(cleanedContent);
   } catch (parseError) {
     return {
       success: false,

@@ -353,3 +353,15 @@ enum VocabularyStatus {
   LEARNED
   MASTERED
 }
+
+model PlatformSetting {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  activeProvider String    @default("openai")
+  activeModel    String?
+  openaiApiKey   String?
+  geminiApiKey   String?
+  grokApiKey     String?
+  deepseekApiKey String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}

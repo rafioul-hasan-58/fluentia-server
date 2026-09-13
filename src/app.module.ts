@@ -14,6 +14,7 @@ import { MailModule } from './modules/mail';
 import { S3Module } from './modules/s3';
 import { LevelTestQuestionsModule } from './modules/levelTest';
 import { VocabularyModule } from './modules/vocabulary';
+import { PlatformSettingsModule } from './modules/platform-settings';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { VocabularyModule } from './modules/vocabulary';
     S3Module,
     LevelTestQuestionsModule,
     VocabularyModule,
+    PlatformSettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

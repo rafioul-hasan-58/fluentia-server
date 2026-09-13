@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { EnvConfig } from '../../config/env.schema';
+import { PlatformSettingsService } from '../platform-settings/platform-settings.service';
 import { Lesson } from './schemas/lesson.schema';
 import { LevelTestAnalysis } from './schemas/level-test-analysis.schema';
 import { AiVocabulary } from './schemas/vocabulary.schema';
@@ -31,7 +32,13 @@ export class AiService implements OnModuleInit {
   private openai!: OpenAI;
   private readonly model = 'gpt-4o-mini';
 
-  constructor(private readonly configService: ConfigService<EnvConfig, true>) {}
+  private readonly clientCache = new Map<string, OpenAI>();
+
+  constructor(
+    private readonly configService: ConfigService<EnvConfig, true>,
+    @Optional()
+    private readonly platformSettingsService?: PlatformSettingsService,
+  ) {}
 
   onModuleInit() {
     const apiKey =
@@ -359,10 +366,36 @@ export class AiService implements OnModuleInit {
     return false;
   }
 
+  private getClient(apiKey: string, baseURL?: string): OpenAI {
+    const cacheKey = `${baseURL || 'default'}::${apiKey}`;
+    let client = this.clientCache.get(cacheKey);
+    if (!client) {
+      client = new OpenAI({ apiKey, baseURL });
+      this.clientCache.set(cacheKey, client);
+    }
+    return client;
+  }
+
   /**
-   * Executes a chat completion call with OpenAI requesting JSON output format.
+   * Executes a chat completion call with the configured AI provider and model requesting JSON output format.
    */
   private async callOpenAi(prompt: string): Promise<string | null> {
+    if (this.platformSettingsService) {
+      try {
+        const config = await this.platformSettingsService.getActiveAiConfig();
+        if (config.apiKey) {
+          const client = this.getClient(config.apiKey, config.baseURL);
+          return await callOpenAi(client, prompt, config.model);
+        }
+        this.logger.warn(
+          `No API key configured for active AI provider "${config.provider}". Falling back to default OpenAI client.`,
+        );
+      } catch (err) {
+        this.logger.warn(
+          `Failed to load platform AI settings, falling back to default OpenAI client: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
     return callOpenAi(this.openai, prompt, this.model);
   }
 }
