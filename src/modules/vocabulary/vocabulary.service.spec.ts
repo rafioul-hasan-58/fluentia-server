@@ -231,6 +231,12 @@ describe('VocabularyService', () => {
             { word: { contains: 'signif', mode: 'insensitive' } },
             { meaning: { contains: 'signif', mode: 'insensitive' } },
             { banglaMeaning: { contains: 'signif', mode: 'insensitive' } },
+            {
+              banglaPronunciation: {
+                contains: 'signif',
+                mode: 'insensitive',
+              },
+            },
           ],
         },
         skip: 0,
