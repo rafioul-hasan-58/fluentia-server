@@ -2,7 +2,7 @@ export interface VocabStoryWordInput {
   word: string;
   meaning: string;
   partOfSpeech: string;
-  collocations?: string[];
+  collocations?: unknown;
   exampleSentences?: string[];
   englishLevel?: string;
 }
@@ -25,9 +25,21 @@ export function buildVocabStoryPrompt(
 
   const wordsListFormatted = words
     .map((w, index) => {
+      let collocationsList: string[] = [];
+      if (Array.isArray(w.collocations)) {
+        collocationsList = w.collocations
+          .map((c: any) =>
+            typeof c === 'string'
+              ? c
+              : typeof c === 'object' && c && 'collocation' in c
+                ? (c as { collocation: string }).collocation
+                : '',
+          )
+          .filter(Boolean);
+      }
       const collocationsText =
-        w.collocations && w.collocations.length > 0
-          ? ` (Collocations: ${w.collocations.join(', ')})`
+        collocationsList.length > 0
+          ? ` (Collocations: ${collocationsList.join(', ')})`
           : '';
       return `${index + 1}. "${w.word.toLowerCase()}" [${w.partOfSpeech}] - Meaning: ${w.meaning}${collocationsText}`;
     })

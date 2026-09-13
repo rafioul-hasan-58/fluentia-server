@@ -16,7 +16,10 @@ Generate accurate, structured dictionary data formatted strictly as a single JSO
 4. "banglaPronunciation": Natural Bengali phonetic pronunciation of the English word written in Bengali script (বাংলা উচ্চারণ, e.g. "সিগনিফিক্যান্ট" for "significant", "অ্যাব্যান্ডন" for "abandon").
 5. "partOfSpeech": EXACTLY one of:
    - "NOUN", "PRONOUN", "VERB", "ADJECTIVE", "ADVERB", "PREPOSITION", "CONJUNCTION", "INTERJECTION", "DETERMINER", "NUMERAL", "PARTICLE"
-6. "collocations": Array of 2-5 natural English collocations / frequent word pairings (e.g. ["significant increase", "significant impact"]).
+6. "collocations": Array of 2-5 natural English collocations / frequent word pairings. Each collocation MUST be an object with:
+   - "collocation": The English collocation phrase (e.g. "significant increase").
+   - "banglaMeaning": Natural Bengali meaning of this collocation (e.g. "উল্লেখযোগ্য বৃদ্ধি").
+   - "exampleSentence": A natural example sentence demonstrating the collocation in context (e.g. "There has been a significant increase in online learning.").
 7. "exampleSentences": Array of 2-3 realistic, high-quality example sentences showcasing standard contextual usage.
 8. "wordFamily": Array of 1-4 closely related morphological word forms with their parts of speech (e.g. [{"word": "significance", "partOfSpeech": "NOUN"}, {"word": "significantly", "partOfSpeech": "ADVERB"}]).
 9. "synonyms": Array of 2-5 direct English synonyms with their parts of speech (e.g. [{"word": "important", "partOfSpeech": "ADJECTIVE"}, {"word": "considerable", "partOfSpeech": "ADJECTIVE"}]).
@@ -34,9 +37,21 @@ Example:
   "banglaPronunciation": "সিগনিফিক্যান্ট",
   "partOfSpeech": "ADJECTIVE",
   "collocations": [
-    "significant increase",
-    "significant impact",
-    "significant difference"
+    {
+      "collocation": "significant increase",
+      "banglaMeaning": "উল্লেখযোগ্য বৃদ্ধি",
+      "exampleSentence": "There has been a significant increase in online learning."
+    },
+    {
+      "collocation": "significant impact",
+      "banglaMeaning": "উল্লেখযোগ্য প্রভাব",
+      "exampleSentence": "Technology has had a significant impact on education."
+    },
+    {
+      "collocation": "significant difference",
+      "banglaMeaning": "উল্লেখযোগ্য পার্থক্য",
+      "exampleSentence": "Good communication makes a significant difference in teamwork."
+    }
   ],
   "exampleSentences": [
     "Technology has had a significant impact on education.",

@@ -29,9 +29,18 @@ describe('VocabularyService', () => {
     word: 'significant',
     meaning: 'important or large enough to matter',
     banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
-    partOfSpeech: PartOfSpeech.ADJECTIVE,
-    collocations: ['significant increase', 'significant impact'],
-    exampleSentences: ['Technology has had a significant impact.'],
+    collocations: [
+      {
+        collocation: 'significant increase',
+        banglaMeaning: 'উল্লেখযোগ্য বৃদ্ধি',
+        exampleSentence: 'There was a significant increase in sales.',
+      },
+      {
+        collocation: 'significant impact',
+        banglaMeaning: 'উল্লেখযোগ্য প্রভাব',
+        exampleSentence: 'Technology has a significant impact on life.',
+      },
+    ],
     wordFamily: [
       { word: 'significance', partOfSpeech: PartOfSpeech.NOUN },
       { word: 'significantly', partOfSpeech: PartOfSpeech.ADVERB },
@@ -141,9 +150,13 @@ describe('VocabularyService', () => {
         word: 'significant',
         meaning: 'important or large enough to matter',
         banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
-        partOfSpeech: PartOfSpeech.ADJECTIVE,
-        collocations: ['significant increase'],
-        exampleSentences: ['A significant change occurred.'],
+        collocations: [
+          {
+            collocation: 'significant increase',
+            banglaMeaning: 'উল্লেখযোগ্য বৃদ্ধি',
+            exampleSentence: 'A significant change occurred.',
+          },
+        ],
         wordFamily: [{ word: 'significance', partOfSpeech: PartOfSpeech.NOUN }],
         synonyms: [{ word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE }],
         antonyms: [{ word: 'minor', partOfSpeech: PartOfSpeech.ADJECTIVE }],

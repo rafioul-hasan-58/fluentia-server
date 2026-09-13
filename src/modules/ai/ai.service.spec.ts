@@ -102,7 +102,18 @@ describe('AiService', () => {
       meaning: 'important or large enough to matter',
       banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
       partOfSpeech: 'ADJECTIVE',
-      collocations: ['significant increase', 'significant impact'],
+      collocations: [
+        {
+          collocation: 'significant increase',
+          banglaMeaning: 'উল্লেখযোগ্য বৃদ্ধি',
+          exampleSentence: 'There was a significant increase in sales.',
+        },
+        {
+          collocation: 'significant impact',
+          banglaMeaning: 'উল্লেখযোগ্য প্রভাব',
+          exampleSentence: 'Technology has a significant impact on life.',
+        },
+      ],
       exampleSentences: [
         'Technology has had a significant impact on education.',
       ],

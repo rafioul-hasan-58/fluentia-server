@@ -14,8 +14,13 @@ describe('VocabularyController', () => {
     word: 'significant',
     meaning: 'important or large enough to matter',
     banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
-    partOfSpeech: PartOfSpeech.ADJECTIVE,
-    collocations: ['significant increase'],
+    collocations: [
+      {
+        collocation: 'significant increase',
+        banglaMeaning: 'উল্লেখযোগ্য বৃদ্ধি',
+        exampleSentence: 'There was a significant increase in sales.',
+      },
+    ],
     exampleSentences: ['A significant change occurred.'],
     wordFamily: [{ word: 'significance', partOfSpeech: PartOfSpeech.NOUN }],
     synonyms: [{ word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE }],

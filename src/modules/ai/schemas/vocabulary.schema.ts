@@ -26,6 +26,14 @@ export const WordWithPartOfSpeechSchema = z.object({
 
 export type WordWithPartOfSpeech = z.infer<typeof WordWithPartOfSpeechSchema>;
 
+export const CollocationSchema = z.object({
+  collocation: z.string().min(1, 'Collocation phrase is required'),
+  banglaMeaning: z.string().min(1, 'Bangla meaning is required'),
+  exampleSentence: z.string().min(1, 'Example sentence is required'),
+});
+
+export type Collocation = z.infer<typeof CollocationSchema>;
+
 export const AiVocabularySchema = z.object({
   word: z
     .string()
@@ -35,7 +43,7 @@ export const AiVocabularySchema = z.object({
   banglaMeaning: z.string().min(1, 'Bangla meaning is required'),
   banglaPronunciation: z.string().optional(),
   partOfSpeech: PartOfSpeechEnum,
-  collocations: z.array(z.string()).default([]),
+  collocations: z.array(CollocationSchema).default([]),
   exampleSentences: z
     .array(z.string())
     .min(1, 'At least one example sentence is required'),

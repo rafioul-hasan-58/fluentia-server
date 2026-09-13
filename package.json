@@ -24,7 +24,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node prisma/seed.ts",
     "db:backfill-durations": "ts-node prisma/backfill-attempt-duration.ts",
-    "db:backfill-pronunciations": "ts-node prisma/backfill-bangla-pronunciation.ts"
+    "db:backfill-pronunciations": "ts-node prisma/backfill-bangla-pronunciation.ts",
+    "db:backfill-collocations": "ts-node prisma/backfill-collocations.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
