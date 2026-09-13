@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv';
 
