@@ -217,6 +217,86 @@ describe('VocabularyService', () => {
       expect(result.message).toBe('Vocabulary retrieved from shared catalog.');
     });
 
+    it('should return existing vocabulary when AI corrects misspelled word and corrected word already exists in DB', async () => {
+      // 1. Initial lookup with typo returns null
+      // 2. Second lookup with corrected word returns mockVocabulary
+      prismaService.vocabulary.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockVocabulary);
+
+      aiService.generateVocabulary.mockResolvedValue({
+        word: 'significant',
+        meaning: 'important or large enough to matter',
+        banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
+        partOfSpeech: PartOfSpeech.ADJECTIVE,
+        collocations: [],
+        exampleSentences: ['A significant change occurred.'],
+        wordFamily: [],
+        synonyms: [],
+        antonyms: [],
+        englishLevel: EnglishLevel.B1,
+      });
+
+      const result = await service.getOrGenerateVocabulary({
+        word: 'significnt', // typo
+      });
+
+      expect(prismaService.vocabulary.findUnique).toHaveBeenNthCalledWith(1, {
+        where: { word: 'significnt' },
+      });
+      expect(aiService.generateVocabulary).toHaveBeenCalledWith('significnt');
+      expect(prismaService.vocabulary.findUnique).toHaveBeenNthCalledWith(2, {
+        where: { word: 'significant' },
+      });
+      expect(prismaService.vocabulary.create).not.toHaveBeenCalled();
+      expect(result.isNew).toBe(false);
+      expect(result.data).toEqual(mockVocabulary);
+      expect(result.message).toBe('Vocabulary retrieved from shared catalog.');
+    });
+
+    it('should create and return vocabulary under corrected word when AI corrects misspelled word and corrected word is new', async () => {
+      // 1. Initial lookup with typo returns null
+      // 2. Second lookup with corrected word returns null
+      prismaService.vocabulary.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+
+      aiService.generateVocabulary.mockResolvedValue({
+        word: 'significant',
+        meaning: 'important or large enough to matter',
+        banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
+        partOfSpeech: PartOfSpeech.ADJECTIVE,
+        collocations: [],
+        exampleSentences: ['A significant change occurred.'],
+        wordFamily: [],
+        synonyms: [],
+        antonyms: [],
+        englishLevel: EnglishLevel.B1,
+      });
+
+      prismaService.vocabulary.create.mockResolvedValue(mockVocabulary);
+
+      const result = await service.getOrGenerateVocabulary({
+        word: 'significnt',
+      });
+
+      expect(prismaService.vocabulary.findUnique).toHaveBeenNthCalledWith(1, {
+        where: { word: 'significnt' },
+      });
+      expect(aiService.generateVocabulary).toHaveBeenCalledWith('significnt');
+      expect(prismaService.vocabulary.findUnique).toHaveBeenNthCalledWith(2, {
+        where: { word: 'significant' },
+      });
+      expect(prismaService.vocabulary.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          word: 'significant',
+        }),
+      });
+      expect(result.isNew).toBe(true);
+      expect(result.data).toEqual(mockVocabulary);
+      expect(result.message).toBe('new word generated');
+    });
+
     it('should throw BadRequestException when word is empty', async () => {
       await expect(
         service.getOrGenerateVocabulary({ word: '   ' }),

@@ -7,10 +7,19 @@ export function buildVocabularyPrompt(word: string): string {
   return `You are an expert lexicographer and language educator specializing in English-Bengali bilingual ESL instruction.
 Analyze the following English word or collocation: "${normalizedWord}"
 
+### Spelling Correction Rule:
+- If the provided input "${normalizedWord}" contains any spelling mistakes, typos, or phonetic errors (e.g., "definately" -> "definitely", "recive" -> "receive", "computr" -> "computer", "siginificant" -> "significant"):
+  1. Identify the intended correct English word.
+  2. Fix and correct the spelling.
+  3. Set the "word" field in the JSON output to the corrected standard English word in lowercase.
+  4. Generate all meanings, pronunciations, collocations, examples, word families, synonyms, and antonyms specifically for the corrected word.
+- If the spelling is already correct, keep it as is.
+- Never include explanations or notes about the typo in the output.
+
 Generate accurate, structured dictionary data formatted strictly as a single JSON object.
 
 ### Guidelines:
-1. "word": The lowercase normalized headword or expression (e.g. "${normalizedWord}").
+1. "word": The correctly spelled, lowercase normalized headword or expression (correct any typos from the input word).
 2. "meaning": Clear, concise, learner-friendly English definition explaining its primary common usage.
 3. "banglaMeaning": Natural, authentic Bengali (বাংলা) meaning/translation including appropriate nuances (e.g. "গুরুত্বপূর্ণ / উল্লেখযোগ্য").
 4. "banglaPronunciation": Natural Bengali phonetic pronunciation of the English word written in Bengali script (বাংলা উচ্চারণ, e.g. "সিগনিফিক্যান্ট" for "significant", "অ্যাব্যান্ডন" for "abandon").

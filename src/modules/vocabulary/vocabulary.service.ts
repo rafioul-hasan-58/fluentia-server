@@ -63,6 +63,24 @@ export class VocabularyService {
     // Ensure generated word adheres to normalization
     const finalWord = this.normalizeWord(aiData.word) || normalizedWord;
 
+    // If the word spelling was corrected by AI, check if corrected word already exists in catalog
+    if (finalWord !== normalizedWord) {
+      const existingCorrected = await this.prisma.vocabulary.findUnique({
+        where: { word: finalWord },
+      });
+
+      if (existingCorrected) {
+        this.logger.log(
+          `Corrected word "${finalWord}" (from "${normalizedWord}") already exists in catalog.`,
+        );
+        return {
+          isNew: false,
+          message: 'Vocabulary retrieved from shared catalog.',
+          data: existingCorrected,
+        };
+      }
+    }
+
     // 3. Save to Vocabulary collection with race-condition handling
     try {
       const result = await this.prisma.vocabulary.create({
