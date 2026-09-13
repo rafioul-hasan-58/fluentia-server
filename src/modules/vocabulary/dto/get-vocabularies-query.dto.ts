@@ -6,7 +6,7 @@ import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 export class GetVocabulariesQueryDto {
   @ApiPropertyOptional({
     description:
-      'Search query matching word, English meaning, or Bangla meaning',
+      'Search query matching word, English meaning, Bangla meaning, or Bangla pronunciation',
     example: 'significant',
   })
   @IsOptional()

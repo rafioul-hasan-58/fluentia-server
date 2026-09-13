@@ -33,6 +33,7 @@ export const AiVocabularySchema = z.object({
     .transform((val) => val.trim().toLowerCase()),
   meaning: z.string().min(1, 'English meaning is required'),
   banglaMeaning: z.string().min(1, 'Bangla meaning is required'),
+  banglaPronunciation: z.string().optional(),
   partOfSpeech: PartOfSpeechEnum,
   collocations: z.array(z.string()).default([]),
   exampleSentences: z

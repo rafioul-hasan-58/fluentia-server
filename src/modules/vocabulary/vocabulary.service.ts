@@ -70,6 +70,7 @@ export class VocabularyService {
           word: finalWord,
           meaning: aiData.meaning,
           banglaMeaning: aiData.banglaMeaning,
+          banglaPronunciation: aiData.banglaPronunciation || null,
           partOfSpeech: aiData.partOfSpeech,
           collocations: aiData.collocations || [],
           exampleSentences: aiData.exampleSentences || [],
@@ -135,6 +136,7 @@ export class VocabularyService {
         { word: { contains: searchTerm, mode: 'insensitive' } },
         { meaning: { contains: searchTerm, mode: 'insensitive' } },
         { banglaMeaning: { contains: searchTerm, mode: 'insensitive' } },
+        { banglaPronunciation: { contains: searchTerm, mode: 'insensitive' } },
       ];
     }
 
@@ -272,6 +274,7 @@ export class VocabularyService {
         { word: { contains: searchTerm, mode: 'insensitive' } },
         { meaning: { contains: searchTerm, mode: 'insensitive' } },
         { banglaMeaning: { contains: searchTerm, mode: 'insensitive' } },
+        { banglaPronunciation: { contains: searchTerm, mode: 'insensitive' } },
       ];
       hasWordFilter = true;
     }
