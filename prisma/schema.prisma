@@ -264,9 +264,10 @@ model TestAttemptAnswer {
 model Vocabulary {
   id               String         @id @default(auto()) @map("_id") @db.ObjectId
   word             String         @unique
-  meaning          String
-  banglaMeaning    String
-  partOfSpeech     PartOfSpeech
+  meaning             String
+  banglaMeaning       String
+  banglaPronunciation String?
+  partOfSpeech        PartOfSpeech
   collocations     String[]
   exampleSentences String[]
   wordFamily       Json?
