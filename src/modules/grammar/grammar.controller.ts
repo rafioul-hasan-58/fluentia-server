@@ -1,13 +1,13 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { GrammarService, TeachResponse } from './grammar.service';
-import { TeachRequestDto } from './dto/teach-request.dto';
+import { TeachRequestDto } from './dto/teachRequest.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Grammar')
 @Controller('grammar')
 export class GrammarController {
-  constructor(private readonly grammarService: GrammarService) {}
+  constructor(private readonly grammarService: GrammarService) { }
 
   @Post('teach')
   @HttpCode(HttpStatus.OK)

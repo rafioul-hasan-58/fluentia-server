@@ -10,15 +10,15 @@ import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { LevelTestEvaluationInput } from '../ai/prompts/levelTest.prompt';
-import { CreateLevelTestQuestionDto } from './dto/create-level-test-question.dto';
-import { UpdateLevelTestQuestionDto } from './dto/update-level-test-question.dto';
-import { GetLevelTestQuestionsQueryDto } from './dto/get-level-test-questions-query.dto';
-import { SubmitLevelTestDto } from './dto/submit-level-test.dto';
-import { GetSubmissionsQueryDto } from './dto/get-submissions-query.dto';
-import { CreateLevelTestSetDto } from './dto/create-level-test-set.dto';
-import { UpdateLevelTestSetDto } from './dto/update-level-test-set.dto';
-import { ManageSetQuestionsDto } from './dto/manage-set-questions.dto';
-import { GetLevelTestSetsQueryDto } from './dto/get-level-test-sets-query.dto';
+import { CreateLevelTestQuestionDto } from './dto/createLevelTestQuestion.dto';
+import { UpdateLevelTestQuestionDto } from './dto/updateLevelTestQuestion.dto';
+import { GetLevelTestQuestionsQueryDto } from './dto/getLevelTestQuestions.query.dto';
+import { SubmitLevelTestDto } from './dto/submitLevelTest.dto';
+import { GetSubmissionsQueryDto } from './dto/getSubmissions.query.dto';
+import { CreateLevelTestSetDto } from './dto/createLevelTestSet.dto';
+import { UpdateLevelTestSetDto } from './dto/updateLevelTestSet.dto';
+import { ManageSetQuestionsDto } from './dto/manageSetQuestions.dto';
+import { GetLevelTestSetsQueryDto } from './dto/getLevelTestSets.query.dto';
 import {
   GradedQuestionItem,
   LevelTestSubmitResult,

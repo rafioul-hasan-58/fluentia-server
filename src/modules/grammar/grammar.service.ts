@@ -9,7 +9,7 @@ import { SkillsService } from '../skills/skills.service';
 import { AiService } from '../ai/ai.service';
 import { Lesson } from '../ai/schemas/lesson.schema';
 import { AiServiceError, AiValidationError } from '../ai/errors/ai.errors';
-import { TeachRequestDto } from './dto/teach-request.dto';
+import { TeachRequestDto } from './dto/teachRequest.dto';
 
 export interface TeachResponse {
   sessionId: string;

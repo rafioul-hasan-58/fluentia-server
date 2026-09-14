@@ -14,7 +14,7 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { QuestionOptionDto } from './question-option.dto';
+import { QuestionOptionDto } from './questionOption.dto';
 
 export class CreateLevelTestQuestionDto {
   @ApiProperty({
