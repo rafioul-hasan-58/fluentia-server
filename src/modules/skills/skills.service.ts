@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, Skill } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { GetSkillsQueryDto } from './dto/get-skills-query.dto';
+import { GetSkillsQueryDto } from './dto/getSkills.query.dto';
 
 @Injectable()
 export class SkillsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * Retrieves all grammar skills with optional filtering by category, CEFR level, or search keyword.

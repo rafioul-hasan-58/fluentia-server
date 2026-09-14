@@ -7,9 +7,9 @@ import { EnglishLevel, Prisma, Role } from '@prisma/client';
 import { UsersRepository } from './users.repository';
 import { PrismaService } from '../../prisma/prisma.service';
 import { S3Service } from '../s3';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import { GetUsersQueryDto, UserRoleFilter } from './dto/get-users-query.dto';
-import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
+import { UpdateProfileDto } from './dto/updateProfile.dto';
+import { GetUsersQueryDto, UserRoleFilter } from './dto/getUsers.query.dto';
+import { AdminUpdateUserDto } from './dto/adminUpdateUser.dto';
 import { calculateActiveStreak } from './utils/streak-calculator.util';
 
 @Injectable()
@@ -18,7 +18,7 @@ export class UsersService {
     private readonly usersRepository: UsersRepository,
     private readonly prisma: PrismaService,
     private readonly s3Service: S3Service,
-  ) {}
+  ) { }
 
   private isValidObjectId(id: string): boolean {
     return /^[0-9a-fA-F]{24}$/.test(id);

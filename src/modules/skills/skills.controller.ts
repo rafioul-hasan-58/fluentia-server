@@ -7,12 +7,12 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SkillsService } from './skills.service';
-import { GetSkillsQueryDto } from './dto/get-skills-query.dto';
+import { GetSkillsQueryDto } from './dto/getSkills.query.dto';
 
 @ApiTags('Skills')
 @Controller('skills')
 export class SkillsController {
-  constructor(private readonly skillsService: SkillsService) {}
+  constructor(private readonly skillsService: SkillsService) { }
 
   @Get()
   @ApiOperation({
