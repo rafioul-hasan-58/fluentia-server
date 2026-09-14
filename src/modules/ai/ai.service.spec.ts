@@ -42,7 +42,7 @@ describe('AiService', () => {
   describe('generateLesson', () => {
     it('should return a validated lesson on successful first attempt', async () => {
       jest
-        .spyOn<any, any>(service, 'callOpenAi')
+        .spyOn<any, any>(service, 'callAi')
         .mockResolvedValue(validLessonJson);
 
       const result = await service.generateLesson(
@@ -64,20 +64,20 @@ describe('AiService', () => {
     });
 
     it('should retry once when first attempt fails validation and succeed on second attempt', async () => {
-      const callOpenAiSpy = jest
-        .spyOn<any, any>(service, 'callOpenAi')
+      const callAiSpy = jest
+        .spyOn<any, any>(service, 'callAi')
         .mockResolvedValueOnce(invalidLessonJson)
         .mockResolvedValueOnce(validLessonJson);
 
       const result = await service.generateLesson('Present Perfect');
 
-      expect(callOpenAiSpy).toHaveBeenCalledTimes(2);
+      expect(callAiSpy).toHaveBeenCalledTimes(2);
       expect(result.title).toBe('Present Perfect');
     });
 
     it('should throw AiValidationError when validation fails twice', async () => {
       jest
-        .spyOn<any, any>(service, 'callOpenAi')
+        .spyOn<any, any>(service, 'callAi')
         .mockResolvedValue(invalidLessonJson);
 
       await expect(service.generateLesson('Present Perfect')).rejects.toThrow(
@@ -85,9 +85,9 @@ describe('AiService', () => {
       );
     });
 
-    it('should throw AiServiceError when callOpenAi throws an API error', async () => {
+    it('should throw AiServiceError when callAi throws an API error', async () => {
       jest
-        .spyOn<any, any>(service, 'callOpenAi')
+        .spyOn<any, any>(service, 'callAi')
         .mockRejectedValue(new Error('OpenAI API Connection Timeout'));
 
       await expect(service.generateLesson('Present Perfect')).rejects.toThrow(
@@ -136,7 +136,7 @@ describe('AiService', () => {
 
     it('should return validated vocabulary on successful first attempt', async () => {
       jest
-        .spyOn<any, any>(service, 'callOpenAi')
+        .spyOn<any, any>(service, 'callAi')
         .mockResolvedValue(validVocabularyJson);
 
       const result = await service.generateVocabulary('significant');
@@ -148,20 +148,20 @@ describe('AiService', () => {
     });
 
     it('should retry once when first attempt fails validation and succeed on second attempt', async () => {
-      const callOpenAiSpy = jest
-        .spyOn<any, any>(service, 'callOpenAi')
+      const callAiSpy = jest
+        .spyOn<any, any>(service, 'callAi')
         .mockResolvedValueOnce(invalidVocabularyJson)
         .mockResolvedValueOnce(validVocabularyJson);
 
       const result = await service.generateVocabulary('significant');
 
-      expect(callOpenAiSpy).toHaveBeenCalledTimes(2);
+      expect(callAiSpy).toHaveBeenCalledTimes(2);
       expect(result.word).toBe('significant');
     });
 
     it('should throw AiValidationError when validation fails twice', async () => {
       jest
-        .spyOn<any, any>(service, 'callOpenAi')
+        .spyOn<any, any>(service, 'callAi')
         .mockResolvedValue(invalidVocabularyJson);
 
       await expect(service.generateVocabulary('significant')).rejects.toThrow(
@@ -171,7 +171,7 @@ describe('AiService', () => {
 
     it('should throw AiServiceError when API call fails', async () => {
       jest
-        .spyOn<any, any>(service, 'callOpenAi')
+        .spyOn<any, any>(service, 'callAi')
         .mockRejectedValue(new Error('API failure'));
 
       await expect(service.generateVocabulary('significant')).rejects.toThrow(
@@ -239,9 +239,7 @@ describe('AiService', () => {
     });
 
     it('should return validated story on successful first attempt', async () => {
-      jest
-        .spyOn<any, any>(service, 'callOpenAi')
-        .mockResolvedValue(validStoryJson);
+      jest.spyOn<any, any>(service, 'callAi').mockResolvedValue(validStoryJson);
 
       const result = await service.generateVocabStory(
         mockWords,
@@ -257,20 +255,20 @@ describe('AiService', () => {
     });
 
     it('should retry once if target words are missing and succeed on second attempt', async () => {
-      const callOpenAiSpy = jest
-        .spyOn<any, any>(service, 'callOpenAi')
+      const callAiSpy = jest
+        .spyOn<any, any>(service, 'callAi')
         .mockResolvedValueOnce(missingWordStoryJson)
         .mockResolvedValueOnce(validStoryJson);
 
       const result = await service.generateVocabStory(mockWords);
 
-      expect(callOpenAiSpy).toHaveBeenCalledTimes(2);
+      expect(callAiSpy).toHaveBeenCalledTimes(2);
       expect(result.usedVocabulary).toEqual(['challenging', 'confidence']);
     });
 
     it('should throw AiValidationError when schema validation fails after retry', async () => {
       jest
-        .spyOn<any, any>(service, 'callOpenAi')
+        .spyOn<any, any>(service, 'callAi')
         .mockResolvedValue(invalidStoryJson);
 
       await expect(service.generateVocabStory(mockWords)).rejects.toThrow(
@@ -278,9 +276,9 @@ describe('AiService', () => {
       );
     });
 
-    it('should throw AiServiceError when callOpenAi throws', async () => {
+    it('should throw AiServiceError when callAi throws', async () => {
       jest
-        .spyOn<any, any>(service, 'callOpenAi')
+        .spyOn<any, any>(service, 'callAi')
         .mockRejectedValue(new Error('Network error'));
 
       await expect(service.generateVocabStory(mockWords)).rejects.toThrow(

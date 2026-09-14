@@ -72,9 +72,7 @@ export class PlatformSettingsService implements OnModuleInit {
     }
   }
 
-  /**
-   * Retrieves the singleton platform setting record or creates a default one.
-   */
+  //  retrieve or create platform setting
   async getOrCreateSettings(): Promise<PlatformSetting> {
     const now = Date.now();
     if (this.cachedSettings && now < this.cacheExpiresAt) {
@@ -160,9 +158,7 @@ export class PlatformSettingsService implements OnModuleInit {
     return setting;
   }
 
-  /**
-   * Updates platform setting document.
-   */
+  //  update platform settings
   async updateSettings(
     dto: UpdatePlatformSettingDto,
   ): Promise<PublicPlatformSettings> {
@@ -210,17 +206,13 @@ export class PlatformSettingsService implements OnModuleInit {
     return this.formatPublicSettings(updated);
   }
 
-  /**
-   * Returns sanitized public representation with masked keys.
-   */
+  // get sanitized public representation
   async getPublicSettings(): Promise<PublicPlatformSettings> {
     const setting = await this.getOrCreateSettings();
     return this.formatPublicSettings(setting);
   }
 
-  /**
-   * Resolves the current active AI configuration ready for API calls.
-   */
+  //  retrieve active ai config ready for api calls
   async getActiveAiConfig(): Promise<ActiveAiConfig> {
     const setting = await this.getOrCreateSettings();
     const provider = (setting.activeProvider?.toLowerCase() ||
@@ -263,9 +255,7 @@ export class PlatformSettingsService implements OnModuleInit {
     };
   }
 
-  /**
-   * Helper to format public platform settings.
-   */
+  // helper to format public platform settings
   private formatPublicSettings(
     setting: PlatformSetting,
   ): PublicPlatformSettings {
@@ -299,9 +289,7 @@ export class PlatformSettingsService implements OnModuleInit {
     };
   }
 
-  /**
-   * Masks an API key for safe UI inspection (e.g. sk-proj-...xxxx).
-   */
+  // masks an api key for safe ui inspection
   private maskApiKey(key?: string | null): string | null {
     if (!key) return null;
     const trimmed = key.trim();

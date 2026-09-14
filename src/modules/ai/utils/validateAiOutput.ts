@@ -22,9 +22,7 @@ export function cleanRawJson(content: string): string {
   return cleaned.trim();
 }
 
-/**
- * Generic helper to parse raw JSON from AI and validate it against a Zod schema.
- */
+// validate ai output
 export function validateAiOutput<T>(
   rawContent: string | null,
   schema: z.ZodType<T>,
@@ -68,36 +66,28 @@ export function validateAiOutput<T>(
   };
 }
 
-/**
- * Parses JSON string and validates it against LevelTestAnalysisSchema.
- */
+// parse and validate level test analysis
 export function parseAndValidateLevelTestAnalysis(
   rawContent: string | null,
 ): ValidationResult<LevelTestAnalysis> {
   return validateAiOutput(rawContent, LevelTestAnalysisSchema);
 }
 
-/**
- * Parses JSON string and validates it against LessonSchema.
- */
+// parse and validate lesson
 export function parseAndValidateLesson(
   rawContent: string | null,
 ): ValidationResult<Lesson> {
   return validateAiOutput(rawContent, LessonSchema);
 }
 
-/**
- * Parses JSON string and validates it against AiVocabularySchema.
- */
+// parse and validate vocabulary
 export function parseAndValidateVocabulary(
   rawContent: string | null,
 ): ValidationResult<AiVocabulary> {
   return validateAiOutput(rawContent, AiVocabularySchema);
 }
 
-/**
- * Parses JSON string and validates it against VocabStorySchema.
- */
+// parse and validate vocab story
 export function parseAndValidateVocabStory(
   rawContent: string | null,
 ): ValidationResult<VocabStoryAiOutput> {

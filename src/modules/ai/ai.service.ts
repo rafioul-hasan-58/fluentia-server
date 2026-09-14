@@ -23,7 +23,7 @@ import {
   parseAndValidateVocabulary,
   parseAndValidateVocabStory,
 } from './utils/validateAiOutput';
-import { callOpenAi } from './utils/ai.config';
+import { callAi } from './utils/ai.config';
 import { PlatformSettingsService } from '../platformSettings';
 
 @Injectable()
@@ -67,10 +67,10 @@ export class AiService implements OnModuleInit {
     // Initial attempt
     let rawContent: string | null;
     try {
-      rawContent = await this.callOpenAi(basePrompt);
+      rawContent = await this.callAi(basePrompt);
     } catch (error) {
       this.logger.error(
-        `OpenAI API call failed for skill "${skillName}": ${error instanceof Error ? error.message : String(error)}`,
+        `AI API call failed for skill "${skillName}": ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new AiServiceError('Failed to communicate with AI service', error);
     }
@@ -89,10 +89,10 @@ export class AiService implements OnModuleInit {
 
     let retryRawContent: string | null;
     try {
-      retryRawContent = await this.callOpenAi(retryPrompt);
+      retryRawContent = await this.callAi(retryPrompt);
     } catch (error) {
       this.logger.error(
-        `OpenAI API call failed on retry for skill "${skillName}": ${error instanceof Error ? error.message : String(error)}`,
+        `AI API call failed on retry for skill "${skillName}": ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new AiServiceError(
         'Failed to communicate with AI service on retry',
@@ -122,10 +122,10 @@ export class AiService implements OnModuleInit {
 
     let rawContent: string | null;
     try {
-      rawContent = await this.callOpenAi(basePrompt);
+      rawContent = await this.callAi(basePrompt);
     } catch (error) {
       this.logger.error(
-        `OpenAI API call failed during level test analysis: ${error instanceof Error ? error.message : String(error)}`,
+        `AI API call failed during level test analysis: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new AiServiceError(
         'Failed to communicate with AI service during level test evaluation',
@@ -146,10 +146,10 @@ export class AiService implements OnModuleInit {
 
     let retryRawContent: string | null;
     try {
-      retryRawContent = await this.callOpenAi(retryPrompt);
+      retryRawContent = await this.callAi(retryPrompt);
     } catch (error) {
       this.logger.error(
-        `OpenAI API call failed on retry during level test evaluation: ${error instanceof Error ? error.message : String(error)}`,
+        `AI API call failed on retry during level test evaluation: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new AiServiceError(
         'Failed to communicate with AI service on retry during level test evaluation',
@@ -179,10 +179,10 @@ export class AiService implements OnModuleInit {
 
     let rawContent: string | null;
     try {
-      rawContent = await this.callOpenAi(basePrompt);
+      rawContent = await this.callAi(basePrompt);
     } catch (error) {
       this.logger.error(
-        `OpenAI API call failed for vocabulary "${normalizedWord}": ${error instanceof Error ? error.message : String(error)}`,
+        `AI API call failed for vocabulary "${normalizedWord}": ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new AiServiceError(
         'Failed to communicate with AI service during vocabulary generation',
@@ -203,10 +203,10 @@ export class AiService implements OnModuleInit {
 
     let retryRawContent: string | null;
     try {
-      retryRawContent = await this.callOpenAi(retryPrompt);
+      retryRawContent = await this.callAi(retryPrompt);
     } catch (error) {
       this.logger.error(
-        `OpenAI API call failed on retry for vocabulary "${normalizedWord}": ${error instanceof Error ? error.message : String(error)}`,
+        `AI API call failed on retry for vocabulary "${normalizedWord}": ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new AiServiceError(
         'Failed to communicate with AI service on retry during vocabulary generation',
@@ -237,10 +237,10 @@ export class AiService implements OnModuleInit {
 
     let rawContent: string | null;
     try {
-      rawContent = await this.callOpenAi(basePrompt);
+      rawContent = await this.callAi(basePrompt);
     } catch (error) {
       this.logger.error(
-        `OpenAI API call failed during vocab story generation: ${error instanceof Error ? error.message : String(error)}`,
+        `AI API call failed during vocab story generation: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new AiServiceError(
         'Failed to communicate with AI service during story generation',
@@ -273,10 +273,10 @@ export class AiService implements OnModuleInit {
 
     let retryRawContent: string | null;
     try {
-      retryRawContent = await this.callOpenAi(retryPrompt);
+      retryRawContent = await this.callAi(retryPrompt);
     } catch (error) {
       this.logger.error(
-        `OpenAI API call failed on retry during vocab story generation: ${error instanceof Error ? error.message : String(error)}`,
+        `AI API call failed on retry during vocab story generation: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw new AiServiceError(
         'Failed to communicate with AI service on retry during story generation',
@@ -379,13 +379,13 @@ export class AiService implements OnModuleInit {
   /**
    * Executes a chat completion call with the configured AI provider and model requesting JSON output format.
    */
-  private async callOpenAi(prompt: string): Promise<string | null> {
+  private async callAi(prompt: string): Promise<string | null> {
     if (this.platformSettingsService) {
       try {
         const config = await this.platformSettingsService.getActiveAiConfig();
         if (config.apiKey) {
           const client = this.getClient(config.apiKey, config.baseURL);
-          return await callOpenAi(client, prompt, config.model);
+          return await callAi(client, prompt, config.model);
         }
         this.logger.warn(
           `No API key configured for active AI provider "${config.provider}". Falling back to default OpenAI client.`,
@@ -396,6 +396,6 @@ export class AiService implements OnModuleInit {
         );
       }
     }
-    return callOpenAi(this.openai, prompt, this.model);
+    return callAi(this.openai, prompt, this.model);
   }
 }

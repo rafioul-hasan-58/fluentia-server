@@ -9,15 +9,8 @@ export interface CallOptions {
 const DEFAULT_SYSTEM_PROMPT =
   'You are an expert English Language Assessment and Pedagogical AI Tutor. You must only output valid JSON.';
 
-/**
- * Executes a chat completion call with OpenAI requesting JSON output format.
- *
- * @param openai - The OpenAI client instance.
- * @param prompt - The prompt content for the user message.
- * @param modelOrOptions - Model name string or configuration options.
- * @returns Raw string content returned from OpenAI.
- */
-export async function callOpenAi(
+// call ai provider
+export async function callAi(
   openai: OpenAI,
   prompt: string,
   modelOrOptions: string | CallOptions = 'gpt-4o-mini',
