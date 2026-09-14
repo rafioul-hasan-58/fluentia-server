@@ -96,7 +96,6 @@ describe('MyVocabularyController', () => {
           total: 1,
           page: 1,
           limit: 10,
-          totalPage: 1,
           totalPages: 1,
         },
       };

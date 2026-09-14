@@ -2,7 +2,6 @@ export interface QueryPaginationResult {
   page: number;
   limit: number;
   total: number;
-  totalPage: number;
   totalPages: number;
 }
 
@@ -271,14 +270,13 @@ export class QueryBuilder<T = any> {
     });
     const page = Math.max(1, Number(this.query.page) || 1);
     const limit = Math.max(1, Number(this.query.limit) || 10);
-    const totalPage = Math.ceil(total / limit) || 1;
+    const totalPages = Math.ceil(total / limit) || 1;
 
     return {
       page,
       limit,
       total,
-      totalPage,
-      totalPages: totalPage,
+      totalPages,
     };
   }
 
