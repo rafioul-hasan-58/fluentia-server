@@ -17,13 +17,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../../common/guards/auth.guard';
-import { VocabularyCoreService } from './vocabulary-core.service';
+import { VocabularyCoreService } from './vocabularyCore.service';
 import { GenerateVocabularyDto, GetVocabulariesQueryDto } from './dto';
 
 @ApiTags('Vocabulary')
 @Controller('vocabularies')
 export class VocabularyCoreController {
-  constructor(private readonly vocabularyCoreService: VocabularyCoreService) {}
+  constructor(private readonly vocabularyCoreService: VocabularyCoreService) { }
 
   @Post('generate')
   @HttpCode(HttpStatus.OK)

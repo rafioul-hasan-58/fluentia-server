@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../../prisma/prisma.module';
 import { AuthModule } from '../../../auth/auth.module';
 import { AiModule } from '../../ai/ai.module';
-import { VocabularyCoreController } from './vocabulary-core.controller';
-import { VocabularyCoreService } from './vocabulary-core.service';
+import { VocabularyCoreController } from './vocabularyCore.controller';
+import { VocabularyCoreService } from './vocabularyCore.service';
 
 @Module({
   imports: [PrismaModule, AuthModule, AiModule],
@@ -11,4 +11,4 @@ import { VocabularyCoreService } from './vocabulary-core.service';
   providers: [VocabularyCoreService],
   exports: [VocabularyCoreService],
 })
-export class VocabularyCoreModule {}
+export class VocabularyCoreModule { }

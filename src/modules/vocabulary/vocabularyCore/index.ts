@@ -1,4 +1,4 @@
-export * from './vocabulary-core.module';
-export * from './vocabulary-core.service';
-export * from './vocabulary-core.controller';
+export * from './vocabularyCore.module';
+export * from './vocabularyCore.service';
+export * from './vocabularyCore.controller';
 export * from './dto';

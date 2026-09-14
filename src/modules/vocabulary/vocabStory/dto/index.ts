@@ -1,3 +1,3 @@
-export * from './generate-vocab-story.dto';
-export * from './get-vocab-stories-query.dto';
-export * from './update-vocab-story-title.dto';
+export * from './generateVocabStory.dto';
+export * from './getVocabStories.query.dto';
+export * from './updateVocabStoryTitle.dto';

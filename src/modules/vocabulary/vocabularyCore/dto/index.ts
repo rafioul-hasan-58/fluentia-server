@@ -1,2 +1,2 @@
-export * from './generate-vocabulary.dto';
-export * from './get-vocabularies-query.dto';
+export * from './generateVocabulary.dto';
+export * from './getVocabularies.query.dto';
