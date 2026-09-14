@@ -110,8 +110,9 @@ describe('MyVocabularyController', () => {
         status: VocabularyStatus.LEARNING,
       });
       expect(result).toEqual({
-        message: 'Personal vocabularies retrieved successfully.',
-        ...listResult,
+        message: 'Personal vocabulary retrieved successfully!',
+        meta: listResult.meta,
+        data: listResult.result,
       });
     });
   });

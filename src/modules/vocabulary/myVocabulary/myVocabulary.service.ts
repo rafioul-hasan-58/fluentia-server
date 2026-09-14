@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -20,11 +19,6 @@ export class MyVocabularyService {
     private readonly prisma: PrismaService,
     private readonly vocabularyCoreService: VocabularyCoreService,
   ) {}
-
-  // check valid mongo db id
-  isValidObjectId(id: string): boolean {
-    return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
-  }
 
   // add vocabulary to user's personal collection
   async addToMyVocabulary(userId: string, dto: AddMyVocabularyDto) {
@@ -121,12 +115,6 @@ export class MyVocabularyService {
 
   // find vocab details
   async findMyVocabularyById(userId: string, id: string) {
-    if (!this.isValidObjectId(id)) {
-      throw new BadRequestException(
-        `Invalid personal vocabulary ID format: '${id}'`,
-      );
-    }
-
     const item = await this.prisma.myVocabulary.findUnique({
       where: { id },
       include: {

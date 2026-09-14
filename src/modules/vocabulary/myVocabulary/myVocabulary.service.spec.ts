@@ -195,10 +195,11 @@ describe('MyVocabularyService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException on invalid ID', async () => {
+    it('should throw NotFoundException on non-existent or invalid ID', async () => {
+      prismaService.myVocabulary.findUnique.mockResolvedValue(null);
       await expect(
         service.findMyVocabularyById(mockUserId, 'invalid'),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

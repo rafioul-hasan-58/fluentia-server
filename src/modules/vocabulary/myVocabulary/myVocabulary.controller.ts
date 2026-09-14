@@ -73,7 +73,7 @@ export class MyVocabularyController {
     };
   }
 
-  @Get()
+  @Get('find-all')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get all personal vocabularies for authenticated user',
@@ -92,13 +92,14 @@ export class MyVocabularyController {
     @CurrentUser('id') userId: string,
     @Query() query: GetMyVocabulariesQueryDto,
   ) {
-    const data = await this.myVocabularyService.findMyVocabularies(
+    const { result, meta } = await this.myVocabularyService.findMyVocabularies(
       userId,
       query,
     );
     return {
-      message: 'Personal vocabularies retrieved successfully.',
-      ...data,
+      message: 'Personal vocabulary retrieved successfully!',
+      meta,
+      data: result,
     };
   }
 
