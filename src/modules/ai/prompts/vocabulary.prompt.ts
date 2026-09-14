@@ -1,6 +1,4 @@
-/**
- * Builds the AI prompt for generating comprehensive vocabulary metadata and learning details.
- */
+// build the prompt for generating vocabulary metadata
 export function buildVocabularyPrompt(word: string): string {
   const normalizedWord = word.trim().toLowerCase();
 

@@ -12,9 +12,7 @@ export interface BuildVocabStoryPromptInput {
   context?: string;
 }
 
-/**
- * Builds the AI prompt for generating bilingual (Bangla-English mixed) and full-English vocabulary stories.
- */
+// build the prompt for generating vocab story
 export function buildVocabStoryPrompt(
   input: BuildVocabStoryPromptInput,
 ): string {
