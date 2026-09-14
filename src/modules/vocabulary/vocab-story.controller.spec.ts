@@ -28,6 +28,7 @@ describe('VocabStoryController', () => {
       findUserStories: jest.fn(),
       findUserStoryById: jest.fn(),
       deleteUserStory: jest.fn(),
+      updateStoryTitle: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -119,6 +120,50 @@ describe('VocabStoryController', () => {
         mockStoryId,
       );
       expect(result).toEqual(deleteResult);
+    });
+  });
+
+  describe('updateStoryTitle', () => {
+    it('should update story title and return message with data', async () => {
+      const updatedStory = { ...mockStory, title: 'Updated Title' };
+      service.updateStoryTitle.mockResolvedValue(updatedStory);
+
+      const dto = { title: 'Updated Title' };
+      const result = await controller.updateStoryTitle(
+        mockUserId,
+        mockStoryId,
+        dto,
+      );
+
+      expect(service.updateStoryTitle).toHaveBeenCalledWith(
+        mockUserId,
+        mockStoryId,
+        dto.title,
+      );
+      expect(result).toEqual({
+        message: 'Vocabulary story title updated successfully.',
+        data: updatedStory,
+      });
+    });
+  });
+
+  describe('updateStory', () => {
+    it('should call updateStoryTitle and return message with data', async () => {
+      const updatedStory = { ...mockStory, title: 'Updated Title' };
+      service.updateStoryTitle.mockResolvedValue(updatedStory);
+
+      const dto = { title: 'Updated Title' };
+      const result = await controller.updateStory(mockUserId, mockStoryId, dto);
+
+      expect(service.updateStoryTitle).toHaveBeenCalledWith(
+        mockUserId,
+        mockStoryId,
+        dto.title,
+      );
+      expect(result).toEqual({
+        message: 'Vocabulary story title updated successfully.',
+        data: updatedStory,
+      });
     });
   });
 });

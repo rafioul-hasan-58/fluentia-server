@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -20,7 +21,11 @@ import {
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { VocabStoryService } from './vocab-story.service';
-import { GenerateVocabStoryDto, GetVocabStoriesQueryDto } from './dto';
+import {
+  GenerateVocabStoryDto,
+  GetVocabStoriesQueryDto,
+  UpdateVocabStoryTitleDto,
+} from './dto';
 
 @ApiTags('Vocab Story')
 @ApiBearerAuth()
@@ -163,5 +168,85 @@ export class VocabStoryController {
   ) {
     const result = await this.vocabStoryService.deleteUserStory(userId, id);
     return result;
+  }
+
+  @Patch(':id/title')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update vocabulary story title',
+    description:
+      'Updates the title of a specific vocabulary story owned by the authenticated user.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ObjectId of the VocabStory record',
+    example: '665f1b2e1111111111111111',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Vocabulary story title updated successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid ID format or empty title.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Vocabulary story not found.',
+  })
+  async updateStoryTitle(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateVocabStoryTitleDto,
+  ) {
+    const data = await this.vocabStoryService.updateStoryTitle(
+      userId,
+      id,
+      dto.title,
+    );
+    return {
+      message: 'Vocabulary story title updated successfully.',
+      data,
+    };
+  }
+
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Update vocabulary story',
+    description:
+      'Updates the title of a specific vocabulary story owned by the authenticated user.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ObjectId of the VocabStory record',
+    example: '665f1b2e1111111111111111',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Vocabulary story title updated successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — Invalid ID format or empty title.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Vocabulary story not found.',
+  })
+  async updateStory(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateVocabStoryTitleDto,
+  ) {
+    return this.updateStoryTitle(userId, id, dto);
   }
 }

@@ -204,4 +204,32 @@ export class VocabStoryService {
       message: 'Vocabulary story deleted successfully.',
     };
   }
+
+  /**
+   * Updates the title of a vocabulary story owned by the authenticated user.
+   */
+  async updateStoryTitle(userId: string, id: string, title: string) {
+    if (!this.isValidObjectId(id)) {
+      throw new BadRequestException(
+        `Invalid vocabulary story ID format: '${id}'`,
+      );
+    }
+
+    const trimmedTitle = typeof title === 'string' ? title.trim() : '';
+    if (!trimmedTitle) {
+      throw new BadRequestException('Story title cannot be empty');
+    }
+
+    // Verify ownership and existence
+    await this.findUserStoryById(userId, id);
+
+    const updatedStory = await this.prisma.vocabStory.update({
+      where: { id },
+      data: {
+        title: trimmedTitle,
+      },
+    });
+
+    return updatedStory;
+  }
 }

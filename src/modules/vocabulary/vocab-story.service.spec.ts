@@ -80,6 +80,7 @@ describe('VocabStoryService', () => {
         findMany: jest.fn(),
         count: jest.fn(),
         findUnique: jest.fn(),
+        update: jest.fn(),
         delete: jest.fn(),
       },
     };
@@ -274,6 +275,55 @@ describe('VocabStoryService', () => {
         where: { id: mockStoryId },
       });
       expect(result.message).toContain('deleted successfully');
+    });
+  });
+
+  describe('updateStoryTitle', () => {
+    it('should update story title when owned by user', async () => {
+      prismaService.vocabStory.findUnique.mockResolvedValue(mockStory);
+      const updatedMockStory = {
+        ...mockStory,
+        title: 'New Story Title',
+      };
+      prismaService.vocabStory.update.mockResolvedValue(updatedMockStory);
+
+      const result = await service.updateStoryTitle(
+        mockUserId,
+        mockStoryId,
+        'New Story Title',
+      );
+
+      expect(prismaService.vocabStory.findUnique).toHaveBeenCalledWith({
+        where: { id: mockStoryId },
+      });
+      expect(prismaService.vocabStory.update).toHaveBeenCalledWith({
+        where: { id: mockStoryId },
+        data: { title: 'New Story Title' },
+      });
+      expect(result).toEqual(updatedMockStory);
+    });
+
+    it('should throw BadRequestException on invalid ID format', async () => {
+      await expect(
+        service.updateStoryTitle(mockUserId, 'invalid-id', 'New Title'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when title is empty', async () => {
+      await expect(
+        service.updateStoryTitle(mockUserId, mockStoryId, '   '),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when story belongs to another user', async () => {
+      prismaService.vocabStory.findUnique.mockResolvedValue({
+        ...mockStory,
+        userId: mockOtherUserId,
+      });
+
+      await expect(
+        service.updateStoryTitle(mockUserId, mockStoryId, 'New Title'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });
