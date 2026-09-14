@@ -11,4 +11,4 @@ import { VocabularyCoreService } from './vocabularyCore.service';
   providers: [VocabularyCoreService],
   exports: [VocabularyCoreService],
 })
-export class VocabularyCoreModule { }
+export class VocabularyCoreModule {}

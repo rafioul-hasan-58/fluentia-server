@@ -6,7 +6,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnglishLevel, PartOfSpeech, VocabularyStatus } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { VocabularyCoreService } from '../vocabulary-core/vocabulary-core.service';
+import { VocabularyCoreService } from '../vocabularyCore';
 import { MyVocabularyService } from './myVocabulary.service';
 
 describe('MyVocabularyService', () => {
@@ -109,7 +109,6 @@ describe('MyVocabularyService', () => {
           vocabularyStatus: VocabularyStatus.LEARNING,
           isFavourate: false,
         },
-        include: { word: true },
       });
       expect(result).toEqual(mockMyVocabulary);
     });
@@ -136,6 +135,10 @@ describe('MyVocabularyService', () => {
     });
 
     it('should throw BadRequestException on invalid wordId format', async () => {
+      vocabularyCoreService.findVocabularyById.mockRejectedValue(
+        new BadRequestException("Invalid wordId format: 'invalid'"),
+      );
+
       await expect(
         service.addToMyVocabulary(mockUserId, { wordId: 'invalid' }),
       ).rejects.toThrow(BadRequestException);
@@ -165,8 +168,8 @@ describe('MyVocabularyService', () => {
         orderBy: { updatedAt: 'desc' },
         include: { word: true },
       });
-      expect(result.items).toEqual([mockMyVocabulary]);
-      expect(result.total).toBe(1);
+      expect(result.result).toEqual([mockMyVocabulary]);
+      expect(result.meta.total).toBe(1);
     });
   });
 

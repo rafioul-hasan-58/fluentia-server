@@ -32,7 +32,7 @@ import {
 @UseGuards(AuthGuard)
 @Controller('my-vocabularies')
 export class MyVocabularyController {
-  constructor(private readonly myVocabularyService: MyVocabularyService) { }
+  constructor(private readonly myVocabularyService: MyVocabularyService) {}
 
   @Post('save')
   @HttpCode(HttpStatus.CREATED)

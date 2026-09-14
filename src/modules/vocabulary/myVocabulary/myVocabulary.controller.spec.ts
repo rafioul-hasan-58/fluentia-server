@@ -91,13 +91,16 @@ describe('MyVocabularyController', () => {
   describe('findMyVocabularies', () => {
     it('should return paginated personal vocabularies', async () => {
       const listResult = {
-        items: [mockMyVocabulary],
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
+        result: [mockMyVocabulary],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPage: 1,
+          totalPages: 1,
+        },
       };
-      service.findMyVocabularies.mockResolvedValue(listResult);
+      service.findMyVocabularies.mockResolvedValue(listResult as any);
 
       const result = await controller.findMyVocabularies(mockUserId, {
         status: VocabularyStatus.LEARNING,

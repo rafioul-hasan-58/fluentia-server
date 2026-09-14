@@ -12,6 +12,7 @@ import {
   UpdateMyVocabularyDto,
 } from './dto';
 import { VocabularyCoreService } from '../vocabularyCore';
+import { QueryBuilder } from '../../../infrastructure';
 
 @Injectable()
 export class MyVocabularyService {
@@ -25,19 +26,12 @@ export class MyVocabularyService {
     return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
   }
 
-  /**
-   * Adds a global vocabulary to the authenticated user's personal MyVocabulary collection.
-   */
+  // add vocabulary to user's personal collection
   async addToMyVocabulary(userId: string, dto: AddMyVocabularyDto) {
-    if (!this.isValidObjectId(dto.wordId)) {
-      throw new BadRequestException(`Invalid wordId format: '${dto.wordId}'`);
-    }
+    // Verify global Vocabulary exists using VocabularyCoreService
+    await this.vocabularyCoreService.findVocabularyById(dto.wordId);
 
-    // 1. Verify global Vocabulary exists using VocabularyCoreService
-    const globalVocabulary =
-      await this.vocabularyCoreService.findVocabularyById(dto.wordId);
-
-    // 2. Check if user already added this word
+    // Check if user already added this word
     const existing = await this.prisma.myVocabulary.findUnique({
       where: {
         userId_wordId: {
@@ -45,14 +39,11 @@ export class MyVocabularyService {
           wordId: dto.wordId,
         },
       },
-      include: {
-        word: true,
-      },
     });
 
     if (existing) {
       throw new ConflictException(
-        `'${globalVocabulary.word}' is already in your personal vocabulary collection`,
+        'This vocabulary word is already in your personal collection',
       );
     }
 
@@ -67,32 +58,23 @@ export class MyVocabularyService {
         vocabularyStatus: VocabularyStatus.LEARNING,
         isFavourate: false,
       },
-      include: {
-        word: true,
-      },
     });
 
     return created;
   }
 
-  /**
-   * Retrieves the authenticated user's personal vocabularies with pagination and filters.
-   */
+  //  get all vocabulary of this user
   async findMyVocabularies(userId: string, query: GetMyVocabulariesQueryDto) {
-    const page = query.page && query.page > 0 ? query.page : 1;
-    const limit = query.limit && query.limit > 0 ? query.limit : 10;
-    const skip = (page - 1) * limit;
-
-    const where: Prisma.MyVocabularyWhereInput = {
+    const rawWhere: Prisma.MyVocabularyWhereInput = {
       userId,
     };
 
     if (query.status) {
-      where.vocabularyStatus = query.status;
+      rawWhere.vocabularyStatus = query.status;
     }
 
     if (query.isFavourate !== undefined) {
-      where.isFavourate = query.isFavourate;
+      rawWhere.isFavourate = query.isFavourate;
     }
 
     const wordFilter: Prisma.VocabularyWhereInput = {};
@@ -108,46 +90,36 @@ export class MyVocabularyService {
       hasWordFilter = true;
     }
 
-    if (query.search && query.search.trim()) {
-      const searchTerm = query.search.trim();
-      wordFilter.OR = [
-        { word: { contains: searchTerm, mode: 'insensitive' } },
-        { meaning: { contains: searchTerm, mode: 'insensitive' } },
-        { banglaMeaning: { contains: searchTerm, mode: 'insensitive' } },
-        { banglaPronunciation: { contains: searchTerm, mode: 'insensitive' } },
-      ];
-      hasWordFilter = true;
-    }
-
     if (hasWordFilter) {
-      where.word = wordFilter;
+      rawWhere.word = wordFilter;
     }
 
-    const [total, items] = await Promise.all([
-      this.prisma.myVocabulary.count({ where }),
-      this.prisma.myVocabulary.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { updatedAt: 'desc' },
-        include: {
-          word: true,
-        },
-      }),
+    const queryBuilder = new QueryBuilder(
+      this.prisma.myVocabulary,
+      query as unknown as Record<string, unknown>,
+    )
+      .search([
+        'word.word',
+        'word.meaning',
+        'word.banglaMeaning',
+        'word.banglaPronunciation',
+      ])
+      .rawFilter(rawWhere)
+      .sort('-updatedAt')
+      .paginate()
+      .include({
+        word: true,
+      });
+
+    const [result, meta] = await Promise.all([
+      queryBuilder.execute(),
+      queryBuilder.count(),
     ]);
 
-    return {
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit) || 1,
-    };
+    return { result, meta };
   }
 
-  /**
-   * Retrieves a single personal vocabulary item by ID, scoped to the authenticated user.
-   */
+  // find vocab details
   async findMyVocabularyById(userId: string, id: string) {
     if (!this.isValidObjectId(id)) {
       throw new BadRequestException(
