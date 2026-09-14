@@ -2,7 +2,6 @@ import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { EnvConfig } from '../../config/env.schema';
-import { PlatformSettingsService } from '../platform-settings/platformSettings.service';
 import { Lesson } from './schemas/lesson.schema';
 import { LevelTestAnalysis } from './schemas/levelTest.schema';
 import { AiVocabulary } from './schemas/vocabulary.schema';
@@ -25,6 +24,7 @@ import {
   parseAndValidateVocabStory,
 } from './utils/validateAiOutput';
 import { callOpenAi } from './utils/ai.config';
+import { PlatformSettingsService } from '../platformSettings';
 
 @Injectable()
 export class AiService implements OnModuleInit {
@@ -38,7 +38,7 @@ export class AiService implements OnModuleInit {
     private readonly configService: ConfigService<EnvConfig, true>,
     @Optional()
     private readonly platformSettingsService?: PlatformSettingsService,
-  ) { }
+  ) {}
 
   onModuleInit() {
     const apiKey =
@@ -251,10 +251,10 @@ export class AiService implements OnModuleInit {
     const validationResult = parseAndValidateVocabStory(rawContent);
     const presenceCheck = validationResult.success
       ? this.checkStoryVocabularyPresence(
-        validationResult.data.storyBangla,
-        validationResult.data.storyEnglish,
-        words,
-      )
+          validationResult.data.storyBangla,
+          validationResult.data.storyEnglish,
+          words,
+        )
       : { valid: false, missingWords: [] };
 
     if (validationResult.success && presenceCheck.valid) {

@@ -23,14 +23,14 @@ import {
 import {
   SUPPORTED_AI_PROVIDERS,
   UpdatePlatformSettingDto,
-} from './dto/update-platform-setting.dto';
+} from './dto/updatePlatformSetting.dto';
 
 @ApiTags('Platform Settings')
 @Controller('platform-settings')
 export class PlatformSettingsController {
   constructor(
     private readonly platformSettingsService: PlatformSettingsService,
-  ) { }
+  ) {}
 
   @Get()
   @UseGuards(AuthGuard)

@@ -4,11 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  EnglishLevel,
-  PartOfSpeech,
-  VocabularyStatus,
-} from '@prisma/client';
+import { EnglishLevel, PartOfSpeech, VocabularyStatus } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { VocabularyCoreService } from '../vocabulary-core/vocabulary-core.service';
 import { MyVocabularyService } from './my-vocabulary.service';
@@ -35,12 +31,8 @@ describe('MyVocabularyService', () => {
         exampleSentence: 'There was a significant increase in sales.',
       },
     ],
-    wordFamily: [
-      { word: 'significance', partOfSpeech: PartOfSpeech.NOUN },
-    ],
-    synonyms: [
-      { word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE },
-    ],
+    wordFamily: [{ word: 'significance', partOfSpeech: PartOfSpeech.NOUN }],
+    synonyms: [{ word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE }],
     antonyms: [{ word: 'insignificant', partOfSpeech: PartOfSpeech.ADJECTIVE }],
     englishLevel: EnglishLevel.B1,
     createdAt: new Date(),
@@ -94,7 +86,9 @@ describe('MyVocabularyService', () => {
 
   describe('addToMyVocabulary', () => {
     it('should add global vocabulary to user collection with default LEARNING status', async () => {
-      vocabularyCoreService.findVocabularyById.mockResolvedValue(mockVocabulary);
+      vocabularyCoreService.findVocabularyById.mockResolvedValue(
+        mockVocabulary,
+      );
       prismaService.myVocabulary.findUnique.mockResolvedValue(null);
       prismaService.myVocabulary.create.mockResolvedValue(mockMyVocabulary);
 
@@ -121,7 +115,9 @@ describe('MyVocabularyService', () => {
     });
 
     it('should throw ConflictException if user already has this word', async () => {
-      vocabularyCoreService.findVocabularyById.mockResolvedValue(mockVocabulary);
+      vocabularyCoreService.findVocabularyById.mockResolvedValue(
+        mockVocabulary,
+      );
       prismaService.myVocabulary.findUnique.mockResolvedValue(mockMyVocabulary);
 
       await expect(

@@ -3,4 +3,4 @@ import { CreateLevelTestQuestionDto } from './createLevelTestQuestion.dto';
 
 export class UpdateLevelTestQuestionDto extends PartialType(
   CreateLevelTestQuestionDto,
-) { }
+) {}

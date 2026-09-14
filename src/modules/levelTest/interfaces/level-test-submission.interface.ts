@@ -183,9 +183,9 @@ export interface TestAttemptEntityInput {
   createdAt: Date;
   updatedAt?: Date;
   sectionBreakdown?:
-  Record<string, RawSectionMetricItem> | Prisma.JsonValue | null;
+    Record<string, RawSectionMetricItem> | Prisma.JsonValue | null;
   aiAnalysis?:
-  RawAiAnalysisSummary | LevelTestAnalysis | Prisma.JsonValue | null;
+    RawAiAnalysisSummary | LevelTestAnalysis | Prisma.JsonValue | null;
   user?: TestAttemptUserRelation | null;
   answers?: TestAttemptAnswerRelation[] | null;
 }

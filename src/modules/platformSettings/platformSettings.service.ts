@@ -3,12 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { PlatformSetting, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EnvConfig } from '../../config/env.schema';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   SupportedAiProvider,
   UpdatePlatformSettingDto,
-} from './dto/update-platform-setting.dto';
-import * as fs from 'fs';
-import * as path from 'path';
+} from './dto/updatePlatformSetting.dto';
 
 export const PROVIDER_DEFAULT_MODELS: Record<SupportedAiProvider, string> = {
   openai: 'gpt-4o-mini',

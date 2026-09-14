@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../../prisma/prisma.module';
 import { AuthModule } from '../../../auth/auth.module';
-import { VocabularyCoreModule } from '../vocabulary-core/vocabulary-core.module';
 import { MyVocabularyController } from './my-vocabulary.controller';
 import { MyVocabularyService } from './my-vocabulary.service';
+import { VocabularyCoreModule } from '../vocabularyCore';
 
 @Module({
   imports: [PrismaModule, AuthModule, VocabularyCoreModule],

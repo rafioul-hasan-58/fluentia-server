@@ -6,12 +6,12 @@ import {
 } from '@nestjs/common';
 import { Prisma, VocabularyStatus } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { VocabularyCoreService } from '../vocabulary-core/vocabulary-core.service';
 import {
   AddMyVocabularyDto,
   GetMyVocabulariesQueryDto,
   UpdateMyVocabularyDto,
 } from './dto';
+import { VocabularyCoreService } from '../vocabularyCore';
 
 @Injectable()
 export class MyVocabularyService {

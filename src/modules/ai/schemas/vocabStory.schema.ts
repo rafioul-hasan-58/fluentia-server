@@ -30,4 +30,3 @@ export const VocabStorySchema = z.object({
 
 export type KeywordExplanation = z.infer<typeof KeywordExplanationSchema>;
 export type VocabStoryAiOutput = z.infer<typeof VocabStorySchema>;
-

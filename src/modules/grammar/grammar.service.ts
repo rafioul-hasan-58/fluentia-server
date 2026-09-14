@@ -28,7 +28,7 @@ export class GrammarService {
     private readonly prisma: PrismaService,
     private readonly skillsService: SkillsService,
     private readonly aiService: AiService,
-  ) { }
+  ) {}
 
   /**
    * Orchestrates the grammar "teach" flow:

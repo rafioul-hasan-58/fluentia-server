@@ -12,7 +12,7 @@ import { GetSkillsQueryDto } from './dto/getSkills.query.dto';
 @ApiTags('Skills')
 @Controller('skills')
 export class SkillsController {
-  constructor(private readonly skillsService: SkillsService) { }
+  constructor(private readonly skillsService: SkillsService) {}
 
   @Get()
   @ApiOperation({

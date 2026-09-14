@@ -14,7 +14,7 @@ import { MailModule } from './modules/mail';
 import { S3Module } from './modules/s3';
 import { LevelTestQuestionsModule } from './modules/levelTest';
 import { VocabularyModule } from './modules/vocabulary';
-import { PlatformSettingsModule } from './modules/platform-settings';
+import { PlatformSettingsModule } from './modules/platformSettings';
 
 @Module({
   imports: [

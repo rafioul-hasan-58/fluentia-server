@@ -7,7 +7,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @ApiTags('Grammar')
 @Controller('grammar')
 export class GrammarController {
-  constructor(private readonly grammarService: GrammarService) { }
+  constructor(private readonly grammarService: GrammarService) {}
 
   @Post('teach')
   @HttpCode(HttpStatus.OK)

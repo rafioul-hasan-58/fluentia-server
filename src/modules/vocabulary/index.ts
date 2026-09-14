@@ -1,8 +1,7 @@
 export * from './vocabulary.module';
-export * from './vocabulary-core';
-export * from './my-vocabulary';
-export * from './vocab-story';
+export * from './vocabularyCore';
+export * from './myVocabulary';
+export * from './vocabStory';
 
-// Backward compatibility aliases
-export { VocabularyCoreService as VocabularyService } from './vocabulary-core';
-export { VocabularyCoreController as VocabularyController } from './vocabulary-core';
+export { VocabularyCoreService as VocabularyService } from './vocabularyCore';
+export { VocabularyCoreController as VocabularyController } from './vocabularyCore';

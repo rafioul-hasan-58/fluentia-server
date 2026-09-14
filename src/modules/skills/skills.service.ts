@@ -5,7 +5,7 @@ import { GetSkillsQueryDto } from './dto/getSkills.query.dto';
 
 @Injectable()
 export class SkillsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Retrieves all grammar skills with optional filtering by category, CEFR level, or search keyword.

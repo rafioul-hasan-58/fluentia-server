@@ -23,9 +23,7 @@ import { GenerateVocabularyDto, GetVocabulariesQueryDto } from './dto';
 @ApiTags('Vocabulary')
 @Controller('vocabularies')
 export class VocabularyCoreController {
-  constructor(
-    private readonly vocabularyCoreService: VocabularyCoreService,
-  ) {}
+  constructor(private readonly vocabularyCoreService: VocabularyCoreService) {}
 
   @Post('generate')
   @HttpCode(HttpStatus.OK)

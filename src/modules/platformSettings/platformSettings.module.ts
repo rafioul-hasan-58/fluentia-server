@@ -10,4 +10,4 @@ import { PlatformSettingsController } from './platformSettings.controller';
   providers: [PlatformSettingsService],
   exports: [PlatformSettingsService],
 })
-export class PlatformSettingsModule { }
+export class PlatformSettingsModule {}
