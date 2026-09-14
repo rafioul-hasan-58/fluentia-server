@@ -4,7 +4,7 @@ import {
   TestQuestionSection,
   Prisma,
 } from '@prisma/client';
-import { LevelTestAnalysis } from '../../ai/schemas/level-test-analysis.schema';
+import { LevelTestAnalysis } from '../../ai/schemas/levelTest.schema';
 
 export interface SectionMetric {
   correct: number;
@@ -183,9 +183,9 @@ export interface TestAttemptEntityInput {
   createdAt: Date;
   updatedAt?: Date;
   sectionBreakdown?:
-    Record<string, RawSectionMetricItem> | Prisma.JsonValue | null;
+  Record<string, RawSectionMetricItem> | Prisma.JsonValue | null;
   aiAnalysis?:
-    RawAiAnalysisSummary | LevelTestAnalysis | Prisma.JsonValue | null;
+  RawAiAnalysisSummary | LevelTestAnalysis | Prisma.JsonValue | null;
   user?: TestAttemptUserRelation | null;
   answers?: TestAttemptAnswerRelation[] | null;
 }

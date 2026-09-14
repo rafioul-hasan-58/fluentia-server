@@ -2,13 +2,13 @@ import { z } from 'zod';
 import {
   LevelTestAnalysis,
   LevelTestAnalysisSchema,
-} from '../schemas/level-test-analysis.schema';
+} from '../schemas/levelTest.schema';
 import { Lesson, LessonSchema } from '../schemas/lesson.schema';
 import { AiVocabulary, AiVocabularySchema } from '../schemas/vocabulary.schema';
 import {
   VocabStoryAiOutput,
   VocabStorySchema,
-} from '../schemas/vocab-story.schema';
+} from '../schemas/vocabStory.schema';
 
 export type ValidationResult<T> =
   | { success: true; data: T }

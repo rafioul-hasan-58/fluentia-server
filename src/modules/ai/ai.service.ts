@@ -4,19 +4,19 @@ import OpenAI from 'openai';
 import { EnvConfig } from '../../config/env.schema';
 import { PlatformSettingsService } from '../platform-settings/platform-settings.service';
 import { Lesson } from './schemas/lesson.schema';
-import { LevelTestAnalysis } from './schemas/level-test-analysis.schema';
+import { LevelTestAnalysis } from './schemas/levelTest.schema';
 import { AiVocabulary } from './schemas/vocabulary.schema';
-import { VocabStoryAiOutput } from './schemas/vocab-story.schema';
+import { VocabStoryAiOutput } from './schemas/vocabStory.schema';
 import { buildTeachPrompt } from './prompts/teach.prompt';
 import {
   buildLevelTestAnalysisPrompt,
   LevelTestEvaluationInput,
-} from './prompts/level-test-analysis.prompt';
+} from './prompts/levelTest.prompt';
 import { buildVocabularyPrompt } from './prompts/vocabulary.prompt';
 import {
   buildVocabStoryPrompt,
   VocabStoryWordInput,
-} from './prompts/vocab-story.prompt';
+} from './prompts/vocabStory.prompt';
 import { AiServiceError, AiValidationError } from './errors/ai.errors';
 import {
   parseAndValidateLesson,
@@ -38,7 +38,7 @@ export class AiService implements OnModuleInit {
     private readonly configService: ConfigService<EnvConfig, true>,
     @Optional()
     private readonly platformSettingsService?: PlatformSettingsService,
-  ) {}
+  ) { }
 
   onModuleInit() {
     const apiKey =
@@ -251,10 +251,10 @@ export class AiService implements OnModuleInit {
     const validationResult = parseAndValidateVocabStory(rawContent);
     const presenceCheck = validationResult.success
       ? this.checkStoryVocabularyPresence(
-          validationResult.data.storyBangla,
-          validationResult.data.storyEnglish,
-          words,
-        )
+        validationResult.data.storyBangla,
+        validationResult.data.storyEnglish,
+        words,
+      )
       : { valid: false, missingWords: [] };
 
     if (validationResult.success && presenceCheck.valid) {

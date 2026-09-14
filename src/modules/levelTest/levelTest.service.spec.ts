@@ -12,7 +12,7 @@ import {
 import { LevelTestQuestionsService } from './levelTest.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
-import { LevelTestAnalysis } from '../ai/schemas/level-test-analysis.schema';
+import { LevelTestAnalysis } from '../ai/schemas/levelTest.schema';
 import { ManageSetQuestionsDto } from './dto';
 
 describe('LevelTestQuestionsService', () => {

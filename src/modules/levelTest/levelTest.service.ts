@@ -9,7 +9,7 @@ import {
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
-import { LevelTestEvaluationInput } from '../ai/prompts/level-test-analysis.prompt';
+import { LevelTestEvaluationInput } from '../ai/prompts/levelTest.prompt';
 import { CreateLevelTestQuestionDto } from './dto/create-level-test-question.dto';
 import { UpdateLevelTestQuestionDto } from './dto/update-level-test-question.dto';
 import { GetLevelTestQuestionsQueryDto } from './dto/get-level-test-questions-query.dto';
@@ -29,7 +29,7 @@ import {
   SubmissionListResult,
   TestAttemptEntityInput,
 } from './interfaces/level-test-submission.interface';
-import { LevelTestAnalysis } from '../ai/schemas/level-test-analysis.schema';
+import { LevelTestAnalysis } from '../ai/schemas/levelTest.schema';
 import { calculateActiveStreak } from '../users/utils/streak-calculator.util';
 
 @Injectable()
@@ -37,7 +37,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiService: AiService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     try {
@@ -265,10 +265,10 @@ export class LevelTestQuestionsService implements OnModuleInit {
 
     const questionIds = Array.isArray(dto.questionIds)
       ? Array.from(
-          new Set(
-            dto.questionIds.filter((id) => this.isValidObjectId(id.trim())),
-          ),
-        )
+        new Set(
+          dto.questionIds.filter((id) => this.isValidObjectId(id.trim())),
+        ),
+      )
       : [];
 
     const set = await this.prisma.levelTestSet.create({
@@ -765,10 +765,10 @@ export class LevelTestQuestionsService implements OnModuleInit {
       const isCorrect = selectedOption
         ? selectedOption.isCorrect
         : Boolean(
-            ans.userAnswer &&
-            ans.userAnswer.trim().toLowerCase() ===
-              correctAnswerText.trim().toLowerCase(),
-          );
+          ans.userAnswer &&
+          ans.userAnswer.trim().toLowerCase() ===
+          correctAnswerText.trim().toLowerCase(),
+        );
 
       if (isCorrect) {
         correctCount++;
@@ -814,9 +814,9 @@ export class LevelTestQuestionsService implements OnModuleInit {
         percentage:
           sectionStats.GRAMMAR.total > 0
             ? Math.round(
-                (sectionStats.GRAMMAR.correct / sectionStats.GRAMMAR.total) *
-                  100,
-              )
+              (sectionStats.GRAMMAR.correct / sectionStats.GRAMMAR.total) *
+              100,
+            )
             : 0,
       },
       vocabulary: {
@@ -825,10 +825,10 @@ export class LevelTestQuestionsService implements OnModuleInit {
         percentage:
           sectionStats.VOCABULARY.total > 0
             ? Math.round(
-                (sectionStats.VOCABULARY.correct /
-                  sectionStats.VOCABULARY.total) *
-                  100,
-              )
+              (sectionStats.VOCABULARY.correct /
+                sectionStats.VOCABULARY.total) *
+              100,
+            )
             : 0,
       },
       reading: {
@@ -837,9 +837,9 @@ export class LevelTestQuestionsService implements OnModuleInit {
         percentage:
           sectionStats.READING.total > 0
             ? Math.round(
-                (sectionStats.READING.correct / sectionStats.READING.total) *
-                  100,
-              )
+              (sectionStats.READING.correct / sectionStats.READING.total) *
+              100,
+            )
             : 0,
       },
     };
@@ -992,7 +992,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
   ): SubmissionListItem {
     const rawBreakdown =
       typeof attempt.sectionBreakdown === 'object' &&
-      attempt.sectionBreakdown !== null
+        attempt.sectionBreakdown !== null
         ? (attempt.sectionBreakdown as Record<string, RawSectionMetricItem>)
         : {};
 
