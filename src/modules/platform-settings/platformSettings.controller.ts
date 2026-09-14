@@ -19,7 +19,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import {
   PlatformSettingsService,
   PROVIDER_DEFAULT_MODELS,
-} from './platform-settings.service';
+} from './platformSettings.service';
 import {
   SUPPORTED_AI_PROVIDERS,
   UpdatePlatformSettingDto,
@@ -30,7 +30,7 @@ import {
 export class PlatformSettingsController {
   constructor(
     private readonly platformSettingsService: PlatformSettingsService,
-  ) {}
+  ) { }
 
   @Get()
   @UseGuards(AuthGuard)

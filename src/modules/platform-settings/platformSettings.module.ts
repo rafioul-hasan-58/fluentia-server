@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '../../prisma/prisma.module';
-import { PlatformSettingsService } from './platform-settings.service';
-import { PlatformSettingsController } from './platform-settings.controller';
+import { PlatformSettingsService } from './platformSettings.service';
+import { PlatformSettingsController } from './platformSettings.controller';
 
 @Module({
   imports: [PrismaModule, ConfigModule],
@@ -10,4 +10,4 @@ import { PlatformSettingsController } from './platform-settings.controller';
   providers: [PlatformSettingsService],
   exports: [PlatformSettingsService],
 })
-export class PlatformSettingsModule {}
+export class PlatformSettingsModule { }

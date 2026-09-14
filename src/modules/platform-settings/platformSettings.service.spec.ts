@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { PlatformSettingsService } from './platform-settings.service';
+import { PlatformSettingsService } from './platformSettings.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
 describe('PlatformSettingsService', () => {
