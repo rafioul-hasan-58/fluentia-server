@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnglishLevel, PartOfSpeech, VocabularyStatus } from '@prisma/client';
 import { MyVocabularyController } from './my-vocabulary.controller';
-import { VocabularyService } from './vocabulary.service';
+import { MyVocabularyService } from './my-vocabulary.service';
 
 describe('MyVocabularyController', () => {
   let controller: MyVocabularyController;
@@ -60,14 +60,14 @@ describe('MyVocabularyController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MyVocabularyController],
       providers: [
-        { provide: VocabularyService, useValue: mockService },
+        { provide: MyVocabularyService, useValue: mockService },
         { provide: JwtService, useValue: { verifyAsync: jest.fn() } },
         { provide: Reflector, useValue: { getAllAndOverride: jest.fn() } },
       ],
     }).compile();
 
     controller = module.get<MyVocabularyController>(MyVocabularyController);
-    service = module.get<VocabularyService>(VocabularyService);
+    service = module.get<MyVocabularyService>(MyVocabularyService);
   });
 
   describe('addToMyVocabulary', () => {

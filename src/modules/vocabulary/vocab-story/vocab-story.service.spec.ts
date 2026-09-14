@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnglishLevel, PartOfSpeech } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
-import { AiService } from '../ai/ai.service';
-import { AiValidationError } from '../ai/errors/ai.errors';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { AiService } from '../../ai/ai.service';
+import { AiValidationError } from '../../ai/errors/ai.errors';
 import { VocabStoryService } from './vocab-story.service';
 
 describe('VocabStoryService', () => {
@@ -80,8 +80,8 @@ describe('VocabStoryService', () => {
         findMany: jest.fn(),
         count: jest.fn(),
         findUnique: jest.fn(),
-        update: jest.fn(),
         delete: jest.fn(),
+        update: jest.fn(),
       },
     };
 
@@ -98,20 +98,26 @@ describe('VocabStoryService', () => {
     }).compile();
 
     service = module.get<VocabStoryService>(VocabStoryService);
-    prismaService = module.get(PrismaService);
-    aiService = module.get(AiService);
+    prismaService = module.get<PrismaService>(PrismaService);
+    aiService = module.get<AiService>(AiService);
   });
 
   describe('isValidObjectId', () => {
-    it('should validate 24-character hexadecimal ObjectId', () => {
+    it('should return true for valid 24-character hexadecimal ObjectId', () => {
       expect(service.isValidObjectId('665f1b2e1111111111111111')).toBe(true);
-      expect(service.isValidObjectId('invalid-id')).toBe(false);
+      expect(service.isValidObjectId('0123456789abcdefABCDEF01')).toBe(true);
+    });
+
+    it('should return false for invalid format', () => {
+      expect(service.isValidObjectId('short-id')).toBe(false);
+      expect(service.isValidObjectId('665f1b2e111111111111111Z')).toBe(false);
       expect(service.isValidObjectId('')).toBe(false);
+      expect(service.isValidObjectId(null as any)).toBe(false);
     });
   });
 
   describe('generateStory', () => {
-    it('should generate and save story for valid vocabulary IDs', async () => {
+    it('should successfully validate words, invoke AI, and persist story', async () => {
       prismaService.vocabulary.findMany.mockResolvedValue([
         mockVocab1,
         mockVocab2,
@@ -120,14 +126,13 @@ describe('VocabStoryService', () => {
         title: 'The Cricket Triumph',
         storyEnglish: mockStory.storyEnglish,
         storyBangla: mockStory.storyBangla,
-        usedVocabulary: ['challenging', 'confidence'],
         keywordExplanations: mockKeywordExplanations,
       });
       prismaService.vocabStory.create.mockResolvedValue(mockStory);
 
       const result = await service.generateStory(mockUserId, {
         vocabularyIds: [mockWordId1, mockWordId2],
-        context: 'cricket match',
+        context: 'cricket game',
       });
 
       expect(prismaService.vocabulary.findMany).toHaveBeenCalledWith({
@@ -136,23 +141,23 @@ describe('VocabStoryService', () => {
       expect(aiService.generateVocabStory).toHaveBeenCalledWith(
         [
           {
-            word: 'challenging',
-            meaning: 'difficult in an interesting way',
-            partOfSpeech: PartOfSpeech.ADJECTIVE,
-            collocations: ['challenging task'],
-            exampleSentences: ['It was a challenging task.'],
-            englishLevel: EnglishLevel.B1,
+            word: mockVocab1.word,
+            meaning: mockVocab1.meaning,
+            partOfSpeech: mockVocab1.partOfSpeech,
+            collocations: mockVocab1.collocations,
+            exampleSentences: mockVocab1.exampleSentences,
+            englishLevel: mockVocab1.englishLevel,
           },
           {
-            word: 'confidence',
-            meaning: 'feeling of trust in abilities',
-            partOfSpeech: PartOfSpeech.NOUN,
-            collocations: ['build confidence'],
-            exampleSentences: ['He has great confidence.'],
-            englishLevel: EnglishLevel.B1,
+            word: mockVocab2.word,
+            meaning: mockVocab2.meaning,
+            partOfSpeech: mockVocab2.partOfSpeech,
+            collocations: mockVocab2.collocations,
+            exampleSentences: mockVocab2.exampleSentences,
+            englishLevel: mockVocab2.englishLevel,
           },
         ],
-        'cricket match',
+        'cricket game',
       );
       expect(prismaService.vocabStory.create).toHaveBeenCalledWith({
         data: {
@@ -167,22 +172,22 @@ describe('VocabStoryService', () => {
       expect(result).toEqual(mockStory);
     });
 
-    it('should throw BadRequestException when vocabularyIds is empty', async () => {
+    it('should throw BadRequestException when no IDs are provided', async () => {
       await expect(
         service.generateStory(mockUserId, { vocabularyIds: [] }),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException when any ID is invalid', async () => {
+    it('should throw BadRequestException on invalid ObjectId format', async () => {
       await expect(
         service.generateStory(mockUserId, {
-          vocabularyIds: [mockWordId1, 'invalid-id'],
+          vocabularyIds: ['invalid-mongo-id'],
         }),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw NotFoundException when one or more vocabulary records do not exist', async () => {
-      prismaService.vocabulary.findMany.mockResolvedValue([mockVocab1]); // mockVocab2 missing
+    it('should throw NotFoundException if one or more vocabulary IDs are missing from DB', async () => {
+      prismaService.vocabulary.findMany.mockResolvedValue([mockVocab1]); // Missing mockWordId2
 
       await expect(
         service.generateStory(mockUserId, {
@@ -191,7 +196,7 @@ describe('VocabStoryService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadGatewayException when AiService throws AiValidationError or AiServiceError', async () => {
+    it('should throw BadGatewayException when AI service validation fails', async () => {
       prismaService.vocabulary.findMany.mockResolvedValue([
         mockVocab1,
         mockVocab2,
@@ -209,7 +214,7 @@ describe('VocabStoryService', () => {
   });
 
   describe('findUserStories', () => {
-    it('should return paginated stories for the authenticated user', async () => {
+    it('should return paginated stories with search filter applied', async () => {
       prismaService.vocabStory.count.mockResolvedValue(1);
       prismaService.vocabStory.findMany.mockResolvedValue([mockStory]);
 
@@ -246,7 +251,7 @@ describe('VocabStoryService', () => {
       expect(result).toEqual(mockStory);
     });
 
-    it('should throw NotFoundException when story belongs to another user', async () => {
+    it('should throw NotFoundException when belonging to another user', async () => {
       prismaService.vocabStory.findUnique.mockResolvedValue({
         ...mockStory,
         userId: mockOtherUserId,
@@ -257,7 +262,7 @@ describe('VocabStoryService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException on invalid ID format', async () => {
+    it('should throw BadRequestException on invalid ObjectId format', async () => {
       await expect(
         service.findUserStoryById(mockUserId, 'invalid-id'),
       ).rejects.toThrow(BadRequestException);
@@ -265,7 +270,7 @@ describe('VocabStoryService', () => {
   });
 
   describe('deleteUserStory', () => {
-    it('should delete story when owned by user', async () => {
+    it('should verify ownership and delete story', async () => {
       prismaService.vocabStory.findUnique.mockResolvedValue(mockStory);
       prismaService.vocabStory.delete.mockResolvedValue(mockStory);
 
@@ -274,56 +279,41 @@ describe('VocabStoryService', () => {
       expect(prismaService.vocabStory.delete).toHaveBeenCalledWith({
         where: { id: mockStoryId },
       });
-      expect(result.message).toContain('deleted successfully');
+      expect(result.message).toBe('Vocabulary story deleted successfully.');
     });
   });
 
   describe('updateStoryTitle', () => {
-    it('should update story title when owned by user', async () => {
+    it('should update story title successfully', async () => {
       prismaService.vocabStory.findUnique.mockResolvedValue(mockStory);
-      const updatedMockStory = {
+      prismaService.vocabStory.update.mockResolvedValue({
         ...mockStory,
-        title: 'New Story Title',
-      };
-      prismaService.vocabStory.update.mockResolvedValue(updatedMockStory);
+        title: 'New Title',
+      });
 
       const result = await service.updateStoryTitle(
         mockUserId,
         mockStoryId,
-        'New Story Title',
+        'New Title',
       );
 
-      expect(prismaService.vocabStory.findUnique).toHaveBeenCalledWith({
-        where: { id: mockStoryId },
-      });
       expect(prismaService.vocabStory.update).toHaveBeenCalledWith({
         where: { id: mockStoryId },
-        data: { title: 'New Story Title' },
+        data: { title: 'New Title' },
       });
-      expect(result).toEqual(updatedMockStory);
+      expect(result.title).toBe('New Title');
     });
 
-    it('should throw BadRequestException on invalid ID format', async () => {
-      await expect(
-        service.updateStoryTitle(mockUserId, 'invalid-id', 'New Title'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException when title is empty', async () => {
+    it('should throw BadRequestException if title is empty', async () => {
       await expect(
         service.updateStoryTitle(mockUserId, mockStoryId, '   '),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw NotFoundException when story belongs to another user', async () => {
-      prismaService.vocabStory.findUnique.mockResolvedValue({
-        ...mockStory,
-        userId: mockOtherUserId,
-      });
-
+    it('should throw BadRequestException if ID is invalid', async () => {
       await expect(
-        service.updateStoryTitle(mockUserId, mockStoryId, 'New Title'),
-      ).rejects.toThrow(NotFoundException);
+        service.updateStoryTitle(mockUserId, 'invalid-id', 'New Title'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

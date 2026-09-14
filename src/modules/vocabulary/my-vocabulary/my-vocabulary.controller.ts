@@ -18,9 +18,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AuthGuard } from '../../common/guards/auth.guard';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { VocabularyService } from './vocabulary.service';
+import { AuthGuard } from '../../../common/guards/auth.guard';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { MyVocabularyService } from './my-vocabulary.service';
 import {
   AddMyVocabularyDto,
   GetMyVocabulariesQueryDto,
@@ -32,7 +32,7 @@ import {
 @UseGuards(AuthGuard)
 @Controller('my-vocabularies')
 export class MyVocabularyController {
-  constructor(private readonly vocabularyService: VocabularyService) {}
+  constructor(private readonly myVocabularyService: MyVocabularyService) {}
 
   @Post('save')
   @HttpCode(HttpStatus.CREATED)
@@ -66,7 +66,7 @@ export class MyVocabularyController {
     @CurrentUser('id') userId: string,
     @Body() dto: AddMyVocabularyDto,
   ) {
-    const data = await this.vocabularyService.addToMyVocabulary(userId, dto);
+    const data = await this.myVocabularyService.addToMyVocabulary(userId, dto);
     return {
       message: 'Vocabulary added to your personal collection successfully.',
       data,
@@ -92,7 +92,10 @@ export class MyVocabularyController {
     @CurrentUser('id') userId: string,
     @Query() query: GetMyVocabulariesQueryDto,
   ) {
-    const data = await this.vocabularyService.findMyVocabularies(userId, query);
+    const data = await this.myVocabularyService.findMyVocabularies(
+      userId,
+      query,
+    );
     return {
       message: 'Personal vocabularies retrieved successfully.',
       ...data,
@@ -127,7 +130,10 @@ export class MyVocabularyController {
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
   ) {
-    const data = await this.vocabularyService.findMyVocabularyById(userId, id);
+    const data = await this.myVocabularyService.findMyVocabularyById(
+      userId,
+      id,
+    );
     return {
       message: 'Personal vocabulary item retrieved successfully.',
       data,
@@ -163,7 +169,7 @@ export class MyVocabularyController {
     @Param('id') id: string,
     @Body() dto: UpdateMyVocabularyDto,
   ) {
-    const data = await this.vocabularyService.updateMyVocabulary(
+    const data = await this.myVocabularyService.updateMyVocabulary(
       userId,
       id,
       dto,
@@ -202,7 +208,7 @@ export class MyVocabularyController {
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
   ) {
-    const result = await this.vocabularyService.removeFromMyVocabulary(
+    const result = await this.myVocabularyService.removeFromMyVocabulary(
       userId,
       id,
     );

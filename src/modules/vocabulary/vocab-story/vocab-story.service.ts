@@ -6,11 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
-import { AiService } from '../ai/ai.service';
-import { AiServiceError, AiValidationError } from '../ai/errors/ai.errors';
-import { VocabStoryWordInput } from '../ai/prompts/vocabStory.prompt';
-import { VocabStoryAiOutput } from '../ai/schemas/vocabStory.schema';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { AiService } from '../../ai/ai.service';
+import { AiServiceError, AiValidationError } from '../../ai/errors/ai.errors';
+import { VocabStoryWordInput } from '../../ai/prompts/vocabStory.prompt';
+import { VocabStoryAiOutput } from '../../ai/schemas/vocabStory.schema';
 import { GenerateVocabStoryDto, GetVocabStoriesQueryDto } from './dto';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class VocabStoryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiService: AiService,
-  ) { }
+  ) {}
 
   /**
    * Validates if a string is a 24-character hexadecimal MongoDB ObjectId.

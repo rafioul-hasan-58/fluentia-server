@@ -1,10 +1,12 @@
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnglishLevel, PartOfSpeech } from '@prisma/client';
-import { VocabularyController } from './vocabulary.controller';
-import { VocabularyService } from './vocabulary.service';
+import { VocabularyCoreController } from './vocabulary-core.controller';
+import { VocabularyCoreService } from './vocabulary-core.service';
 
-describe('VocabularyController', () => {
-  let controller: VocabularyController;
+describe('VocabularyCoreController', () => {
+  let controller: VocabularyCoreController;
   let service: any;
 
   const mockWordId = '665f1b2e3333333333333333';
@@ -38,12 +40,16 @@ describe('VocabularyController', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [VocabularyController],
-      providers: [{ provide: VocabularyService, useValue: mockService }],
+      controllers: [VocabularyCoreController],
+      providers: [
+        { provide: VocabularyCoreService, useValue: mockService },
+        { provide: JwtService, useValue: { verifyAsync: jest.fn() } },
+        { provide: Reflector, useValue: { getAllAndOverride: jest.fn() } },
+      ],
     }).compile();
 
-    controller = module.get<VocabularyController>(VocabularyController);
-    service = module.get<VocabularyService>(VocabularyService);
+    controller = module.get<VocabularyCoreController>(VocabularyCoreController);
+    service = module.get<VocabularyCoreService>(VocabularyCoreService);
   });
 
   describe('generate', () => {

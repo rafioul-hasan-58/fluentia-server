@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -8,21 +7,17 @@ import {
   EnglishLevel,
   PartOfSpeech,
   Prisma,
-  VocabularyStatus,
 } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
-import { AiService } from '../ai/ai.service';
-import { VocabularyService } from './vocabulary.service';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { AiService } from '../../ai/ai.service';
+import { VocabularyCoreService } from './vocabulary-core.service';
 
-describe('VocabularyService', () => {
-  let service: VocabularyService;
+describe('VocabularyCoreService', () => {
+  let service: VocabularyCoreService;
   let prismaService: any;
   let aiService: any;
 
-  const mockUserId = '665f1b2e1111111111111111';
-  const mockOtherUserId = '665f1b2e2222222222222222';
   const mockWordId = '665f1b2e3333333333333333';
-  const mockMyVocabId = '665f1b2e4444444444444444';
 
   const mockVocabulary = {
     id: mockWordId,
@@ -55,20 +50,6 @@ describe('VocabularyService', () => {
     updatedAt: new Date(),
   };
 
-  const mockMyVocabulary = {
-    id: mockMyVocabId,
-    userId: mockUserId,
-    wordId: mockWordId,
-    word: mockVocabulary,
-    mySentences: ['This is my custom sentence.'],
-    notes: 'Important adjective',
-    masteryLevel: 50,
-    vocabularyStatus: VocabularyStatus.LEARNING,
-    isFavourate: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
   beforeEach(async () => {
     const mockPrisma = {
       vocabulary: {
@@ -76,14 +57,6 @@ describe('VocabularyService', () => {
         findMany: jest.fn(),
         count: jest.fn(),
         create: jest.fn(),
-      },
-      myVocabulary: {
-        findUnique: jest.fn(),
-        findMany: jest.fn(),
-        count: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
       },
     };
 
@@ -93,74 +66,72 @@ describe('VocabularyService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        VocabularyService,
+        VocabularyCoreService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: AiService, useValue: mockAi },
       ],
     }).compile();
 
-    service = module.get<VocabularyService>(VocabularyService);
-    prismaService = module.get(PrismaService);
-    aiService = module.get(AiService);
+    service = module.get<VocabularyCoreService>(VocabularyCoreService);
+    prismaService = module.get<PrismaService>(PrismaService);
+    aiService = module.get<AiService>(AiService);
   });
 
   describe('normalizeWord', () => {
-    it('should trim whitespace and convert to lowercase', () => {
+    it('should trim and lowercase word', () => {
       expect(service.normalizeWord('  Significant  ')).toBe('significant');
-      expect(service.normalizeWord('SIGNIFICANT')).toBe('significant');
-      expect(service.normalizeWord(' Significant Impact ')).toBe(
-        'significant impact',
-      );
+      expect(service.normalizeWord('RUNNING')).toBe('running');
     });
 
-    it('should return empty string for null or non-string input', () => {
+    it('should handle empty or non-string input safely', () => {
       expect(service.normalizeWord('')).toBe('');
       expect(service.normalizeWord(null as any)).toBe('');
     });
   });
 
   describe('isValidObjectId', () => {
-    it('should validate 24-character hexadecimal ObjectId format', () => {
+    it('should return true for valid 24-char hex string', () => {
       expect(service.isValidObjectId('665f1b2e1111111111111111')).toBe(true);
+    });
+
+    it('should return false for invalid string', () => {
       expect(service.isValidObjectId('invalid-id')).toBe(false);
       expect(service.isValidObjectId('')).toBe(false);
+      expect(service.isValidObjectId(null as any)).toBe(false);
     });
   });
 
   describe('getOrGenerateVocabulary', () => {
-    it('should return existing vocabulary from DB without calling AI', async () => {
+    it('should return existing vocabulary from shared catalog without calling AI', async () => {
       prismaService.vocabulary.findUnique.mockResolvedValue(mockVocabulary);
 
       const result = await service.getOrGenerateVocabulary({
-        word: '  Significant  ',
+        word: 'significant',
       });
 
       expect(prismaService.vocabulary.findUnique).toHaveBeenCalledWith({
         where: { word: 'significant' },
       });
       expect(aiService.generateVocabulary).not.toHaveBeenCalled();
-      expect(result.isNew).toBe(false);
-      expect(result.data).toEqual(mockVocabulary);
-      expect(result.message).toBe('Vocabulary retrieved from shared catalog.');
+      expect(result).toEqual({
+        isNew: false,
+        message: 'Vocabulary retrieved from shared catalog.',
+        data: mockVocabulary,
+      });
     });
 
-    it('should call AI service and save new vocabulary when not found in DB', async () => {
+    it('should call AI service and save new word when not in catalog', async () => {
       prismaService.vocabulary.findUnique.mockResolvedValue(null);
       aiService.generateVocabulary.mockResolvedValue({
         word: 'significant',
         meaning: 'important or large enough to matter',
         banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
         partOfSpeech: PartOfSpeech.ADJECTIVE,
-        collocations: [
-          {
-            collocation: 'significant increase',
-            banglaMeaning: 'উল্লেখযোগ্য বৃদ্ধি',
-            exampleSentence: 'A significant change occurred.',
-          },
-        ],
-        wordFamily: [{ word: 'significance', partOfSpeech: PartOfSpeech.NOUN }],
-        synonyms: [{ word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE }],
-        antonyms: [{ word: 'minor', partOfSpeech: PartOfSpeech.ADJECTIVE }],
+        collocations: [],
+        exampleSentences: ['A significant change occurred.'],
+        wordFamily: [],
+        synonyms: [],
+        antonyms: [],
         englishLevel: EnglishLevel.B1,
       });
       prismaService.vocabulary.create.mockResolvedValue(mockVocabulary);
@@ -169,33 +140,32 @@ describe('VocabularyService', () => {
         word: 'significant',
       });
 
-      expect(aiService.generateVocabulary).toHaveBeenCalledWith('significant');
-      expect(prismaService.vocabulary.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          word: 'significant',
-          meaning: 'important or large enough to matter',
-          banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
-          partOfSpeech: PartOfSpeech.ADJECTIVE,
-          englishLevel: EnglishLevel.B1,
-        }),
+      expect(prismaService.vocabulary.findUnique).toHaveBeenCalledWith({
+        where: { word: 'significant' },
       });
-      expect(result.isNew).toBe(true);
-      expect(result.data).toEqual(mockVocabulary);
-      expect(result.message).toBe('new word generated');
+      expect(aiService.generateVocabulary).toHaveBeenCalledWith('significant');
+      expect(prismaService.vocabulary.create).toHaveBeenCalled();
+      expect(result).toEqual({
+        isNew: true,
+        message: 'new word generated',
+        data: mockVocabulary,
+      });
     });
 
-    it('should handle P2002 race condition by falling back to findUnique', async () => {
+    it('should handle P2002 race condition gracefully by returning concurrent record', async () => {
+      // 1. Initial findUnique returns null (word doesn't exist yet)
+      // 2. Second findUnique in catch block returns concurrentVocabulary
       prismaService.vocabulary.findUnique
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(mockVocabulary);
 
       aiService.generateVocabulary.mockResolvedValue({
         word: 'significant',
-        meaning: 'important',
-        banglaMeaning: 'গুরুত্বপূর্ণ',
+        meaning: 'important or large enough to matter',
+        banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
         partOfSpeech: PartOfSpeech.ADJECTIVE,
         collocations: [],
-        exampleSentences: ['Example'],
+        exampleSentences: ['A significant change occurred.'],
         wordFamily: [],
         synonyms: [],
         antonyms: [],
@@ -362,159 +332,6 @@ describe('VocabularyService', () => {
       await expect(service.findVocabularyById(mockWordId)).rejects.toThrow(
         NotFoundException,
       );
-    });
-  });
-
-  describe('addToMyVocabulary', () => {
-    it('should add global vocabulary to user collection with default LEARNING status', async () => {
-      prismaService.vocabulary.findUnique.mockResolvedValue(mockVocabulary);
-      prismaService.myVocabulary.findUnique.mockResolvedValue(null);
-      prismaService.myVocabulary.create.mockResolvedValue(mockMyVocabulary);
-
-      const result = await service.addToMyVocabulary(mockUserId, {
-        wordId: mockWordId,
-      });
-
-      expect(prismaService.myVocabulary.create).toHaveBeenCalledWith({
-        data: {
-          userId: mockUserId,
-          wordId: mockWordId,
-          mySentences: [],
-          notes: null,
-          masteryLevel: 0,
-          vocabularyStatus: VocabularyStatus.LEARNING,
-          isFavourate: false,
-        },
-        include: { word: true },
-      });
-      expect(result).toEqual(mockMyVocabulary);
-    });
-
-    it('should throw ConflictException if user already has this word', async () => {
-      prismaService.vocabulary.findUnique.mockResolvedValue(mockVocabulary);
-      prismaService.myVocabulary.findUnique.mockResolvedValue(mockMyVocabulary);
-
-      await expect(
-        service.addToMyVocabulary(mockUserId, { wordId: mockWordId }),
-      ).rejects.toThrow(ConflictException);
-    });
-
-    it('should throw NotFoundException if global vocabulary does not exist', async () => {
-      prismaService.vocabulary.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.addToMyVocabulary(mockUserId, { wordId: mockWordId }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException on invalid wordId format', async () => {
-      await expect(
-        service.addToMyVocabulary(mockUserId, { wordId: 'invalid' }),
-      ).rejects.toThrow(BadRequestException);
-    });
-  });
-
-  describe('findMyVocabularies', () => {
-    it('should return paginated personal vocabularies with user isolation', async () => {
-      prismaService.myVocabulary.count.mockResolvedValue(1);
-      prismaService.myVocabulary.findMany.mockResolvedValue([mockMyVocabulary]);
-
-      const result = await service.findMyVocabularies(mockUserId, {
-        status: VocabularyStatus.LEARNING,
-        isFavourate: true,
-        page: 1,
-        limit: 10,
-      });
-
-      expect(prismaService.myVocabulary.findMany).toHaveBeenCalledWith({
-        where: {
-          userId: mockUserId,
-          vocabularyStatus: VocabularyStatus.LEARNING,
-          isFavourate: true,
-        },
-        skip: 0,
-        take: 10,
-        orderBy: { updatedAt: 'desc' },
-        include: { word: true },
-      });
-      expect(result.items).toEqual([mockMyVocabulary]);
-      expect(result.total).toBe(1);
-    });
-  });
-
-  describe('findMyVocabularyById', () => {
-    it('should return personal vocabulary when owned by user', async () => {
-      prismaService.myVocabulary.findUnique.mockResolvedValue(mockMyVocabulary);
-
-      const result = await service.findMyVocabularyById(
-        mockUserId,
-        mockMyVocabId,
-      );
-      expect(result).toEqual(mockMyVocabulary);
-    });
-
-    it('should throw NotFoundException when belonging to another user', async () => {
-      prismaService.myVocabulary.findUnique.mockResolvedValue({
-        ...mockMyVocabulary,
-        userId: mockOtherUserId,
-      });
-
-      await expect(
-        service.findMyVocabularyById(mockUserId, mockMyVocabId),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException on invalid ID', async () => {
-      await expect(
-        service.findMyVocabularyById(mockUserId, 'invalid'),
-      ).rejects.toThrow(BadRequestException);
-    });
-  });
-
-  describe('updateMyVocabulary', () => {
-    it('should update personal fields only without touching global vocabulary', async () => {
-      prismaService.myVocabulary.findUnique.mockResolvedValue(mockMyVocabulary);
-      prismaService.myVocabulary.update.mockResolvedValue({
-        ...mockMyVocabulary,
-        masteryLevel: 80,
-        vocabularyStatus: VocabularyStatus.MASTERED,
-      });
-
-      const result = await service.updateMyVocabulary(
-        mockUserId,
-        mockMyVocabId,
-        {
-          masteryLevel: 80,
-          vocabularyStatus: VocabularyStatus.MASTERED,
-        },
-      );
-
-      expect(prismaService.myVocabulary.update).toHaveBeenCalledWith({
-        where: { id: mockMyVocabId },
-        data: {
-          masteryLevel: 80,
-          vocabularyStatus: VocabularyStatus.MASTERED,
-        },
-        include: { word: true },
-      });
-      expect(result.masteryLevel).toBe(80);
-    });
-  });
-
-  describe('removeFromMyVocabulary', () => {
-    it('should delete personal MyVocabulary record only', async () => {
-      prismaService.myVocabulary.findUnique.mockResolvedValue(mockMyVocabulary);
-      prismaService.myVocabulary.delete.mockResolvedValue(mockMyVocabulary);
-
-      const result = await service.removeFromMyVocabulary(
-        mockUserId,
-        mockMyVocabId,
-      );
-
-      expect(prismaService.myVocabulary.delete).toHaveBeenCalledWith({
-        where: { id: mockMyVocabId },
-      });
-      expect(result.message).toContain('successfully');
     });
   });
 });

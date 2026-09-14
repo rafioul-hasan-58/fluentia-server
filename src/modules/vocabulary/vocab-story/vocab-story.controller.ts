@@ -18,8 +18,8 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AuthGuard } from '../../common/guards/auth.guard';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AuthGuard } from '../../../common/guards/auth.guard';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { VocabStoryService } from './vocab-story.service';
 import {
   GenerateVocabStoryDto,
