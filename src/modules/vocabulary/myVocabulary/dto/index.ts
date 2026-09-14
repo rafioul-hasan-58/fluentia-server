@@ -1,3 +1,3 @@
-export * from './add-my-vocabulary.dto';
-export * from './get-my-vocabularies-query.dto';
-export * from './update-my-vocabulary.dto';
+export * from './addMyVocabulary.dto';
+export * from './getMyVocabularies.query.dto';
+export * from './updateMyVocabulary.dto';

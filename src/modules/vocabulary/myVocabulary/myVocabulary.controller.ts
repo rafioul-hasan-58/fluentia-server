@@ -20,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../../common/guards/auth.guard';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
-import { MyVocabularyService } from './my-vocabulary.service';
+import { MyVocabularyService } from './myVocabulary.service';
 import {
   AddMyVocabularyDto,
   GetMyVocabulariesQueryDto,
@@ -32,7 +32,7 @@ import {
 @UseGuards(AuthGuard)
 @Controller('my-vocabularies')
 export class MyVocabularyController {
-  constructor(private readonly myVocabularyService: MyVocabularyService) {}
+  constructor(private readonly myVocabularyService: MyVocabularyService) { }
 
   @Post('save')
   @HttpCode(HttpStatus.CREATED)

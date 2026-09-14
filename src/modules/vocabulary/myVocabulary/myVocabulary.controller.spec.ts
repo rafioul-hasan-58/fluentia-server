@@ -2,8 +2,8 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnglishLevel, PartOfSpeech, VocabularyStatus } from '@prisma/client';
-import { MyVocabularyController } from './my-vocabulary.controller';
-import { MyVocabularyService } from './my-vocabulary.service';
+import { MyVocabularyController } from './myVocabulary.controller';
+import { MyVocabularyService } from './myVocabulary.service';
 
 describe('MyVocabularyController', () => {
   let controller: MyVocabularyController;

@@ -7,7 +7,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EnglishLevel, PartOfSpeech, VocabularyStatus } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { VocabularyCoreService } from '../vocabulary-core/vocabulary-core.service';
-import { MyVocabularyService } from './my-vocabulary.service';
+import { MyVocabularyService } from './myVocabulary.service';
 
 describe('MyVocabularyService', () => {
   let service: MyVocabularyService;
