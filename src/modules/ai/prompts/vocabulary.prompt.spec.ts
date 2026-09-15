@@ -25,4 +25,15 @@ describe('buildVocabularyPrompt', () => {
     );
     expect(prompt).toContain('definately');
   });
+
+  it('should instruct single-word banglaMeaning in wordFamily', () => {
+    const prompt = buildVocabularyPrompt('significant');
+
+    expect(prompt).toContain('"wordFamily"');
+    expect(prompt).toContain(
+      'Single-word Bengali meaning of this specific word form',
+    );
+    expect(prompt).toContain('strictly ONE word only in Bengali script');
+    expect(prompt).toContain('"banglaMeaning": "তাৎপর্য"');
+  });
 });

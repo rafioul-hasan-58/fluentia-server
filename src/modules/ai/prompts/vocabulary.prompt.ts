@@ -28,7 +28,10 @@ Generate accurate, structured dictionary data formatted strictly as a single JSO
    - "banglaMeaning": Natural Bengali meaning of this collocation (e.g. "উল্লেখযোগ্য বৃদ্ধি").
    - "exampleSentence": A natural example sentence demonstrating the collocation in context (e.g. "There has been a significant increase in online learning.").
 7. "exampleSentences": Array of 2-3 realistic, high-quality example sentences showcasing standard contextual usage.
-8. "wordFamily": Array of 1-4 closely related morphological word forms with their parts of speech (e.g. [{"word": "significance", "partOfSpeech": "NOUN"}, {"word": "significantly", "partOfSpeech": "ADVERB"}]).
+8. "wordFamily": Array of 1-4 closely related morphological word forms. Each object MUST be:
+   - "word": English morphological word form in lowercase (e.g. "significance").
+   - "partOfSpeech": EXACTLY one of the allowed parts of speech (e.g. "NOUN").
+   - "banglaMeaning": Single-word Bengali meaning of this specific word form (strictly ONE word only in Bengali script, e.g. "তাৎপর্য", "উল্লেখযোগ্যভাবে"). Do NOT use multiple words or phrases.
 9. "synonyms": Array of 2-5 direct English synonyms with their parts of speech (e.g. [{"word": "important", "partOfSpeech": "ADJECTIVE"}, {"word": "considerable", "partOfSpeech": "ADJECTIVE"}]).
 10. "antonyms": Array of 1-4 direct English antonyms with their parts of speech (or empty array if none apply) (e.g. [{"word": "insignificant", "partOfSpeech": "ADJECTIVE"}, {"word": "minor", "partOfSpeech": "ADJECTIVE"}]).
 11. "englishLevel": CEFR proficiency level (EXACTLY one of: "A1", "A2", "B1", "B2", "C1", "C2") based on Oxford/Cambridge standards.
@@ -65,8 +68,8 @@ Example:
     "There has been a significant increase in online learning."
   ],
   "wordFamily": [
-    { "word": "significance", "partOfSpeech": "NOUN" },
-    { "word": "significantly", "partOfSpeech": "ADVERB" }
+    { "word": "significance", "partOfSpeech": "NOUN", "banglaMeaning": "তাৎপর্য" },
+    { "word": "significantly", "partOfSpeech": "ADVERB", "banglaMeaning": "উল্লেখযোগ্যভাবে" }
   ],
   "synonyms": [
     { "word": "important", "partOfSpeech": "ADJECTIVE" },

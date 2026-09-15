@@ -30,8 +30,16 @@ describe('VocabularyCoreService', () => {
       },
     ],
     wordFamily: [
-      { word: 'significance', partOfSpeech: PartOfSpeech.NOUN },
-      { word: 'significantly', partOfSpeech: PartOfSpeech.ADVERB },
+      {
+        word: 'significance',
+        partOfSpeech: PartOfSpeech.NOUN,
+        banglaMeaning: 'তাৎপর্য',
+      },
+      {
+        word: 'significantly',
+        partOfSpeech: PartOfSpeech.ADVERB,
+        banglaMeaning: 'উল্লেখযোগ্যভাবে',
+      },
     ],
     synonyms: [
       { word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE },

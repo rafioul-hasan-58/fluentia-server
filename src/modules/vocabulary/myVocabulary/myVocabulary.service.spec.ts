@@ -31,7 +31,13 @@ describe('MyVocabularyService', () => {
         exampleSentence: 'There was a significant increase in sales.',
       },
     ],
-    wordFamily: [{ word: 'significance', partOfSpeech: PartOfSpeech.NOUN }],
+    wordFamily: [
+      {
+        word: 'significance',
+        partOfSpeech: PartOfSpeech.NOUN,
+        banglaMeaning: 'তাৎপর্য',
+      },
+    ],
     synonyms: [{ word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE }],
     antonyms: [{ word: 'insignificant', partOfSpeech: PartOfSpeech.ADJECTIVE }],
     englishLevel: EnglishLevel.B1,

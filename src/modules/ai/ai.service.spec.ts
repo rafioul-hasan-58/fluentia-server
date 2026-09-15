@@ -118,8 +118,8 @@ describe('AiService', () => {
         'Technology has had a significant impact on education.',
       ],
       wordFamily: [
-        { word: 'significance', partOfSpeech: 'NOUN' },
-        { word: 'significantly', partOfSpeech: 'ADVERB' },
+        { word: 'significance', partOfSpeech: 'NOUN', banglaMeaning: 'তাৎপর্য' },
+        { word: 'significantly', partOfSpeech: 'ADVERB', banglaMeaning: 'উল্লেখযোগ্যভাবে' },
       ],
       synonyms: [
         { word: 'important', partOfSpeech: 'ADJECTIVE' },

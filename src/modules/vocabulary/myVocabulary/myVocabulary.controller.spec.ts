@@ -26,7 +26,13 @@ describe('MyVocabularyController', () => {
       },
     ],
     exampleSentences: ['A significant change occurred.'],
-    wordFamily: [{ word: 'significance', partOfSpeech: PartOfSpeech.NOUN }],
+    wordFamily: [
+      {
+        word: 'significance',
+        partOfSpeech: PartOfSpeech.NOUN,
+        banglaMeaning: 'তাৎপর্য',
+      },
+    ],
     synonyms: [{ word: 'important', partOfSpeech: PartOfSpeech.ADJECTIVE }],
     antonyms: [{ word: 'minor', partOfSpeech: PartOfSpeech.ADJECTIVE }],
     englishLevel: EnglishLevel.B1,

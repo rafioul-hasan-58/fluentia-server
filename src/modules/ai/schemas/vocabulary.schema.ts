@@ -26,6 +26,24 @@ export const WordWithPartOfSpeechSchema = z.object({
 
 export type WordWithPartOfSpeech = z.infer<typeof WordWithPartOfSpeechSchema>;
 
+export const WordFamilyItemSchema = z.object({
+  word: z
+    .string()
+    .min(1, 'Word must not be empty')
+    .transform((val) => val.trim().toLowerCase()),
+  partOfSpeech: PartOfSpeechEnum,
+  banglaMeaning: z
+    .string()
+    .min(1, 'Bangla meaning is required')
+    .transform((val) => {
+      const cleaned = val.trim().replace(/^[,./\s]+|[,./\s]+$/g, '');
+      const firstWord = cleaned.split(/[\s/]+/)[0];
+      return firstWord || cleaned;
+    }),
+});
+
+export type WordFamilyItem = z.infer<typeof WordFamilyItemSchema>;
+
 export const CollocationSchema = z.object({
   collocation: z.string().min(1, 'Collocation phrase is required'),
   banglaMeaning: z.string().min(1, 'Bangla meaning is required'),
@@ -47,7 +65,7 @@ export const AiVocabularySchema = z.object({
   exampleSentences: z
     .array(z.string())
     .min(1, 'At least one example sentence is required'),
-  wordFamily: z.array(WordWithPartOfSpeechSchema).default([]),
+  wordFamily: z.array(WordFamilyItemSchema).default([]),
   synonyms: z.array(WordWithPartOfSpeechSchema).default([]),
   antonyms: z.array(WordWithPartOfSpeechSchema).default([]),
   englishLevel: EnglishLevelEnum,
