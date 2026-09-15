@@ -25,7 +25,8 @@
     "seed": "ts-node prisma/seed.ts",
     "db:backfill-durations": "ts-node prisma/backfill-attempt-duration.ts",
     "db:backfill-pronunciations": "ts-node prisma/backfill-bangla-pronunciation.ts",
-    "db:backfill-collocations": "ts-node prisma/backfill-collocations.ts"
+    "db:backfill-collocations": "ts-node prisma/backfill-collocations.ts",
+    "db:backfill-word-family": "ts-node prisma/backfill-word-family.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
