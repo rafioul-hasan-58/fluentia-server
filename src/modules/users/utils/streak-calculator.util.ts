@@ -1,31 +1,42 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, LearningProfile } from '@prisma/client';
 import { formatInTimeZone } from 'date-fns-tz';
-import { subDays } from 'date-fns';
+
+export interface StreakContext {
+  profile?: LearningProfile | null;
+  timezone?: string | null;
+}
 
 export async function calculateActiveStreak(
   prisma: PrismaClient,
   userId: string,
+  context?: StreakContext,
 ) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { profile: true },
-  });
+  let profile = context?.profile;
+  let timezone = context?.timezone;
 
-  if (!user) {
-    throw new Error(`User not found: ${userId}`);
+  if (profile === undefined || timezone === undefined) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true },
+    });
+
+    if (!user) {
+      throw new Error(`User not found: ${userId}`);
+    }
+
+    if (timezone === undefined) timezone = user.timezone;
+    if (profile === undefined) profile = user.profile;
   }
 
-  const timezone = user.timezone ?? 'UTC';
-
+  const tz = timezone ?? 'UTC';
   const now = new Date();
-  const yesterday = subDays(now, 1);
-  const todayKey = formatInTimeZone(now, timezone, 'yyyy-MM-dd');
-  const yesterdayKey = formatInTimeZone(yesterday, timezone, 'yyyy-MM-dd');
+  const todayKey = formatInTimeZone(now, tz, 'yyyy-MM-dd');
   const lastActiveKey =
-    user.profile?.lastActiveAt &&
-    formatInTimeZone(user.profile.lastActiveAt, timezone, 'yyyy-MM-dd');
+    profile?.lastActiveAt &&
+    formatInTimeZone(profile.lastActiveAt, tz, 'yyyy-MM-dd');
 
-  if (!user.profile) {
+  // If profile doesn't exist yet, create it with initial streak of 1
+  if (!profile) {
     return prisma.learningProfile.create({
       data: {
         userId,
@@ -34,34 +45,29 @@ export async function calculateActiveStreak(
         longestStreak: 1,
       },
     });
-  } else if (!user.profile.lastActiveAt) {
-    return prisma.learningProfile.update({
-      where: { userId },
-      data: {
-        lastActiveAt: now,
-        streakDays: 1,
-        longestStreak: Math.max(1, user.profile.longestStreak ?? 1),
-      },
-    });
-  } else if (lastActiveKey === todayKey) {
-    return user.profile;
-  } else if (lastActiveKey === yesterdayKey) {
-    const newStreak = (user.profile.streakDays ?? 0) + 1;
-    return prisma.learningProfile.update({
-      where: { userId },
-      data: {
-        streakDays: { increment: 1 },
-        longestStreak: Math.max(newStreak, user.profile.longestStreak ?? 0),
-        lastActiveAt: now,
-      },
-    });
-  } else {
-    return prisma.learningProfile.update({
-      where: { userId },
-      data: {
-        streakDays: 1,
-        lastActiveAt: now,
-      },
-    });
   }
+
+  // If already active today, avoid redundant database writes
+  if (lastActiveKey === todayKey) {
+    return profile;
+  }
+
+  // Calculate calendar yesterday in user's timezone reliably without DST drift
+  const [year, month, day] = todayKey.split('-').map(Number);
+  const localTodayUtc = new Date(Date.UTC(year, month - 1, day));
+  localTodayUtc.setUTCDate(localTodayUtc.getUTCDate() - 1);
+  const yesterdayKey = localTodayUtc.toISOString().slice(0, 10);
+
+  const isConsecutive = lastActiveKey === yesterdayKey;
+  const newStreak = isConsecutive ? (profile.streakDays ?? 0) + 1 : 1;
+  const longestStreak = Math.max(newStreak, profile.longestStreak ?? 0);
+
+  return prisma.learningProfile.update({
+    where: { userId },
+    data: {
+      streakDays: newStreak,
+      longestStreak,
+      lastActiveAt: now,
+    },
+  });
 }

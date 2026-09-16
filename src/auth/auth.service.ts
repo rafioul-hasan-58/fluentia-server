@@ -18,7 +18,10 @@ import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '../config/env.schema';
 import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../prisma/prisma.service';
-import { calculateActiveStreak } from '../modules/users/utils/streak-calculator.util';
+import {
+  calculateActiveStreak,
+  StreakContext,
+} from '../modules/users/utils/streak-calculator.util';
 
 @Injectable()
 export class AuthService {
@@ -93,7 +96,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password!');
     }
 
-    await this.calculateActiveStreak(user.id);
+    await this.calculateActiveStreak(user.id, {
+      timezone: user.timezone,
+    });
 
     const tokenPayload = {
       id: user.id,
@@ -255,12 +260,14 @@ export class AuthService {
       );
     }
 
-    await this.calculateActiveStreak(user.id);
+    await this.calculateActiveStreak(user.id, {
+      timezone: user.timezone,
+    });
 
     return this.generateTokens(user);
   }
 
-  async calculateActiveStreak(userId: string) {
-    return calculateActiveStreak(this.prisma, userId);
+  async calculateActiveStreak(userId: string, context?: StreakContext) {
+    return calculateActiveStreak(this.prisma, userId, context);
   }
 }

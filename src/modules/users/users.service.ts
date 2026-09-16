@@ -486,7 +486,10 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException('User not found!');
     }
-    await calculateActiveStreak(this.prisma, userId);
+    await calculateActiveStreak(this.prisma, userId, {
+      profile: user.profile,
+      timezone: user.timezone,
+    });
     return {
       currentLevel: user.profile?.estimatedCEFR ?? 'A2',
     };

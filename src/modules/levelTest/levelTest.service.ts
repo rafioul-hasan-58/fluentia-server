@@ -881,6 +881,7 @@ export class LevelTestQuestionsService implements OnModuleInit {
     if (userId && this.isValidObjectId(userId)) {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
+        include: { profile: true },
       });
 
       if (user) {
@@ -907,13 +908,15 @@ export class LevelTestQuestionsService implements OnModuleInit {
         });
         savedAttemptId = attempt.id;
 
-        await calculateActiveStreak(this.prisma, user.id);
+        await calculateActiveStreak(this.prisma, user.id, {
+          profile: user.profile,
+          timezone: user.timezone,
+        });
 
         await this.prisma.learningProfile.update({
           where: { userId: user.id },
           data: {
             estimatedCEFR: analysis.estimatedLevel,
-            lastActiveAt: new Date(),
           },
         });
       }
