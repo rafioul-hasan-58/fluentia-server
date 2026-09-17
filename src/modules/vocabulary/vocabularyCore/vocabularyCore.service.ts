@@ -43,10 +43,11 @@ export class VocabularyCoreService {
     });
 
     if (existingVocabulary) {
+      const vocabWithVerbForms = await this.ensureVerbForms(existingVocabulary);
       return {
         isNew: false,
         message: 'Vocabulary retrieved from shared catalog.',
-        data: existingVocabulary,
+        data: vocabWithVerbForms,
       };
     }
 
@@ -67,10 +68,12 @@ export class VocabularyCoreService {
         this.logger.log(
           `Corrected word "${finalWord}" (from "${normalizedWord}") already exists in catalog.`,
         );
+        const correctedWithVerbForms =
+          await this.ensureVerbForms(existingCorrected);
         return {
           isNew: false,
           message: 'Vocabulary retrieved from shared catalog.',
-          data: existingCorrected,
+          data: correctedWithVerbForms,
         };
       }
     }
@@ -84,6 +87,8 @@ export class VocabularyCoreService {
           banglaMeaning: aiData.banglaMeaning,
           banglaPronunciation: aiData.banglaPronunciation || null,
           partOfSpeech: aiData.partOfSpeech,
+          verbForms:
+            (aiData.verbForms as Prisma.InputJsonValue) ?? Prisma.JsonNull,
           collocations: aiData.collocations || [],
           exampleSentences: aiData.exampleSentences || [],
           wordFamily: aiData.wordFamily || [],
@@ -112,16 +117,54 @@ export class VocabularyCoreService {
         });
 
         if (concurrentVocabulary) {
+          const concurrentWithVerbForms =
+            await this.ensureVerbForms(concurrentVocabulary);
           return {
             isNew: false,
             message: 'Vocabulary retrieved from shared catalog.',
-            data: concurrentVocabulary,
+            data: concurrentWithVerbForms,
           };
         }
       }
 
       throw error;
     }
+  }
+
+  /**
+   * Dynamically generates and persists verb forms for a VERB record if missing.
+   */
+  private async ensureVerbForms<
+    T extends {
+      id: string;
+      word: string;
+      partOfSpeech: string;
+      verbForms: unknown;
+    },
+  >(vocabulary: T): Promise<T> {
+    if (
+      vocabulary.partOfSpeech === 'VERB' &&
+      (!vocabulary.verbForms ||
+        !(vocabulary.verbForms as Record<string, unknown>)?.v1)
+    ) {
+      try {
+        const generatedForms = await this.aiService.generateVerbForms(
+          vocabulary.word,
+        );
+        const updated = await this.prisma.vocabulary.update({
+          where: { id: vocabulary.id },
+          data: {
+            verbForms: generatedForms,
+          },
+        });
+        return updated as unknown as T;
+      } catch (error) {
+        this.logger.warn(
+          `Failed to generate missing verb forms for verb "${vocabulary.word}": ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+    return vocabulary;
   }
 
   /**
@@ -187,6 +230,6 @@ export class VocabularyCoreService {
       throw new NotFoundException(`Vocabulary with ID '${id}' not found`);
     }
 
-    return vocabulary;
+    return await this.ensureVerbForms(vocabulary);
   }
 }

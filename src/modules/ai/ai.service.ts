@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 import { EnvConfig } from '../../config/env.schema';
 import { Lesson } from './schemas/lesson.schema';
 import { LevelTestAnalysis } from './schemas/levelTest.schema';
-import { AiVocabulary } from './schemas/vocabulary.schema';
+import { AiVocabulary, VerbForms } from './schemas/vocabulary.schema';
 import { VocabStoryAiOutput } from './schemas/vocabStory.schema';
 import { buildTeachPrompt } from './prompts/teach.prompt';
 import {
@@ -22,6 +22,7 @@ import {
   parseAndValidateLevelTestAnalysis,
   parseAndValidateVocabulary,
   parseAndValidateVocabStory,
+  parseAndValidateVerbForms,
 } from './utils/validateAiOutput';
 import { callAi } from './utils/ai.config';
 import { PlatformSettingsService } from '../platformSettings';
@@ -224,6 +225,70 @@ export class AiService implements OnModuleInit {
     );
     throw new AiValidationError(
       `AI vocabulary response failed schema validation: ${retryValidationResult.error}`,
+      retryValidationResult.cause,
+    );
+  }
+
+  // generate principal verb forms (v1, v2, v3) for a verb
+  async generateVerbForms(word: string): Promise<VerbForms> {
+    const normalizedWord = word.trim().toLowerCase();
+    const prompt = `You are an expert English lexicographer.
+Provide the standard principal verb forms (v1, v2, v3) in lowercase for the English verb: "${normalizedWord}"
+
+Return strictly a single JSON object with no markdown formatting:
+{
+  "v1": "base / present form",
+  "v2": "past simple form",
+  "v3": "past participle form"
+}`;
+
+    let rawContent: string | null;
+    try {
+      rawContent = await this.callAi(prompt);
+    } catch (error) {
+      this.logger.error(
+        `AI API call failed for verb forms "${normalizedWord}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new AiServiceError(
+        'Failed to communicate with AI service during verb forms generation',
+        error,
+      );
+    }
+
+    const validationResult = parseAndValidateVerbForms(rawContent);
+    if (validationResult.success) {
+      return validationResult.data;
+    }
+
+    this.logger.warn(
+      `AI verb forms output failed validation on first attempt for "${normalizedWord}". Retrying once... Error: ${validationResult.error}`,
+    );
+
+    const retryPrompt = `${prompt}\n\nCRITICAL FIX: Output must be valid JSON matching { "v1": "...", "v2": "...", "v3": "..." }. Validation error: ${validationResult.error}`;
+
+    let retryRawContent: string | null;
+    try {
+      retryRawContent = await this.callAi(retryPrompt);
+    } catch (error) {
+      this.logger.error(
+        `AI API call failed on retry for verb forms "${normalizedWord}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new AiServiceError(
+        'Failed to communicate with AI service on retry during verb forms generation',
+        error,
+      );
+    }
+
+    const retryValidationResult = parseAndValidateVerbForms(retryRawContent);
+    if (retryValidationResult.success) {
+      return retryValidationResult.data;
+    }
+
+    this.logger.error(
+      `AI verb forms output failed validation after retry for "${normalizedWord}". Error: ${retryValidationResult.error}`,
+    );
+    throw new AiValidationError(
+      `AI verb forms response failed schema validation: ${retryValidationResult.error}`,
       retryValidationResult.cause,
     );
   }
