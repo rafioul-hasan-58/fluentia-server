@@ -214,6 +214,7 @@ export class QueryBuilder<T = any> {
 
   // Programmatic select fields
   select(selectableFields: Record<string, boolean | object>): this {
+    delete this.prismaQuery.include;
     this.prismaQuery.select = {
       ...this.prismaQuery.select,
       ...selectableFields,

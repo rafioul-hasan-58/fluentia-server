@@ -295,6 +295,7 @@ model MyVocabulary {
   updatedAt        DateTime         @updatedAt
 
   @@unique([userId, wordId])
+  @@index([userId, updatedAt])
 }
 
 model VocabStory {

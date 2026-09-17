@@ -101,8 +101,25 @@ export class MyVocabularyService {
       .rawFilter(rawWhere)
       .sort('-updatedAt')
       .paginate()
-      .include({
-        word: true,
+      .select({
+        id: true,
+        wordId: true,
+        masteryLevel: true,
+        isFavourate: true,
+        vocabularyStatus: true,
+        createdAt: true,
+        updatedAt: true,
+        word: {
+          select: {
+            id: true,
+            word: true,
+            partOfSpeech: true,
+            englishLevel: true,
+            banglaMeaning: true,
+            banglaPronunciation: true,
+            meaning: true,
+          },
+        },
       });
 
     const [result, meta] = await Promise.all([
