@@ -4,7 +4,12 @@ import {
   LevelTestAnalysisSchema,
 } from '../schemas/levelTest.schema';
 import { Lesson, LessonSchema } from '../schemas/lesson.schema';
-import { AiVocabulary, AiVocabularySchema } from '../schemas/vocabulary.schema';
+import {
+  AiVocabulary,
+  AiVocabularySchema,
+  VerbForms,
+  VerbFormsSchema,
+} from '../schemas/vocabulary.schema';
 import {
   VocabStoryAiOutput,
   VocabStorySchema,
@@ -92,4 +97,11 @@ export function parseAndValidateVocabStory(
   rawContent: string | null,
 ): ValidationResult<VocabStoryAiOutput> {
   return validateAiOutput(rawContent, VocabStorySchema);
+}
+
+// parse and validate verb forms
+export function parseAndValidateVerbForms(
+  rawContent: string | null,
+): ValidationResult<VerbForms> {
+  return validateAiOutput(rawContent, VerbFormsSchema);
 }

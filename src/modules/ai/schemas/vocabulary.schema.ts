@@ -44,6 +44,23 @@ export const WordFamilyItemSchema = z.object({
 
 export type WordFamilyItem = z.infer<typeof WordFamilyItemSchema>;
 
+export const VerbFormsSchema = z.object({
+  v1: z
+    .string()
+    .min(1, 'v1 form is required')
+    .transform((val) => val.trim().toLowerCase()),
+  v2: z
+    .string()
+    .min(1, 'v2 form is required')
+    .transform((val) => val.trim().toLowerCase()),
+  v3: z
+    .string()
+    .min(1, 'v3 form is required')
+    .transform((val) => val.trim().toLowerCase()),
+});
+
+export type VerbForms = z.infer<typeof VerbFormsSchema>;
+
 export const CollocationSchema = z.object({
   collocation: z.string().min(1, 'Collocation phrase is required'),
   banglaMeaning: z.string().min(1, 'Bangla meaning is required'),
@@ -52,23 +69,48 @@ export const CollocationSchema = z.object({
 
 export type Collocation = z.infer<typeof CollocationSchema>;
 
-export const AiVocabularySchema = z.object({
-  word: z
-    .string()
-    .min(1, 'Word must not be empty')
-    .transform((val) => val.trim().toLowerCase()),
-  meaning: z.string().min(1, 'English meaning is required'),
-  banglaMeaning: z.string().min(1, 'Bangla meaning is required'),
-  banglaPronunciation: z.string().optional(),
-  partOfSpeech: PartOfSpeechEnum,
-  collocations: z.array(CollocationSchema).default([]),
-  exampleSentences: z
-    .array(z.string())
-    .min(1, 'At least one example sentence is required'),
-  wordFamily: z.array(WordFamilyItemSchema).default([]),
-  synonyms: z.array(WordWithPartOfSpeechSchema).default([]),
-  antonyms: z.array(WordWithPartOfSpeechSchema).default([]),
-  englishLevel: EnglishLevelEnum,
-});
+export const AiVocabularySchema = z
+  .object({
+    word: z
+      .string()
+      .min(1, 'Word must not be empty')
+      .transform((val) => val.trim().toLowerCase()),
+    meaning: z.string().min(1, 'English meaning is required'),
+    banglaMeaning: z.string().min(1, 'Bangla meaning is required'),
+    banglaPronunciation: z.string().optional(),
+    partOfSpeech: PartOfSpeechEnum,
+    verbForms: VerbFormsSchema.nullable().optional().default(null),
+    collocations: z.array(CollocationSchema).default([]),
+    exampleSentences: z
+      .array(z.string())
+      .min(1, 'At least one example sentence is required'),
+    wordFamily: z.array(WordFamilyItemSchema).default([]),
+    synonyms: z.array(WordWithPartOfSpeechSchema).default([]),
+    antonyms: z.array(WordWithPartOfSpeechSchema).default([]),
+    englishLevel: EnglishLevelEnum,
+  })
+  .superRefine((data, ctx) => {
+    if (data.partOfSpeech === 'VERB') {
+      if (
+        !data.verbForms ||
+        !data.verbForms.v1 ||
+        !data.verbForms.v2 ||
+        !data.verbForms.v3
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'verbForms (v1, v2, v3) is required when partOfSpeech is VERB',
+          path: ['verbForms'],
+        });
+      }
+    }
+  })
+  .transform((data) => {
+    if (data.partOfSpeech !== 'VERB') {
+      return { ...data, verbForms: null };
+    }
+    return data;
+  });
 
 export type AiVocabulary = z.infer<typeof AiVocabularySchema>;

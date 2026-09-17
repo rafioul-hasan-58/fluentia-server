@@ -268,7 +268,8 @@ model Vocabulary {
   banglaMeaning       String
   banglaPronunciation String?
   partOfSpeech        PartOfSpeech
-  collocations     Json?
+  verbForms           Json?
+  collocations        Json?
   exampleSentences String[]
   wordFamily       Json?
   synonyms         Json?

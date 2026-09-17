@@ -35,17 +35,23 @@ Generate accurate, structured dictionary data formatted strictly as a single JSO
 9. "synonyms": Array of 2-5 direct English synonyms with their parts of speech (e.g. [{"word": "important", "partOfSpeech": "ADJECTIVE"}, {"word": "considerable", "partOfSpeech": "ADJECTIVE"}]).
 10. "antonyms": Array of 1-4 direct English antonyms with their parts of speech (or empty array if none apply) (e.g. [{"word": "insignificant", "partOfSpeech": "ADJECTIVE"}, {"word": "minor", "partOfSpeech": "ADJECTIVE"}]).
 11. "englishLevel": CEFR proficiency level (EXACTLY one of: "A1", "A2", "B1", "B2", "C1", "C2") based on Oxford/Cambridge standards.
+12. "verbForms": If "partOfSpeech" is "VERB", you MUST provide an object with "v1", "v2", and "v3" in lowercase containing the principal verb forms:
+   - "v1": Base form / Present simple (e.g. "write", "go", "break").
+   - "v2": Past simple (e.g. "wrote", "went", "broke").
+   - "v3": Past participle (e.g. "written", "gone", "broken").
+   If "partOfSpeech" is NOT "VERB", strictly set "verbForms" to null.
 
 ### Output Format:
 Return ONLY the raw JSON object with no markdown fences, no formatting backticks, and no commentary.
 
-Example:
+Example (Non-verb):
 {
   "word": "significant",
   "meaning": "important or large enough to matter",
   "banglaMeaning": "গুরুত্বপূর্ণ / উল্লেখযোগ্য",
   "banglaPronunciation": "সিগনিফিক্যান্ট",
   "partOfSpeech": "ADJECTIVE",
+  "verbForms": null,
   "collocations": [
     {
       "collocation": "significant increase",
@@ -81,5 +87,13 @@ Example:
     { "word": "minor", "partOfSpeech": "ADJECTIVE" }
   ],
   "englishLevel": "B1"
+}
+
+Example snippet when partOfSpeech is "VERB" (e.g. "break"):
+"partOfSpeech": "VERB",
+"verbForms": {
+  "v1": "break",
+  "v2": "broke",
+  "v3": "broken"
 }`;
 }
