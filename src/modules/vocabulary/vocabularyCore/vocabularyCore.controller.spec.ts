@@ -16,6 +16,8 @@ describe('VocabularyCoreController', () => {
     word: 'significant',
     meaning: 'important or large enough to matter',
     banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
+    partOfSpeech: PartOfSpeech.ADJECTIVE,
+    verbForms: null,
     collocations: [
       {
         collocation: 'significant increase',

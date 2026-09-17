@@ -118,8 +118,16 @@ describe('AiService', () => {
         'Technology has had a significant impact on education.',
       ],
       wordFamily: [
-        { word: 'significance', partOfSpeech: 'NOUN', banglaMeaning: 'তাৎপর্য' },
-        { word: 'significantly', partOfSpeech: 'ADVERB', banglaMeaning: 'উল্লেখযোগ্যভাবে' },
+        {
+          word: 'significance',
+          partOfSpeech: 'NOUN',
+          banglaMeaning: 'তাৎপর্য',
+        },
+        {
+          word: 'significantly',
+          partOfSpeech: 'ADVERB',
+          banglaMeaning: 'উল্লেখযোগ্যভাবে',
+        },
       ],
       synonyms: [
         { word: 'important', partOfSpeech: 'ADJECTIVE' },
@@ -175,6 +183,64 @@ describe('AiService', () => {
         .mockRejectedValue(new Error('API failure'));
 
       await expect(service.generateVocabulary('significant')).rejects.toThrow(
+        AiServiceError,
+      );
+    });
+  });
+
+  describe('generateVerbForms', () => {
+    const validVerbFormsJson = JSON.stringify({
+      v1: 'break',
+      v2: 'broke',
+      v3: 'broken',
+    });
+
+    const invalidVerbFormsJson = JSON.stringify({
+      v1: 'break',
+    });
+
+    it('should return validated verb forms on successful first attempt', async () => {
+      jest
+        .spyOn<any, any>(service, 'callAi')
+        .mockResolvedValue(validVerbFormsJson);
+
+      const result = await service.generateVerbForms('break');
+
+      expect(result).toEqual({
+        v1: 'break',
+        v2: 'broke',
+        v3: 'broken',
+      });
+    });
+
+    it('should retry once when first attempt fails and succeed on second attempt', async () => {
+      const callAiSpy = jest
+        .spyOn<any, any>(service, 'callAi')
+        .mockResolvedValueOnce(invalidVerbFormsJson)
+        .mockResolvedValueOnce(validVerbFormsJson);
+
+      const result = await service.generateVerbForms('break');
+
+      expect(callAiSpy).toHaveBeenCalledTimes(2);
+      expect(result.v3).toBe('broken');
+    });
+
+    it('should throw AiValidationError when validation fails twice', async () => {
+      jest
+        .spyOn<any, any>(service, 'callAi')
+        .mockResolvedValue(invalidVerbFormsJson);
+
+      await expect(service.generateVerbForms('break')).rejects.toThrow(
+        AiValidationError,
+      );
+    });
+
+    it('should throw AiServiceError when API call fails', async () => {
+      jest
+        .spyOn<any, any>(service, 'callAi')
+        .mockRejectedValue(new Error('API failure'));
+
+      await expect(service.generateVerbForms('break')).rejects.toThrow(
         AiServiceError,
       );
     });

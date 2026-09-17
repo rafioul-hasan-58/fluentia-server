@@ -17,6 +17,8 @@ describe('VocabularyCoreService', () => {
     word: 'significant',
     meaning: 'important or large enough to matter',
     banglaMeaning: 'গুরুত্বপূর্ণ / উল্লেখযোগ্য',
+    partOfSpeech: PartOfSpeech.ADJECTIVE,
+    verbForms: null,
     collocations: [
       {
         collocation: 'significant increase',
@@ -58,11 +60,13 @@ describe('VocabularyCoreService', () => {
         findMany: jest.fn(),
         count: jest.fn(),
         create: jest.fn(),
+        update: jest.fn(),
       },
     };
 
     const mockAi = {
       generateVocabulary: jest.fn(),
+      generateVerbForms: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -266,6 +270,108 @@ describe('VocabularyCoreService', () => {
       expect(result.isNew).toBe(true);
       expect(result.data).toEqual(mockVocabulary);
       expect(result.message).toBe('new word generated');
+    });
+
+    it('should call AI service and save new VERB with verbForms when not in catalog', async () => {
+      const mockVerbAiOutput = {
+        word: 'write',
+        meaning: 'mark letters, words, or other symbols on a surface',
+        banglaMeaning: 'লেখা',
+        partOfSpeech: PartOfSpeech.VERB,
+        verbForms: {
+          v1: 'write',
+          v2: 'wrote',
+          v3: 'written',
+        },
+        collocations: [],
+        exampleSentences: ['She writes a letter.'],
+        wordFamily: [],
+        synonyms: [],
+        antonyms: [],
+        englishLevel: EnglishLevel.A1,
+      };
+
+      const mockCreatedVerb = {
+        id: '665f1b2e4444444444444444',
+        ...mockVerbAiOutput,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      prismaService.vocabulary.findUnique.mockResolvedValue(null);
+      aiService.generateVocabulary.mockResolvedValue(mockVerbAiOutput);
+      prismaService.vocabulary.create.mockResolvedValue(mockCreatedVerb);
+
+      const result = await service.getOrGenerateVocabulary({ word: 'write' });
+
+      expect(aiService.generateVocabulary).toHaveBeenCalledWith('write');
+      expect(prismaService.vocabulary.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          word: 'write',
+          partOfSpeech: PartOfSpeech.VERB,
+          verbForms: {
+            v1: 'write',
+            v2: 'wrote',
+            v3: 'written',
+          },
+        }),
+      });
+      expect(result.isNew).toBe(true);
+      expect(result.data).toEqual(mockCreatedVerb);
+    });
+
+    it('should dynamically generate and update verbForms when retrieving an existing VERB missing verb forms', async () => {
+      const existingVerbWithoutForms = {
+        id: '665f1b2e5555555555555555',
+        word: 'break',
+        meaning: 'separate into pieces as a result of a blow, shock, or strain',
+        banglaMeaning: 'ভাঙা',
+        partOfSpeech: PartOfSpeech.VERB,
+        verbForms: null,
+        collocations: [],
+        exampleSentences: ['He broke the vase.'],
+        wordFamily: [],
+        synonyms: [],
+        antonyms: [],
+        englishLevel: EnglishLevel.A2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const updatedVerbWithForms = {
+        ...existingVerbWithoutForms,
+        verbForms: {
+          v1: 'break',
+          v2: 'broke',
+          v3: 'broken',
+        },
+      };
+
+      prismaService.vocabulary.findUnique.mockResolvedValue(
+        existingVerbWithoutForms,
+      );
+      aiService.generateVerbForms.mockResolvedValue({
+        v1: 'break',
+        v2: 'broke',
+        v3: 'broken',
+      });
+      prismaService.vocabulary.update.mockResolvedValue(updatedVerbWithForms);
+
+      const result = await service.getOrGenerateVocabulary({ word: 'break' });
+
+      expect(aiService.generateVerbForms).toHaveBeenCalledWith('break');
+      expect(prismaService.vocabulary.update).toHaveBeenCalledWith({
+        where: { id: existingVerbWithoutForms.id },
+        data: {
+          verbForms: {
+            v1: 'break',
+            v2: 'broke',
+            v3: 'broken',
+          },
+        },
+      });
+      expect(result.isNew).toBe(false);
+      expect(result.data).toEqual(updatedVerbWithForms);
     });
 
     it('should throw BadRequestException when word is empty', async () => {
