@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import nodemailer from 'nodemailer';
-import { EnvConfig } from '../../config/env.schema';
+import { EnvConfig } from '../../../config/env.schema';
 
 @Injectable()
 export class MailService implements OnModuleInit {

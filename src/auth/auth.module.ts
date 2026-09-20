@@ -5,7 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EnvConfig } from '../config/env.schema';
 import { UsersModule } from '../modules/users';
-import { MailModule } from '../modules/mail';
+import { MailModule } from '../infrastructure/utilsModule';
 import { OtpRepository } from './otp.repository';
 
 @Module({

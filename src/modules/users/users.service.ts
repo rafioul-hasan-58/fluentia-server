@@ -6,7 +6,7 @@ import {
 import { EnglishLevel, Prisma, Role } from '@prisma/client';
 import { UsersRepository } from './users.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { S3Service } from '../s3';
+import { S3Service } from '../../infrastructure/utilsModule';
 import { UpdateProfileDto } from './dto/updateProfile.dto';
 import { GetUsersQueryDto, UserRoleFilter } from './dto/getUsers.query.dto';
 import { AdminUpdateUserDto } from './dto/adminUpdateUser.dto';

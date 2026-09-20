@@ -4,7 +4,7 @@ import { EnglishLevel, Role } from '@prisma/client';
 import { UsersService } from './users.service';
 import { UsersRepository } from './users.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { S3Service } from '../s3';
+import { S3Service } from '../../infrastructure/utilsModule';
 
 describe('UsersService', () => {
   let service: UsersService;

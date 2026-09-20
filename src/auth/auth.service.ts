@@ -12,7 +12,7 @@ import bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
 import { RegistrationMethod, User } from '@prisma/client';
 import { ForgotPasswordDTO } from './dto/forgotPassword.dto';
-import { MailService } from '../modules/mail';
+import { MailService } from '../infrastructure/utilsModule';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '../config/env.schema';

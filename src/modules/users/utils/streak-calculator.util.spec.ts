@@ -15,7 +15,7 @@ describe('calculateActiveStreak', () => {
   beforeEach(() => {
     prisma = {
       user: {
-        findUnique: jest.MockedFunction = jest.fn(),
+        findUnique: jest.fn(),
       },
       learningProfile: {
         create: jest.fn(),

@@ -10,7 +10,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
-import { EnvConfig } from '../../config/env.schema';
+import { EnvConfig } from '../../../config/env.schema';
 import crypto from 'crypto';
 import path from 'path';
 

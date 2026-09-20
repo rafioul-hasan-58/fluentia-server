@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { UsersRepository } from '../modules/users/users.repository';
 import { OtpRepository } from './otp.repository';
 import { JwtService } from '@nestjs/jwt';
-import { MailService } from '../modules/mail';
+import { MailService } from '../infrastructure/utilsModule';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { UnauthorizedException } from '@nestjs/common';
