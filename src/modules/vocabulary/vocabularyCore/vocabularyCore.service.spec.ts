@@ -149,7 +149,12 @@ describe('VocabularyCoreService', () => {
         where: { word: 'significant' },
       });
       expect(aiService.generateVocabulary).toHaveBeenCalledWith('significant');
-      expect(prismaService.vocabulary.create).toHaveBeenCalled();
+      expect(prismaService.vocabulary.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          word: 'significant',
+          verbForms: null,
+        }),
+      });
       expect(result).toEqual({
         isNew: true,
         message: 'new word generated',

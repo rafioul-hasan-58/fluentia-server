@@ -87,8 +87,7 @@ export class VocabularyCoreService {
           banglaMeaning: aiData.banglaMeaning,
           banglaPronunciation: aiData.banglaPronunciation || null,
           partOfSpeech: aiData.partOfSpeech,
-          verbForms:
-            (aiData.verbForms as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+          verbForms: (aiData.verbForms as Prisma.InputJsonValue) ?? null,
           collocations: aiData.collocations || [],
           exampleSentences: aiData.exampleSentences || [],
           wordFamily: aiData.wordFamily || [],
