@@ -174,25 +174,8 @@ describe('MyVocabularyService', () => {
         skip: 0,
         take: 10,
         orderBy: { updatedAt: 'desc' },
-        select: {
-          id: true,
-          wordId: true,
-          masteryLevel: true,
-          isFavourate: true,
-          vocabularyStatus: true,
-          createdAt: true,
-          updatedAt: true,
-          word: {
-            select: {
-              id: true,
-              word: true,
-              partOfSpeech: true,
-              englishLevel: true,
-              banglaMeaning: true,
-              banglaPronunciation: true,
-              meaning: true,
-            },
-          },
+        include: {
+          word: true,
         },
       });
       expect(result.result).toEqual([mockMyVocabulary]);

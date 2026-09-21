@@ -101,25 +101,8 @@ export class MyVocabularyService {
       .rawFilter(rawWhere)
       .sort('-updatedAt')
       .paginate()
-      .select({
-        id: true,
-        wordId: true,
-        masteryLevel: true,
-        isFavourate: true,
-        vocabularyStatus: true,
-        createdAt: true,
-        updatedAt: true,
-        word: {
-          select: {
-            id: true,
-            word: true,
-            partOfSpeech: true,
-            englishLevel: true,
-            banglaMeaning: true,
-            banglaPronunciation: true,
-            meaning: true,
-          },
-        },
+      .include({
+        word: true,
       });
 
     const [result, meta] = await Promise.all([
