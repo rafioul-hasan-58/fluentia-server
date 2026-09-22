@@ -3,7 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { EnglishLevel, Prisma, VocabularyStatus } from '@prisma/client';
+import {
+  EnglishLevel,
+  PartOfSpeech,
+  Prisma,
+  VocabularyStatus,
+} from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
   AddMyVocabularyDto,
@@ -196,6 +201,7 @@ export class MyVocabularyService {
         word: {
           select: {
             englishLevel: true,
+            partOfSpeech: true,
           },
         },
       },
@@ -225,6 +231,19 @@ export class MyVocabularyService {
       [EnglishLevel.C1]: 0,
       [EnglishLevel.C2]: 0,
     };
+    const partOfSpeeches: Record<string, number> = {
+      [PartOfSpeech.NOUN]: 0,
+      [PartOfSpeech.PRONOUN]: 0,
+      [PartOfSpeech.VERB]: 0,
+      [PartOfSpeech.ADJECTIVE]: 0,
+      [PartOfSpeech.ADVERB]: 0,
+      [PartOfSpeech.PREPOSITION]: 0,
+      [PartOfSpeech.CONJUNCTION]: 0,
+      [PartOfSpeech.INTERJECTION]: 0,
+      [PartOfSpeech.DETERMINER]: 0,
+      [PartOfSpeech.NUMERAL]: 0,
+      [PartOfSpeech.PARTICLE]: 0,
+    };
 
     for (const item of items) {
       if (item.isFavorite) {
@@ -250,6 +269,11 @@ export class MyVocabularyService {
         statuses[item.vocabularyStatus] =
           (statuses[item.vocabularyStatus] || 0) + 1;
       }
+      // P0S count
+      if (item.word?.partOfSpeech) {
+        const pos = item.word.partOfSpeech;
+        partOfSpeeches[pos] = (partOfSpeeches[pos] || 0) + 1;
+      }
 
       // Level counts
       if (item.word?.englishLevel) {
@@ -265,6 +289,7 @@ export class MyVocabularyService {
       todaysVocab,
       statuses,
       levels,
+      partOfSpeeches,
     };
   }
 }
