@@ -13,6 +13,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import {
   AddMyVocabularyDto,
   GetMyVocabulariesQueryDto,
+  GetVocabularyStatsQueryDto,
   UpdateMyVocabularyDto,
 } from './dto';
 import { VocabularyCoreService } from '../vocabularyCore';
@@ -190,7 +191,7 @@ export class MyVocabularyService {
     };
   }
   // get my-vocabulary stats
-  async getVocabularyStats(userId: string) {
+  async getVocabularyStats(userId: string, query?: GetVocabularyStatsQueryDto) {
     const items = await this.prisma.myVocabulary.findMany({
       where: { userId },
       select: {
@@ -211,6 +212,8 @@ export class MyVocabularyService {
     startOfToday.setHours(0, 0, 0, 0);
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
+
+    const targetMonth = query?.month || new Date().toISOString().slice(0, 7);
 
     const totalWords = items.length;
     let favoriteCount = 0;
@@ -244,6 +247,8 @@ export class MyVocabularyService {
       [PartOfSpeech.NUMERAL]: 0,
       [PartOfSpeech.PARTICLE]: 0,
     };
+
+    const dateWordCounts: Record<string, number> = {};
 
     for (const item of items) {
       if (item.isFavorite) {
@@ -280,6 +285,22 @@ export class MyVocabularyService {
         const lvl = item.word.englishLevel;
         levels[lvl] = (levels[lvl] || 0) + 1;
       }
+
+      // Date word counts for target month (only dates with count > 0)
+      if (item.createdAt) {
+        try {
+          const isoDate =
+            item.createdAt instanceof Date
+              ? item.createdAt.toISOString().slice(0, 10)
+              : new Date(item.createdAt).toISOString().slice(0, 10);
+
+          if (isoDate.slice(0, 7) === targetMonth) {
+            dateWordCounts[isoDate] = (dateWordCounts[isoDate] || 0) + 1;
+          }
+        } catch {
+          // Ignore invalid dates
+        }
+      }
     }
 
     return {
@@ -290,6 +311,7 @@ export class MyVocabularyService {
       statuses,
       levels,
       partOfSpeeches,
+      dateWordCounts,
     };
   }
 }

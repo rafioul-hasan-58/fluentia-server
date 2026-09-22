@@ -264,50 +264,126 @@ describe('MyVocabularyService', () => {
   });
 
   describe('getVocabularyStats', () => {
-    it('should calculate personal vocabulary stats accurately', async () => {
+    it('should calculate personal vocabulary stats accurately including dateWordCounts', async () => {
       const todayDate = new Date();
+      const todayIso = todayDate.toISOString().slice(0, 10);
+
       const mockItems = [
         {
           isFavorite: true,
           masteryLevel: 4,
           vocabularyStatus: VocabularyStatus.LEARNING,
           createdAt: todayDate,
-          word: { englishLevel: EnglishLevel.B1 },
+          word: {
+            englishLevel: EnglishLevel.B1,
+            partOfSpeech: PartOfSpeech.NOUN,
+          },
         },
         {
           isFavorite: false,
           masteryLevel: 5,
           vocabularyStatus: VocabularyStatus.MASTERED,
           createdAt: todayDate,
-          word: { englishLevel: EnglishLevel.B2 },
+          word: {
+            englishLevel: EnglishLevel.B2,
+            partOfSpeech: PartOfSpeech.VERB,
+          },
         },
         {
           isFavorite: true,
           masteryLevel: 2,
           vocabularyStatus: VocabularyStatus.LEARNED,
-          createdAt: new Date('2020-01-01'),
-          word: { englishLevel: EnglishLevel.A1 },
+          createdAt: new Date('2020-01-01T00:00:00.000Z'),
+          word: {
+            englishLevel: EnglishLevel.A1,
+            partOfSpeech: PartOfSpeech.ADJECTIVE,
+          },
         },
       ];
 
-      prismaService.user.findUnique.mockResolvedValue({ timezone: 'UTC' });
       prismaService.myVocabulary.findMany.mockResolvedValue(mockItems);
 
       const stats = await service.getVocabularyStats(mockUserId);
 
       expect(stats.totalWords).toBe(3);
       expect(stats.favoriteCount).toBe(2);
-      expect(stats.favoritesCount).toBe(2);
       expect(stats.masteredCount).toBe(2); // items with masteryLevel >= 4
       expect(stats.todaysVocab).toBe(2);
-      expect(stats.todayWordsCount).toBe(2);
-      expect(stats.byStatus[VocabularyStatus.LEARNING]).toBe(1);
-      expect(stats.byStatus[VocabularyStatus.LEARNED]).toBe(1);
-      expect(stats.byStatus[VocabularyStatus.MASTERED]).toBe(1);
-      expect(stats.byLevel[EnglishLevel.B1]).toBe(1);
-      expect(stats.byLevel[EnglishLevel.B2]).toBe(1);
-      expect(stats.byLevel[EnglishLevel.A1]).toBe(1);
-      expect(stats.byLevel[EnglishLevel.A2]).toBe(0);
+      expect(stats.statuses[VocabularyStatus.LEARNING]).toBe(1);
+      expect(stats.statuses[VocabularyStatus.LEARNED]).toBe(1);
+      expect(stats.statuses[VocabularyStatus.MASTERED]).toBe(1);
+      expect(stats.levels[EnglishLevel.B1]).toBe(1);
+      expect(stats.levels[EnglishLevel.B2]).toBe(1);
+      expect(stats.levels[EnglishLevel.A1]).toBe(1);
+      expect(stats.levels[EnglishLevel.A2]).toBe(0);
+      expect(stats.partOfSpeeches[PartOfSpeech.NOUN]).toBe(1);
+      expect(stats.partOfSpeeches[PartOfSpeech.VERB]).toBe(1);
+      expect(stats.partOfSpeeches[PartOfSpeech.ADJECTIVE]).toBe(1);
+
+      // Default month should be current month
+      expect(stats.dateWordCounts).toEqual({
+        [todayIso]: 2,
+      });
+      // Zero-count dates omitted, and 2020-01-01 omitted from current month
+      expect(stats.dateWordCounts['2020-01-01']).toBeUndefined();
+    });
+
+    it('should scope dateWordCounts to requested query.month and omit zero-count dates', async () => {
+      const mockItems = [
+        {
+          isFavorite: false,
+          masteryLevel: 1,
+          vocabularyStatus: VocabularyStatus.LEARNING,
+          createdAt: new Date('2026-05-10T10:00:00.000Z'),
+          word: {
+            englishLevel: EnglishLevel.A1,
+            partOfSpeech: PartOfSpeech.NOUN,
+          },
+        },
+        {
+          isFavorite: false,
+          masteryLevel: 2,
+          vocabularyStatus: VocabularyStatus.LEARNING,
+          createdAt: new Date('2026-05-10T15:00:00.000Z'),
+          word: {
+            englishLevel: EnglishLevel.A2,
+            partOfSpeech: PartOfSpeech.VERB,
+          },
+        },
+        {
+          isFavorite: false,
+          masteryLevel: 3,
+          vocabularyStatus: VocabularyStatus.LEARNING,
+          createdAt: new Date('2026-05-22T08:00:00.000Z'),
+          word: {
+            englishLevel: EnglishLevel.B1,
+            partOfSpeech: PartOfSpeech.NOUN,
+          },
+        },
+        {
+          isFavorite: false,
+          masteryLevel: 4,
+          vocabularyStatus: VocabularyStatus.LEARNED,
+          createdAt: new Date('2026-04-30T23:59:59.000Z'),
+          word: {
+            englishLevel: EnglishLevel.C1,
+            partOfSpeech: PartOfSpeech.NOUN,
+          },
+        },
+      ];
+
+      prismaService.myVocabulary.findMany.mockResolvedValue(mockItems);
+
+      const stats = await service.getVocabularyStats(mockUserId, {
+        month: '2026-05',
+      });
+
+      expect(stats.dateWordCounts).toEqual({
+        '2026-05-10': 2,
+        '2026-05-22': 1,
+      });
+      expect(stats.dateWordCounts['2026-04-30']).toBeUndefined();
+      expect(stats.dateWordCounts['2026-05-01']).toBeUndefined();
     });
   });
 });

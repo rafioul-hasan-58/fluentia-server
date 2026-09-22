@@ -204,39 +204,22 @@ describe('MyVocabularyController', () => {
       const mockStats = {
         totalWords: 10,
         favoriteCount: 2,
-        favoritesCount: 2,
         masteredCount: 3,
         todaysVocab: 1,
-        todayCount: 1,
-        byStatus: { LEARNING: 6, LEARNED: 3, MASTERED: 1 },
-        byLevel: { A1: 2, A2: 2, B1: 3, B2: 2, C1: 1, C2: 0 },
+        statuses: { LEARNING: 6, LEARNED: 3, MASTERED: 1 },
+        levels: { A1: 2, A2: 2, B1: 3, B2: 2, C1: 1, C2: 0 },
+        partOfSpeeches: {},
+        dateWordCounts: { '2026-09-22': 2 },
       };
-      service.getVocabularyStats.mockResolvedValue(mockStats);
+      service.getVocabularyStats.mockResolvedValue(mockStats as any);
 
-      const result = await controller.getMyVocabularyStats(mockUserId, {});
+      const query = { month: '2026-09' };
+      const result = await controller.getMyVocabularyStats(mockUserId, query);
 
-      expect(service.getVocabularyStats).toHaveBeenCalledWith(mockUserId, {});
-      expect(result).toEqual({
-        message: 'Personal vocabulary statistics retrieved successfully.',
-        data: mockStats,
-      });
-    });
-  });
-
-  describe('getVaultStats', () => {
-    it('should act as alias and return vocabulary vault statistics', async () => {
-      const mockStats = {
-        totalWords: 5,
-        favoriteCount: 1,
-        favoritesCount: 1,
-        masteredCount: 1,
-        todaysVocab: 1,
-      };
-      service.getVocabularyStats.mockResolvedValue(mockStats);
-
-      const result = await controller.getVaultStats(mockUserId, {});
-
-      expect(service.getVocabularyStats).toHaveBeenCalledWith(mockUserId, {});
+      expect(service.getVocabularyStats).toHaveBeenCalledWith(
+        mockUserId,
+        query,
+      );
       expect(result).toEqual({
         message: 'Personal vocabulary statistics retrieved successfully.',
         data: mockStats,

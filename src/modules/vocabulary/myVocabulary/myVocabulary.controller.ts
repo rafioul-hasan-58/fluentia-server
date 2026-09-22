@@ -24,6 +24,7 @@ import { MyVocabularyService } from './myVocabulary.service';
 import {
   AddMyVocabularyDto,
   GetMyVocabulariesQueryDto,
+  GetVocabularyStatsQueryDto,
   UpdateMyVocabularyDto,
 } from './dto';
 
@@ -108,7 +109,7 @@ export class MyVocabularyController {
   @ApiOperation({
     summary: 'Get personal vocabulary vault statistics',
     description:
-      'Returns aggregate counts for personal vocabulary vault: total words, favorite count, counts by status (LEARNING, LEARNED, MASTERED), counts by CEFR level (A1-C2), today words count, and mastered words with score 4 or better.',
+      'Returns aggregate counts for personal vocabulary vault: total words, favorite count, counts by status (LEARNING, LEARNED, MASTERED), counts by CEFR level (A1-C2), today words count, mastered words with score 4 or better, and date-wise word counts scoped to a month.',
   })
   @ApiResponse({
     status: 200,
@@ -118,8 +119,14 @@ export class MyVocabularyController {
     status: 401,
     description: 'Unauthorized.',
   })
-  async getMyVocabularyStats(@CurrentUser('id') userId: string) {
-    const data = await this.myVocabularyService.getVocabularyStats(userId);
+  async getMyVocabularyStats(
+    @CurrentUser('id') userId: string,
+    @Query() query: GetVocabularyStatsQueryDto,
+  ) {
+    const data = await this.myVocabularyService.getVocabularyStats(
+      userId,
+      query,
+    );
     return {
       message: 'Personal vocabulary statistics retrieved successfully.',
       data,
