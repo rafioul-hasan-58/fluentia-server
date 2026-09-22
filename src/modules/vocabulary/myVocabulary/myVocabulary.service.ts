@@ -105,7 +105,7 @@ export class MyVocabularyService {
         'word.banglaPronunciation',
       ])
       .rawFilter(rawWhere)
-      .sort('-updatedAt')
+      .sort('-createdAt')
       .paginate()
       .include({
         word: true,

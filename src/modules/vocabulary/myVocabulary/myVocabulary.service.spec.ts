@@ -176,13 +176,56 @@ describe('MyVocabularyService', () => {
         },
         skip: 0,
         take: 10,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           word: true,
         },
       });
       expect(result.result).toEqual([mockMyVocabulary]);
       expect(result.meta.total).toBe(1);
+    });
+
+    it('should sort in ascending order when sortBy is asc', async () => {
+      prismaService.myVocabulary.count.mockResolvedValue(1);
+      prismaService.myVocabulary.findMany.mockResolvedValue([mockMyVocabulary]);
+
+      await service.findMyVocabularies(mockUserId, {
+        sortBy: 'asc',
+      });
+
+      expect(prismaService.myVocabulary.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { createdAt: 'asc' },
+        }),
+      );
+    });
+
+    it('should sort in descending order when sortBy is desc', async () => {
+      prismaService.myVocabulary.count.mockResolvedValue(1);
+      prismaService.myVocabulary.findMany.mockResolvedValue([mockMyVocabulary]);
+
+      await service.findMyVocabularies(mockUserId, {
+        sortBy: 'desc',
+      });
+
+      expect(prismaService.myVocabulary.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
+    });
+
+    it('should sort in descending order by default when sortBy is not provided', async () => {
+      prismaService.myVocabulary.count.mockResolvedValue(1);
+      prismaService.myVocabulary.findMany.mockResolvedValue([mockMyVocabulary]);
+
+      await service.findMyVocabularies(mockUserId, {});
+
+      expect(prismaService.myVocabulary.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
     });
   });
 

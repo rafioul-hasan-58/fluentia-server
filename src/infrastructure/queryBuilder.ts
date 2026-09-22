@@ -81,7 +81,9 @@ export class QueryBuilder<T = any> {
       'search',
       'sort',
       'sortBy',
+      'findBy',
       'sortOrder',
+      'order',
       'limit',
       'page',
       'fields',
@@ -144,30 +146,67 @@ export class QueryBuilder<T = any> {
 
   // Sorting with optional default sort order
   sort(defaultSort = '-createdAt'): this {
-    const sortParam = (this.query.sort as string) || defaultSort;
-    const sortList = sortParam
+    const sortParam = (this.query.sort as string)?.trim();
+    let sortBy: string | undefined = (
+      (this.query.sortBy ?? this.query.findBy) as string
+    )?.trim();
+    let sortOrder = ((this.query.sortOrder ?? this.query.order) as string)
+      ?.trim()
+      .toLowerCase();
+
+    if (
+      sortBy &&
+      (sortBy.toLowerCase() === 'asc' || sortBy.toLowerCase() === 'desc')
+    ) {
+      sortOrder = sortOrder || sortBy.toLowerCase();
+      sortBy = undefined;
+    }
+
+    const isDesc = sortOrder === 'desc';
+
+    let finalSort: string;
+
+    if (sortParam) {
+      // Explicit `sort` param wins; apply sortOrder only if sort has no
+      // direction prefix and doesn't already list multiple fields
+      if (sortOrder && !sortParam.includes(',')) {
+        const cleanField = sortParam.replace(/^[-+]/, '');
+        finalSort = isDesc ? `-${cleanField}` : cleanField;
+      } else {
+        finalSort = sortParam;
+      }
+    } else if (sortBy) {
+      const cleanField = sortBy.replace(/^[-+]/, '');
+      const desc = isDesc || sortBy.startsWith('-');
+      finalSort = desc ? `-${cleanField}` : cleanField;
+    } else if (sortOrder) {
+      const cleanDefault = defaultSort.replace(/^[-+]/, '');
+      finalSort = isDesc ? `-${cleanDefault}` : cleanDefault;
+    } else {
+      finalSort = defaultSort;
+    }
+
+    const sortList = finalSort
       .split(',')
       .map((field) => field.trim())
       .filter(Boolean);
 
     const orderBy = sortList.map((field) => {
-      const isDesc = field.startsWith('-');
-      const cleanField = isDesc ? field.slice(1) : field;
+      const desc = field.startsWith('-');
+      const cleanField = desc ? field.slice(1) : field;
 
       if (cleanField.includes('.')) {
         const parts = cleanField.split('.');
         return parts
-          .slice()
           .reverse()
-          .reduce<Record<string, unknown>>((acc, k, idx) => {
-            if (idx === 0) {
-              return { [k]: isDesc ? 'desc' : 'asc' };
-            }
-            return { [k]: acc };
-          }, {});
+          .reduce<Record<string, unknown>>(
+            (acc, key, idx) =>
+              idx === 0 ? { [key]: desc ? 'desc' : 'asc' } : { [key]: acc },
+            {},
+          );
       }
 
-      return { [cleanField]: isDesc ? 'desc' : 'asc' };
+      return { [cleanField]: desc ? 'desc' : 'asc' };
     });
 
     this.prismaQuery.orderBy = orderBy.length === 1 ? orderBy[0] : orderBy;
