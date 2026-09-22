@@ -98,12 +98,7 @@ export class MyVocabularyService {
       this.prisma.myVocabulary,
       query as unknown as Record<string, unknown>,
     )
-      .search([
-        'word.word',
-        'word.meaning',
-        'word.banglaMeaning',
-        'word.banglaPronunciation',
-      ])
+      .search(['word.word', 'word.meaning', 'word.banglaMeaning'])
       .rawFilter(rawWhere)
       .sort('-createdAt')
       .paginate()
