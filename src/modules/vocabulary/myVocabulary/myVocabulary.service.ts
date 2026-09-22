@@ -50,7 +50,7 @@ export class MyVocabularyService {
         notes: null,
         masteryLevel: 0,
         vocabularyStatus: VocabularyStatus.LEARNING,
-        isFavourate: false,
+        isFavorite: false,
       },
     });
 
@@ -67,8 +67,8 @@ export class MyVocabularyService {
       rawWhere.vocabularyStatus = query.status;
     }
 
-    if (query.isFavourate !== undefined) {
-      rawWhere.isFavourate = query.isFavourate;
+    if (query.isFavorite !== undefined) {
+      rawWhere.isFavorite = query.isFavorite;
     }
 
     const wordFilter: Prisma.VocabularyWhereInput = {};
@@ -157,8 +157,8 @@ export class MyVocabularyService {
         ...(dto.vocabularyStatus !== undefined
           ? { vocabularyStatus: dto.vocabularyStatus }
           : {}),
-        ...(dto.isFavourate !== undefined
-          ? { isFavourate: dto.isFavourate }
+        ...(dto.isFavorite !== undefined
+          ? { isFavorite: dto.isFavorite }
           : {}),
       },
       include: {

@@ -59,11 +59,14 @@ export class UpdateMyVocabularyDto {
     example: true,
   })
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return value;
-  })
-  @IsBoolean({ message: 'isFavourate must be a boolean' })
-  isFavourate?: boolean;
+  @Transform(
+    ({ value, obj }: { value: unknown; obj?: Record<string, unknown> }) => {
+      const raw = value !== undefined ? value : obj?.isFavourate;
+      if (raw === 'true' || raw === true) return true;
+      if (raw === 'false' || raw === false) return false;
+      return raw;
+    },
+  )
+  @IsBoolean({ message: 'isFavorite must be a boolean' })
+  isFavorite?: boolean;
 }
