@@ -24,6 +24,7 @@ import { MyVocabularyService } from './myVocabulary.service';
 import {
   AddMyVocabularyDto,
   GetMyVocabulariesQueryDto,
+  GetVocabularyStatsQueryDto,
   UpdateMyVocabularyDto,
 } from './dto';
 
@@ -101,6 +102,57 @@ export class MyVocabularyController {
       meta,
       data: result,
     };
+  }
+
+  @Get('stats')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get personal vocabulary vault statistics',
+    description:
+      'Returns aggregate counts for personal vocabulary vault: total words, favorite count, counts by status (LEARNING, LEARNED, MASTERED), counts by CEFR level (A1-C2), today words count, and mastered words with score 4 or better.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Personal vocabulary statistics retrieved successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized.',
+  })
+  async getMyVocabularyStats(
+    @CurrentUser('id') userId: string,
+    @Query() query: GetVocabularyStatsQueryDto,
+  ) {
+    const data = await this.myVocabularyService.getVocabularyStats(
+      userId,
+      query,
+    );
+    return {
+      message: 'Personal vocabulary statistics retrieved successfully.',
+      data,
+    };
+  }
+
+  @Get('vault-stats')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Alias for personal vocabulary vault statistics',
+    description:
+      'Alias endpoint for GET /my-vocabularies/stats returning identical vocabulary vault statistics.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Personal vocabulary statistics retrieved successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized.',
+  })
+  async getVaultStats(
+    @CurrentUser('id') userId: string,
+    @Query() query: GetVocabularyStatsQueryDto,
+  ) {
+    return this.getMyVocabularyStats(userId, query);
   }
 
   @Get(':id')

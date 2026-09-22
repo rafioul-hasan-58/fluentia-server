@@ -63,6 +63,9 @@ describe('MyVocabularyService', () => {
 
   beforeEach(async () => {
     const mockPrisma = {
+      user: {
+        findUnique: jest.fn(),
+      },
       myVocabulary: {
         findUnique: jest.fn(),
         findMany: jest.fn(),
@@ -257,6 +260,54 @@ describe('MyVocabularyService', () => {
         where: { id: mockMyVocabId },
       });
       expect(result.message).toContain('successfully');
+    });
+  });
+
+  describe('getVocabularyStats', () => {
+    it('should calculate personal vocabulary stats accurately', async () => {
+      const todayDate = new Date();
+      const mockItems = [
+        {
+          isFavorite: true,
+          masteryLevel: 4,
+          vocabularyStatus: VocabularyStatus.LEARNING,
+          createdAt: todayDate,
+          word: { englishLevel: EnglishLevel.B1 },
+        },
+        {
+          isFavorite: false,
+          masteryLevel: 5,
+          vocabularyStatus: VocabularyStatus.MASTERED,
+          createdAt: todayDate,
+          word: { englishLevel: EnglishLevel.B2 },
+        },
+        {
+          isFavorite: true,
+          masteryLevel: 2,
+          vocabularyStatus: VocabularyStatus.LEARNED,
+          createdAt: new Date('2020-01-01'),
+          word: { englishLevel: EnglishLevel.A1 },
+        },
+      ];
+
+      prismaService.user.findUnique.mockResolvedValue({ timezone: 'UTC' });
+      prismaService.myVocabulary.findMany.mockResolvedValue(mockItems);
+
+      const stats = await service.getVocabularyStats(mockUserId);
+
+      expect(stats.totalWords).toBe(3);
+      expect(stats.favoriteCount).toBe(2);
+      expect(stats.favoritesCount).toBe(2);
+      expect(stats.masteredCount).toBe(2); // items with masteryLevel >= 4
+      expect(stats.todaysVocab).toBe(2);
+      expect(stats.todayWordsCount).toBe(2);
+      expect(stats.byStatus[VocabularyStatus.LEARNING]).toBe(1);
+      expect(stats.byStatus[VocabularyStatus.LEARNED]).toBe(1);
+      expect(stats.byStatus[VocabularyStatus.MASTERED]).toBe(1);
+      expect(stats.byLevel[EnglishLevel.B1]).toBe(1);
+      expect(stats.byLevel[EnglishLevel.B2]).toBe(1);
+      expect(stats.byLevel[EnglishLevel.A1]).toBe(1);
+      expect(stats.byLevel[EnglishLevel.A2]).toBe(0);
     });
   });
 });

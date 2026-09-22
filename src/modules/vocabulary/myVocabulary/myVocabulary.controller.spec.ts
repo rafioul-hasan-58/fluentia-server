@@ -63,6 +63,7 @@ describe('MyVocabularyController', () => {
       findMyVocabularyById: jest.fn(),
       updateMyVocabulary: jest.fn(),
       removeFromMyVocabulary: jest.fn(),
+      getVocabularyStats: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -195,6 +196,51 @@ describe('MyVocabularyController', () => {
         mockMyVocabId,
       );
       expect(result).toEqual(deleteResult);
+    });
+  });
+
+  describe('getMyVocabularyStats', () => {
+    it('should return personal vocabulary vault statistics', async () => {
+      const mockStats = {
+        totalWords: 10,
+        favoriteCount: 2,
+        favoritesCount: 2,
+        masteredCount: 3,
+        todaysVocab: 1,
+        todayCount: 1,
+        byStatus: { LEARNING: 6, LEARNED: 3, MASTERED: 1 },
+        byLevel: { A1: 2, A2: 2, B1: 3, B2: 2, C1: 1, C2: 0 },
+      };
+      service.getVocabularyStats.mockResolvedValue(mockStats);
+
+      const result = await controller.getMyVocabularyStats(mockUserId, {});
+
+      expect(service.getVocabularyStats).toHaveBeenCalledWith(mockUserId, {});
+      expect(result).toEqual({
+        message: 'Personal vocabulary statistics retrieved successfully.',
+        data: mockStats,
+      });
+    });
+  });
+
+  describe('getVaultStats', () => {
+    it('should act as alias and return vocabulary vault statistics', async () => {
+      const mockStats = {
+        totalWords: 5,
+        favoriteCount: 1,
+        favoritesCount: 1,
+        masteredCount: 1,
+        todaysVocab: 1,
+      };
+      service.getVocabularyStats.mockResolvedValue(mockStats);
+
+      const result = await controller.getVaultStats(mockUserId, {});
+
+      expect(service.getVocabularyStats).toHaveBeenCalledWith(mockUserId, {});
+      expect(result).toEqual({
+        message: 'Personal vocabulary statistics retrieved successfully.',
+        data: mockStats,
+      });
     });
   });
 });
