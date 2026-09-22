@@ -8,7 +8,6 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import {
   AddMyVocabularyDto,
   GetMyVocabulariesQueryDto,
-  GetVocabularyStatsQueryDto,
   UpdateMyVocabularyDto,
 } from './dto';
 import { VocabularyCoreService } from '../vocabularyCore';
@@ -185,91 +184,8 @@ export class MyVocabularyService {
       message: 'Vocabulary removed from your personal collection successfully.',
     };
   }
-
-  /**
-   * Helper function to get start and end boundaries of a day in a given timezone
-   */
-  private getDayDateRange(
-    targetDate?: string,
-    timeZone?: string,
-  ): { start: Date; end: Date } {
-    let dateStr = targetDate;
-
-    if (!dateStr) {
-      const now = new Date();
-      if (timeZone) {
-        try {
-          const formatter = new Intl.DateTimeFormat('en-CA', {
-            timeZone,
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-          });
-          dateStr = formatter.format(now); // "YYYY-MM-DD"
-        } catch {
-          // ignore invalid timezone
-        }
-      }
-      if (!dateStr) {
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        dateStr = `${year}-${month}-${day}`;
-      }
-    }
-
-    const [yearStr, monthStr, dayStr] = dateStr.split('-');
-    const year = parseInt(yearStr, 10);
-    const month = parseInt(monthStr, 10) - 1;
-    const day = parseInt(dayStr, 10);
-
-    if (timeZone) {
-      try {
-        const approxUtc = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
-        const dateInTz = new Date(
-          approxUtc.toLocaleString('en-US', { timeZone }),
-        );
-        const offsetMs = dateInTz.getTime() - approxUtc.getTime();
-
-        const start = new Date(approxUtc.getTime() - offsetMs);
-        const end = new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1);
-        return { start, end };
-      } catch {
-        // fallback to server local time below
-      }
-    }
-
-    const start = new Date(year, month, day, 0, 0, 0, 0);
-    const end = new Date(year, month, day, 23, 59, 59, 999);
-    return { start, end };
-  }
-
-  /**
-   * Get vocabulary vault statistics for a user:
-   * - totalWords: total vocabulary in personal collection
-   * - favoriteCount / favoritesCount: starred words
-   * - todaysVocab / todayWordsCount: words added today
-   * - masteredCount: words with mastery score >= 4
-   * - byStatus: count per VocabularyStatus (LEARNING, LEARNED, MASTERED)
-   * - byLevel: count per CEFR EnglishLevel (A1 - C2)
-   */
-  async getVocabularyStats(userId: string, query?: GetVocabularyStatsQueryDto) {
-    let timeZone = query?.timeZone;
-    if (!timeZone) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { timezone: true },
-      });
-      if (user?.timezone) {
-        timeZone = user.timezone;
-      }
-    }
-
-    const { start: startOfToday, end: endOfToday } = this.getDayDateRange(
-      query?.date,
-      timeZone,
-    );
-
+  // get my-vocabulary stats
+  async getVocabularyStats(userId: string) {
     const items = await this.prisma.myVocabulary.findMany({
       where: { userId },
       select: {
@@ -285,6 +201,11 @@ export class MyVocabularyService {
       },
     });
 
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
     const totalWords = items.length;
     let favoriteCount = 0;
     let masteredCount = 0;
@@ -296,15 +217,6 @@ export class MyVocabularyService {
       [VocabularyStatus.MASTERED]: 0,
     };
 
-    const byStatus: Record<string, number> = {
-      [VocabularyStatus.LEARNING]: 0,
-      [VocabularyStatus.LEARNED]: 0,
-      [VocabularyStatus.MASTERED]: 0,
-      learning: 0,
-      learned: 0,
-      mastered: 0,
-    };
-
     const levels: Record<string, number> = {
       [EnglishLevel.A1]: 0,
       [EnglishLevel.A2]: 0,
@@ -312,21 +224,6 @@ export class MyVocabularyService {
       [EnglishLevel.B2]: 0,
       [EnglishLevel.C1]: 0,
       [EnglishLevel.C2]: 0,
-    };
-
-    const byLevel: Record<string, number> = {
-      [EnglishLevel.A1]: 0,
-      [EnglishLevel.A2]: 0,
-      [EnglishLevel.B1]: 0,
-      [EnglishLevel.B2]: 0,
-      [EnglishLevel.C1]: 0,
-      [EnglishLevel.C2]: 0,
-      a1: 0,
-      a2: 0,
-      b1: 0,
-      b2: 0,
-      c1: 0,
-      c2: 0,
     };
 
     for (const item of items) {
@@ -352,37 +249,21 @@ export class MyVocabularyService {
       if (item.vocabularyStatus) {
         statuses[item.vocabularyStatus] =
           (statuses[item.vocabularyStatus] || 0) + 1;
-        byStatus[item.vocabularyStatus] =
-          (byStatus[item.vocabularyStatus] || 0) + 1;
-        byStatus[item.vocabularyStatus.toLowerCase()] =
-          (byStatus[item.vocabularyStatus.toLowerCase()] || 0) + 1;
       }
 
       // Level counts
       if (item.word?.englishLevel) {
         const lvl = item.word.englishLevel;
         levels[lvl] = (levels[lvl] || 0) + 1;
-        byLevel[lvl] = (byLevel[lvl] || 0) + 1;
-        byLevel[lvl.toLowerCase()] = (byLevel[lvl.toLowerCase()] || 0) + 1;
       }
     }
 
     return {
       totalWords,
       favoriteCount,
-      favoritesCount: favoriteCount,
       masteredCount,
-      masteredScoreCount: masteredCount,
-      masteredFourPlusCount: masteredCount,
       todaysVocab,
-      todayCount: todaysVocab,
-      todayWordsCount: todaysVocab,
-      byStatus,
       statuses,
-      learningCount: statuses[VocabularyStatus.LEARNING],
-      learnedCount: statuses[VocabularyStatus.LEARNED],
-      masteredStatusCount: statuses[VocabularyStatus.MASTERED],
-      byLevel,
       levels,
     };
   }

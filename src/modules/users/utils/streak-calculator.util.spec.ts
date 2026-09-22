@@ -132,11 +132,10 @@ describe('calculateActiveStreak', () => {
       longestStreak: 15,
     });
 
-    await calculateActiveStreak(
-      prisma as unknown as PrismaClient,
-      'user-1',
-      { profile: existingProfile as any, timezone: 'UTC' },
-    );
+    await calculateActiveStreak(prisma as unknown as PrismaClient, 'user-1', {
+      profile: existingProfile as any,
+      timezone: 'UTC',
+    });
 
     expect(prisma.learningProfile.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -161,11 +160,10 @@ describe('calculateActiveStreak', () => {
       lastActiveAt: fiveDaysAgo,
     };
 
-    await calculateActiveStreak(
-      prisma as unknown as PrismaClient,
-      'user-1',
-      { profile: existingProfile as any, timezone: 'UTC' },
-    );
+    await calculateActiveStreak(prisma as unknown as PrismaClient, 'user-1', {
+      profile: existingProfile as any,
+      timezone: 'UTC',
+    });
 
     expect(prisma.learningProfile.update).toHaveBeenCalledWith(
       expect.objectContaining({
