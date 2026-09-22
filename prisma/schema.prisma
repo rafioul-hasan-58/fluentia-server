@@ -290,7 +290,7 @@ model MyVocabulary {
   notes            String?
   masteryLevel     Int              @default(0)
   vocabularyStatus VocabularyStatus
-  isFavourate      Boolean          @default(false)
+  isFavorite       Boolean          @default(false)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
