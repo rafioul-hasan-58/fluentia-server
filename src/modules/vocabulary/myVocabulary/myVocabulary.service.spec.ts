@@ -56,7 +56,7 @@ describe('MyVocabularyService', () => {
     notes: 'Important adjective',
     masteryLevel: 50,
     vocabularyStatus: VocabularyStatus.LEARNING,
-    isFavourate: true,
+    isFavorite: true,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -115,7 +115,7 @@ describe('MyVocabularyService', () => {
           notes: null,
           masteryLevel: 0,
           vocabularyStatus: VocabularyStatus.LEARNING,
-          isFavourate: false,
+          isFavorite: false,
         },
       });
       expect(result).toEqual(mockMyVocabulary);
@@ -160,7 +160,7 @@ describe('MyVocabularyService', () => {
 
       const result = await service.findMyVocabularies(mockUserId, {
         status: VocabularyStatus.LEARNING,
-        isFavourate: true,
+        isFavorite: true,
         page: 1,
         limit: 10,
       });
@@ -169,7 +169,7 @@ describe('MyVocabularyService', () => {
         where: {
           userId: mockUserId,
           vocabularyStatus: VocabularyStatus.LEARNING,
-          isFavourate: true,
+          isFavorite: true,
         },
         skip: 0,
         take: 10,

@@ -51,7 +51,7 @@ describe('MyVocabularyController', () => {
     notes: 'Important notes',
     masteryLevel: 40,
     vocabularyStatus: VocabularyStatus.LEARNING,
-    isFavourate: false,
+    isFavorite: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

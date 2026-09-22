@@ -157,9 +157,7 @@ export class MyVocabularyService {
         ...(dto.vocabularyStatus !== undefined
           ? { vocabularyStatus: dto.vocabularyStatus }
           : {}),
-        ...(dto.isFavorite !== undefined
-          ? { isFavorite: dto.isFavorite }
-          : {}),
+        ...(dto.isFavorite !== undefined ? { isFavorite: dto.isFavorite } : {}),
       },
       include: {
         word: true,

@@ -27,7 +27,8 @@
     "db:backfill-pronunciations": "ts-node prisma/backfill-bangla-pronunciation.ts",
     "db:backfill-collocations": "ts-node prisma/backfill-collocations.ts",
     "db:backfill-word-family": "ts-node prisma/backfill-word-family.ts",
-    "db:backfill-verb-forms": "ts-node prisma/backfill-verb-forms.ts"
+    "db:backfill-verb-forms": "ts-node prisma/backfill-verb-forms.ts",
+    "db:backfill-favorite": "ts-node prisma/backfill-favorite-field.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
