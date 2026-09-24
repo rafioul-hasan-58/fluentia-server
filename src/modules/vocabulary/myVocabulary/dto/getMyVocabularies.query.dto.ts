@@ -3,6 +3,7 @@ import { EnglishLevel, PartOfSpeech, VocabularyStatus } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsInt,
   IsOptional,
@@ -39,6 +40,21 @@ export class GetMyVocabulariesQueryDto {
   )
   @IsBoolean({ message: 'isFavorite must be a boolean' })
   isFavorite?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter by creation date (YYYY-MM-DD or ISO 8601 string, e.g. 2026-09-24)',
+    example: '2026-09-24',
+  })
+  @IsOptional()
+  @IsDateString(
+    {},
+    {
+      message:
+        'date must be a valid date string (e.g. YYYY-MM-DD or ISO 8601 format)',
+    },
+  )
+  date?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by part of speech of the associated word',

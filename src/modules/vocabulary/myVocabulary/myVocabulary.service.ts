@@ -90,6 +90,19 @@ export class MyVocabularyService {
       hasWordFilter = true;
     }
 
+    if (query.date) {
+      const dateStr = query.date.trim().slice(0, 10);
+      const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+      const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
+
+      if (!isNaN(startOfDay.getTime()) && !isNaN(endOfDay.getTime())) {
+        rawWhere.createdAt = {
+          gte: startOfDay,
+          lte: endOfDay,
+        };
+      }
+    }
+
     if (hasWordFilter) {
       rawWhere.word = wordFilter;
     }
