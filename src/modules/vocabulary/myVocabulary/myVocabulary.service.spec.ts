@@ -227,6 +227,27 @@ describe('MyVocabularyService', () => {
         }),
       );
     });
+
+    it('should filter by date when query.date is provided', async () => {
+      prismaService.myVocabulary.count.mockResolvedValue(1);
+      prismaService.myVocabulary.findMany.mockResolvedValue([mockMyVocabulary]);
+
+      await service.findMyVocabularies(mockUserId, {
+        date: '2026-09-24',
+      });
+
+      expect(prismaService.myVocabulary.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: mockUserId,
+            createdAt: {
+              gte: new Date('2026-09-24T00:00:00.000Z'),
+              lte: new Date('2026-09-24T23:59:59.999Z'),
+            },
+          }),
+        }),
+      );
+    });
   });
 
   describe('findMyVocabularyById', () => {
