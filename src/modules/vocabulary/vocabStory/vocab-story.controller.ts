@@ -73,7 +73,7 @@ export class VocabStoryController {
     };
   }
 
-  @Get()
+  @Get('find-all')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get all generated vocabulary stories for authenticated user',
