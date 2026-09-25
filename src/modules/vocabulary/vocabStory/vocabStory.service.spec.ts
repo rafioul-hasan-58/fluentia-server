@@ -8,7 +8,7 @@ import { EnglishLevel, PartOfSpeech } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AiService } from '../../ai/ai.service';
 import { AiValidationError } from '../../ai/errors/ai.errors';
-import { VocabStoryService } from './vocab-story.service';
+import { VocabStoryService } from './vocabStory.service';
 
 describe('VocabStoryService', () => {
   let service: VocabStoryService;

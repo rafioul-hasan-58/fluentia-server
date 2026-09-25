@@ -29,12 +29,13 @@ export class VocabStoryService {
     return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
   }
 
-  /**
-   * Generates bilingual and full-English vocabulary stories via AI and saves to VocabStory collection.
-   */
+  //  Generates bilingual and full-English vocabulary stories via AI.
+
   async generateStory(userId: string, dto: GenerateVocabStoryDto) {
-    if (!dto.vocabularyIds || dto.vocabularyIds.length === 0) {
-      throw new BadRequestException('At least one vocabulary ID is required');
+    if (!dto.vocabularyIds || dto.vocabularyIds.length < 5) {
+      throw new BadRequestException(
+        'At least five vocabulary IDs are required for story generation',
+      );
     }
 
     // 1. Normalize and validate ID formats
@@ -128,9 +129,7 @@ export class VocabStoryService {
     return createdStory;
   }
 
-  /**
-   * Retrieves paginated list of generated vocabulary stories for the authenticated user.
-   */
+  // find all user stories
   async findUserStories(userId: string, query: GetVocabStoriesQueryDto) {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = query.limit && query.limit > 0 ? query.limit : 10;

@@ -1,8 +1,8 @@
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { VocabStoryController } from './vocab-story.controller';
-import { VocabStoryService } from './vocab-story.service';
+import { VocabStoryController } from './vocabStory.controller';
+import { VocabStoryService } from './vocabStory.service';
 
 describe('VocabStoryController', () => {
   let controller: VocabStoryController;

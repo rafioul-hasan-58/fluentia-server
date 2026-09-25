@@ -1,4 +1,4 @@
-export * from './vocab-story.module';
-export * from './vocab-story.service';
-export * from './vocab-story.controller';
+export * from './vocabStory.module';
+export * from './vocabStory.service';
+export * from './vocabStory.controller';
 export * from './dto';
