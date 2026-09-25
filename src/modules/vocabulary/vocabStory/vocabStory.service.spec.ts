@@ -19,7 +19,10 @@ describe('VocabStoryService', () => {
   const mockOtherUserId = '665f1b2e2222222222222222';
   const mockWordId1 = '665f1b2e3333333333333333';
   const mockWordId2 = '665f1b2e4444444444444444';
-  const mockStoryId = '665f1b2e5555555555555555';
+  const mockWordId3 = '665f1b2e5555555555555555';
+  const mockWordId4 = '665f1b2e6666666666666666';
+  const mockWordId5 = '665f1b2e7777777777777777';
+  const mockStoryId = '665f1b2e8888888888888888';
 
   const mockVocab1 = {
     id: mockWordId1,
@@ -42,6 +45,54 @@ describe('VocabStoryService', () => {
     exampleSentences: ['He has great confidence.'],
     englishLevel: EnglishLevel.B1,
   };
+
+  const mockVocab3 = {
+    id: mockWordId3,
+    word: 'perseverance',
+    meaning: 'persistence in doing something despite difficulty',
+    banglaMeaning: 'অধ্যবসায়',
+    partOfSpeech: PartOfSpeech.NOUN,
+    collocations: ['show perseverance'],
+    exampleSentences: ['Through perseverance he succeeded.'],
+    englishLevel: EnglishLevel.B2,
+  };
+
+  const mockVocab4 = {
+    id: mockWordId4,
+    word: 'triumph',
+    meaning: 'a great victory or achievement',
+    banglaMeaning: 'বিজয়',
+    partOfSpeech: PartOfSpeech.NOUN,
+    collocations: ['great triumph'],
+    exampleSentences: ['They celebrated their triumph.'],
+    englishLevel: EnglishLevel.B2,
+  };
+
+  const mockVocab5 = {
+    id: mockWordId5,
+    word: 'determined',
+    meaning: 'having made a firm decision and being resolved not to change it',
+    banglaMeaning: 'দৃঢ়সংকল্প',
+    partOfSpeech: PartOfSpeech.ADJECTIVE,
+    collocations: ['determined effort'],
+    exampleSentences: ['She was determined to win.'],
+    englishLevel: EnglishLevel.B1,
+  };
+
+  const mockFiveVocabs = [
+    mockVocab1,
+    mockVocab2,
+    mockVocab3,
+    mockVocab4,
+    mockVocab5,
+  ];
+  const mockFiveVocabIds = [
+    mockWordId1,
+    mockWordId2,
+    mockWordId3,
+    mockWordId4,
+    mockWordId5,
+  ];
 
   const mockKeywordExplanations = [
     {
@@ -118,10 +169,7 @@ describe('VocabStoryService', () => {
 
   describe('generateStory', () => {
     it('should successfully validate words, invoke AI, and persist story', async () => {
-      prismaService.vocabulary.findMany.mockResolvedValue([
-        mockVocab1,
-        mockVocab2,
-      ]);
+      prismaService.vocabulary.findMany.mockResolvedValue(mockFiveVocabs);
       aiService.generateVocabStory.mockResolvedValue({
         title: 'The Cricket Triumph',
         storyEnglish: mockStory.storyEnglish,
@@ -131,32 +179,22 @@ describe('VocabStoryService', () => {
       prismaService.vocabStory.create.mockResolvedValue(mockStory);
 
       const result = await service.generateStory(mockUserId, {
-        vocabularyIds: [mockWordId1, mockWordId2],
+        vocabularyIds: mockFiveVocabIds,
         context: 'cricket game',
       });
 
       expect(prismaService.vocabulary.findMany).toHaveBeenCalledWith({
-        where: { id: { in: [mockWordId1, mockWordId2] } },
+        where: { id: { in: mockFiveVocabIds } },
       });
       expect(aiService.generateVocabStory).toHaveBeenCalledWith(
-        [
-          {
-            word: mockVocab1.word,
-            meaning: mockVocab1.meaning,
-            partOfSpeech: mockVocab1.partOfSpeech,
-            collocations: mockVocab1.collocations,
-            exampleSentences: mockVocab1.exampleSentences,
-            englishLevel: mockVocab1.englishLevel,
-          },
-          {
-            word: mockVocab2.word,
-            meaning: mockVocab2.meaning,
-            partOfSpeech: mockVocab2.partOfSpeech,
-            collocations: mockVocab2.collocations,
-            exampleSentences: mockVocab2.exampleSentences,
-            englishLevel: mockVocab2.englishLevel,
-          },
-        ],
+        mockFiveVocabs.map((v) => ({
+          word: v.word,
+          meaning: v.meaning,
+          partOfSpeech: v.partOfSpeech,
+          collocations: v.collocations,
+          exampleSentences: v.exampleSentences,
+          englishLevel: v.englishLevel,
+        })),
         'cricket game',
       );
       expect(prismaService.vocabStory.create).toHaveBeenCalledWith({
@@ -165,7 +203,7 @@ describe('VocabStoryService', () => {
           title: 'The Cricket Triumph',
           storyEnglish: mockStory.storyEnglish,
           storyBangla: mockStory.storyBangla,
-          usedVocabulary: ['challenging', 'confidence'],
+          usedVocabulary: mockFiveVocabs.map((v) => v.word.toLowerCase()),
           keywordExplanations: mockKeywordExplanations,
         },
       });
@@ -187,34 +225,31 @@ describe('VocabStoryService', () => {
     });
 
     it('should throw NotFoundException if one or more vocabulary IDs are missing from DB', async () => {
-      prismaService.vocabulary.findMany.mockResolvedValue([mockVocab1]); // Missing mockWordId2
+      prismaService.vocabulary.findMany.mockResolvedValue([mockVocab1]); // Missing remaining 4
 
       await expect(
         service.generateStory(mockUserId, {
-          vocabularyIds: [mockWordId1, mockWordId2],
+          vocabularyIds: mockFiveVocabIds,
         }),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadGatewayException when AI service validation fails', async () => {
-      prismaService.vocabulary.findMany.mockResolvedValue([
-        mockVocab1,
-        mockVocab2,
-      ]);
+      prismaService.vocabulary.findMany.mockResolvedValue(mockFiveVocabs);
       aiService.generateVocabStory.mockRejectedValue(
         new AiValidationError('AI schema validation failed'),
       );
 
       await expect(
         service.generateStory(mockUserId, {
-          vocabularyIds: [mockWordId1, mockWordId2],
+          vocabularyIds: mockFiveVocabIds,
         }),
       ).rejects.toThrow(BadGatewayException);
     });
   });
 
   describe('findUserStories', () => {
-    it('should return paginated stories with search filter applied', async () => {
+    it('should return paginated stories with search filter applied and default sorting', async () => {
       prismaService.vocabStory.count.mockResolvedValue(1);
       prismaService.vocabStory.findMany.mockResolvedValue([mockStory]);
 
@@ -239,6 +274,53 @@ describe('VocabStoryService', () => {
         orderBy: { createdAt: 'desc' },
       });
       expect(result.total).toBe(1);
+      expect(result.items).toEqual([mockStory]);
+    });
+
+    it('should filter stories by date when date query is provided', async () => {
+      prismaService.vocabStory.count.mockResolvedValue(1);
+      prismaService.vocabStory.findMany.mockResolvedValue([mockStory]);
+
+      const result = await service.findUserStories(mockUserId, {
+        date: '2026-09-24',
+        page: 1,
+        limit: 10,
+      });
+
+      expect(prismaService.vocabStory.findMany).toHaveBeenCalledWith({
+        where: {
+          userId: mockUserId,
+          createdAt: {
+            gte: new Date('2026-09-24T00:00:00.000Z'),
+            lte: new Date('2026-09-24T23:59:59.999Z'),
+          },
+        },
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.items).toEqual([mockStory]);
+    });
+
+    it('should sort stories by sortBy and sortOrder', async () => {
+      prismaService.vocabStory.count.mockResolvedValue(1);
+      prismaService.vocabStory.findMany.mockResolvedValue([mockStory]);
+
+      const result = await service.findUserStories(mockUserId, {
+        sortBy: 'title',
+        sortOrder: 'asc',
+        page: 1,
+        limit: 10,
+      });
+
+      expect(prismaService.vocabStory.findMany).toHaveBeenCalledWith({
+        where: {
+          userId: mockUserId,
+        },
+        skip: 0,
+        take: 10,
+        orderBy: { title: 'asc' },
+      });
       expect(result.items).toEqual([mockStory]);
     });
   });

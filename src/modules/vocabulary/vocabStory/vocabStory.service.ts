@@ -5,7 +5,8 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, VocabStory } from '@prisma/client';
+import { QueryBuilder } from '../../../infrastructure';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AiService } from '../../ai/ai.service';
 import { AiServiceError, AiValidationError } from '../../ai/errors/ai.errors';
@@ -133,17 +134,22 @@ export class VocabStoryService {
   async findUserStories(userId: string, query: GetVocabStoriesQueryDto) {
     const rawWhere: Prisma.VocabStoryWhereInput = { userId };
 
-    const page = query.page && query.page > 0 ? query.page : 1;
-    const limit = query.limit && query.limit > 0 ? query.limit : 10;
-    const skip = (page - 1) * limit;
+    if (query.date) {
+      const dateStr = query.date.trim().slice(0, 10);
+      const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+      const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
-    const where: Prisma.VocabStoryWhereInput = {
-      userId,
-    };
+      if (!isNaN(startOfDay.getTime()) && !isNaN(endOfDay.getTime())) {
+        rawWhere.createdAt = {
+          gte: startOfDay,
+          lte: endOfDay,
+        };
+      }
+    }
 
     if (query.search && query.search.trim()) {
       const searchTerm = query.search.trim();
-      where.OR = [
+      rawWhere.OR = [
         { title: { contains: searchTerm, mode: 'insensitive' } },
         { storyEnglish: { contains: searchTerm, mode: 'insensitive' } },
         { storyBangla: { contains: searchTerm, mode: 'insensitive' } },
@@ -151,22 +157,22 @@ export class VocabStoryService {
       ];
     }
 
-    const [total, items] = await Promise.all([
-      this.prisma.vocabStory.count({ where }),
-      this.prisma.vocabStory.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
+    const queryBuilder = new QueryBuilder<VocabStory>(
+      this.prisma.vocabStory,
+      query as unknown as Record<string, unknown>,
+    )
+      .rawFilter(rawWhere)
+      .sort('-createdAt')
+      .paginate();
+
+    const [result, meta] = await Promise.all([
+      queryBuilder.execute(),
+      queryBuilder.count(),
     ]);
 
     return {
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit) || 1,
+      result,
+      meta,
     };
   }
 
