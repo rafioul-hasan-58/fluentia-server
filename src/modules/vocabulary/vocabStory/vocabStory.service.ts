@@ -131,7 +131,7 @@ export class VocabStoryService {
 
   // find all user stories
   async findUserStories(userId: string, query: GetVocabStoriesQueryDto) {
-    // const rawWhere: Prisma.VocabStoryWhereInput = { userId };
+    const rawWhere: Prisma.VocabStoryWhereInput = { userId };
 
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = query.limit && query.limit > 0 ? query.limit : 10;

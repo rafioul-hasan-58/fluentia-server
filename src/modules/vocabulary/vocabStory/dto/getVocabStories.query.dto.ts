@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class GetVocabStoriesQueryDto {
   @ApiPropertyOptional({
@@ -10,7 +18,20 @@ export class GetVocabStoriesQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
-
+  @ApiPropertyOptional({
+    description:
+      'Filter by creation date (YYYY-MM-DD or ISO 8601 string, e.g. 2026-09-24)',
+    example: '2026-09-24',
+  })
+  @IsOptional()
+  @IsDateString(
+    {},
+    {
+      message:
+        'date must be a valid date string (e.g. YYYY-MM-DD or ISO 8601 format)',
+    },
+  )
+  date?: string;
   @ApiPropertyOptional({
     description: 'Page number for pagination (starts from 1)',
     example: 1,
