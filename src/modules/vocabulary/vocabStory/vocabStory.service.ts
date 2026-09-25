@@ -176,9 +176,7 @@ export class VocabStoryService {
     };
   }
 
-  /**
-   * Retrieves a single generated vocabulary story by ID with user isolation.
-   */
+  // retrieves a single generated vocabulary story by ID.
   async findUserStoryById(userId: string, id: string) {
     if (!this.isValidObjectId(id)) {
       throw new BadRequestException(
@@ -197,9 +195,7 @@ export class VocabStoryService {
     return story;
   }
 
-  /**
-   * Deletes a user's generated vocabulary story by ID.
-   */
+  // deletes a user's generated vocabulary story by ID
   async deleteUserStory(userId: string, id: string) {
     await this.findUserStoryById(userId, id);
 
@@ -212,9 +208,8 @@ export class VocabStoryService {
     };
   }
 
-  /**
-   * Updates the title of a vocabulary story owned by the authenticated user.
-   */
+  // updates the title of a vocabulary story owned by the authenticated user.
+
   async updateStoryTitle(userId: string, id: string, title: string) {
     if (!this.isValidObjectId(id)) {
       throw new BadRequestException(
