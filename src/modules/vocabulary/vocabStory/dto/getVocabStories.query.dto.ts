@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class GetVocabStoriesQueryDto {
   @ApiPropertyOptional({
@@ -36,4 +36,34 @@ export class GetVocabStoriesQueryDto {
   @Min(1, { message: 'limit must be at least 1' })
   @Max(100, { message: 'limit cannot exceed 100' })
   limit?: number = 10;
+
+  @ApiPropertyOptional({
+    description:
+      'Field to sort by (e.g. createdAt, updatedAt, masteryLevel, word.word).',
+    example: 'createdAt',
+  })
+  @IsOptional()
+  @IsString({ message: 'sortBy must be a string' })
+  sortBy?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Sort order: asc (ascending) or desc (descending). Defaults to desc.',
+    enum: ['asc', 'desc'],
+    example: 'desc',
+    default: 'desc',
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value === 'string') {
+      const lower = value.toLowerCase().trim();
+      if (lower === 'asc') return 'asc';
+      if (lower === 'desc') return 'desc';
+    }
+    return value;
+  })
+  @IsEnum(['asc', 'desc'], {
+    message: 'sortOrder must be one of: asc, desc',
+  })
+  sortOrder?: 'asc' | 'desc';
 }

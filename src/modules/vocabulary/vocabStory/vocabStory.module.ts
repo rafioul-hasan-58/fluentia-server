@@ -12,4 +12,4 @@ import { MyVocabularyModule } from '../myVocabulary';
   providers: [VocabStoryService],
   exports: [VocabStoryService],
 })
-export class VocabStoryModule { }
+export class VocabStoryModule {}
