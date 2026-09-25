@@ -103,7 +103,7 @@ export class VocabStoryController {
     };
   }
 
-  @Get(':id')
+  @Get('details/:id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get a single generated vocabulary story by ID',
