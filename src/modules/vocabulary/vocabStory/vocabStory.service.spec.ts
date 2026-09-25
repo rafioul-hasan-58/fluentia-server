@@ -273,8 +273,8 @@ describe('VocabStoryService', () => {
         take: 10,
         orderBy: { createdAt: 'desc' },
       });
-      expect(result.total).toBe(1);
-      expect(result.items).toEqual([mockStory]);
+      expect(result.meta.total).toBe(1);
+      expect(result.result).toEqual([mockStory]);
     });
 
     it('should filter stories by date when date query is provided', async () => {
@@ -299,7 +299,7 @@ describe('VocabStoryService', () => {
         take: 10,
         orderBy: { createdAt: 'desc' },
       });
-      expect(result.items).toEqual([mockStory]);
+      expect(result.result).toEqual([mockStory]);
     });
 
     it('should sort stories by sortBy and sortOrder', async () => {
@@ -321,7 +321,7 @@ describe('VocabStoryService', () => {
         take: 10,
         orderBy: { title: 'asc' },
       });
-      expect(result.items).toEqual([mockStory]);
+      expect(result.result).toEqual([mockStory]);
     });
   });
 

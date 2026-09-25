@@ -92,10 +92,14 @@ export class VocabStoryController {
     @CurrentUser('id') userId: string,
     @Query() query: GetVocabStoriesQueryDto,
   ) {
-    const data = await this.vocabStoryService.findUserStories(userId, query);
+    const { result, meta } = await this.vocabStoryService.findUserStories(
+      userId,
+      query,
+    );
     return {
       message: 'Vocabulary stories retrieved successfully.',
-      ...data,
+      meta,
+      data: result,
     };
   }
 

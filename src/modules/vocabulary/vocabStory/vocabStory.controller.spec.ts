@@ -65,14 +65,16 @@ describe('VocabStoryController', () => {
 
   describe('findUserStories', () => {
     it('should return paginated stories with message', async () => {
-      const listData = {
-        items: [mockStory],
+      const mockMeta = {
         total: 1,
         page: 1,
         limit: 10,
         totalPages: 1,
       };
-      service.findUserStories.mockResolvedValue(listData);
+      service.findUserStories.mockResolvedValue({
+        result: [mockStory],
+        meta: mockMeta,
+      });
 
       const result = await controller.findUserStories(mockUserId, { page: 1 });
 
@@ -81,7 +83,8 @@ describe('VocabStoryController', () => {
       });
       expect(result).toEqual({
         message: 'Vocabulary stories retrieved successfully.',
-        ...listData,
+        meta: mockMeta,
+        data: [mockStory],
       });
     });
   });
