@@ -142,7 +142,7 @@ export class VocabStoryController {
     };
   }
 
-  @Delete(':id')
+  @Delete('delete/:id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete a generated vocabulary story',
@@ -174,7 +174,7 @@ export class VocabStoryController {
     return result;
   }
 
-  @Patch(':id/title')
+  @Patch('update/:id/title')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Update vocabulary story title',
