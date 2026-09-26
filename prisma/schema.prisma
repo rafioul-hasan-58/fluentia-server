@@ -288,7 +288,7 @@ model MyVocabulary {
   word             Vocabulary       @relation(fields: [wordId], references: [id], onDelete: Cascade)
   mySentences      String[]
   notes            String?
-  masteryLevel     Int              @default(0)
+  masteryLevel     Int              @default(1)
   vocabularyStatus VocabularyStatus
   isFavorite       Boolean          @default(false)
   createdAt        DateTime         @default(now())
