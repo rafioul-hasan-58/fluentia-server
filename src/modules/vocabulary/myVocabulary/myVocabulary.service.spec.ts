@@ -248,6 +248,46 @@ describe('MyVocabularyService', () => {
         }),
       );
     });
+
+    it('should filter by exact masteryLevel when provided', async () => {
+      prismaService.myVocabulary.count.mockResolvedValue(1);
+      prismaService.myVocabulary.findMany.mockResolvedValue([mockMyVocabulary]);
+
+      await service.findMyVocabularies(mockUserId, {
+        masteryLevel: 4,
+      });
+
+      expect(prismaService.myVocabulary.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: mockUserId,
+            masteryLevel: 4,
+          }),
+        }),
+      );
+    });
+
+    it('should filter by masteryLevel range when min/max provided', async () => {
+      prismaService.myVocabulary.count.mockResolvedValue(1);
+      prismaService.myVocabulary.findMany.mockResolvedValue([mockMyVocabulary]);
+
+      await service.findMyVocabularies(mockUserId, {
+        minMasteryLevel: 2,
+        maxMasteryLevel: 5,
+      });
+
+      expect(prismaService.myVocabulary.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: mockUserId,
+            masteryLevel: {
+              gte: 2,
+              lte: 5,
+            },
+          }),
+        }),
+      );
+    });
   });
 
   describe('findMyVocabularyById', () => {
