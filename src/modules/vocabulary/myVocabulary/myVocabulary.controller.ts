@@ -79,7 +79,7 @@ export class MyVocabularyController {
   @ApiOperation({
     summary: 'Get all personal vocabularies for authenticated user',
     description:
-      'Returns a paginated list of personal vocabulary items with filters for status, favorite, creation date (YYYY-MM-DD), part of speech, CEFR level, search keyword, and sorting (ascending / descending order by field).',
+      'Returns a paginated list of personal vocabulary items with filters for status, favorite, mastery level (masteryLevel), creation date (YYYY-MM-DD), part of speech, CEFR level, search keyword, and sorting (ascending / descending order by field).',
   })
   @ApiResponse({
     status: 200,

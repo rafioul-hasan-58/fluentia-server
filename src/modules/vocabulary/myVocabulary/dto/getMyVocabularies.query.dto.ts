@@ -55,32 +55,6 @@ export class GetMyVocabulariesQueryDto {
   masteryLevel?: number;
 
   @ApiPropertyOptional({
-    description: 'Filter by minimum mastery level score (0 to 100)',
-    example: 1,
-    minimum: 0,
-    maximum: 100,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: 'minMasteryLevel must be an integer' })
-  @Min(0, { message: 'minMasteryLevel cannot be less than 0' })
-  @Max(100, { message: 'minMasteryLevel cannot exceed 100' })
-  minMasteryLevel?: number;
-
-  @ApiPropertyOptional({
-    description: 'Filter by maximum mastery level score (0 to 100)',
-    example: 5,
-    minimum: 0,
-    maximum: 100,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: 'maxMasteryLevel must be an integer' })
-  @Min(0, { message: 'maxMasteryLevel cannot be less than 0' })
-  @Max(100, { message: 'maxMasteryLevel cannot exceed 100' })
-  maxMasteryLevel?: number;
-
-  @ApiPropertyOptional({
     description:
       'Filter by creation date (YYYY-MM-DD or ISO 8601 string, e.g. 2026-09-24)',
     example: '2026-09-24',

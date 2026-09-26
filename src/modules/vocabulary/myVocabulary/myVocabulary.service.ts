@@ -79,18 +79,6 @@ export class MyVocabularyService {
 
     if (query.masteryLevel !== undefined) {
       rawWhere.masteryLevel = query.masteryLevel;
-    } else if (
-      query.minMasteryLevel !== undefined ||
-      query.maxMasteryLevel !== undefined
-    ) {
-      rawWhere.masteryLevel = {
-        ...(query.minMasteryLevel !== undefined
-          ? { gte: query.minMasteryLevel }
-          : {}),
-        ...(query.maxMasteryLevel !== undefined
-          ? { lte: query.maxMasteryLevel }
-          : {}),
-      };
     }
 
     const wordFilter: Prisma.VocabularyWhereInput = {};
