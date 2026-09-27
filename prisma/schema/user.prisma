@@ -1,0 +1,58 @@
+enum Role {
+  USER
+  ADMIN
+}
+
+enum RegistrationMethod {
+  EMAIL
+  GOOGLE
+}
+
+model User {
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+  firstName          String
+  lastName           String
+  email              String             @unique
+  password           String?
+  role               Role               @default(USER)
+  isSuspended        Boolean            @default(false)
+  profileImage       String?
+  bio                String?
+  phoneNumber        String?
+  country            String?
+  timezone           String?
+  registrationMethod RegistrationMethod @default(EMAIL)
+  googleId           String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  profile        LearningProfile?
+  sessions       LearningSession[]
+  testAttempts   TestAttempt[]
+  myVocabularies MyVocabulary[]
+  vocabStories   VocabStory[]
+}
+
+model LearningProfile {
+  id               String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String        @unique @db.ObjectId
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  estimatedCEFR    EnglishLevel  @default(A2)
+  targetLevel      EnglishLevel?
+  nativeLanguage   String?
+  learningGoals    String[]      @default([])
+  dailyGoalMinutes Int?          @default(15)
+  streakDays       Int           @default(0)
+  longestStreak    Int           @default(0)
+  lastActiveAt     DateTime?
+  createdAt        DateTime?     @default(now())
+  updatedAt        DateTime?     @updatedAt
+}
+
+model Otp {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  otp       String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}

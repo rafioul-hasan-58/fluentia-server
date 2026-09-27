@@ -1,0 +1,19 @@
+// The curated taxonomy — seeded by you, not created by the AI at runtime.
+model Skill {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug      String   @unique
+  name      String
+  category  String // top-level group, shared by parent + its children
+  cefr      String? // "A1".."C2", null for top-level parent rows
+  parentId  String?  @db.ObjectId
+  parent    Skill?   @relation("SkillTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children  Skill[]  @relation("SkillTree")
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  sessions LearningSession[]
+
+  @@index([parentId])
+  @@index([category])
+}

@@ -31,6 +31,7 @@
     "db:backfill-favorite": "ts-node prisma/backfill-favorite-field.ts"
   },
   "prisma": {
+    "schema": "prisma/schema",
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {

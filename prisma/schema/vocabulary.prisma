@@ -1,0 +1,69 @@
+enum PartOfSpeech {
+  NOUN
+  PRONOUN
+  VERB
+  ADJECTIVE
+  ADVERB
+  PREPOSITION
+  CONJUNCTION
+  INTERJECTION
+  DETERMINER
+  NUMERAL
+  PARTICLE
+}
+
+enum VocabularyStatus {
+  LEARNING
+  LEARNED
+  MASTERED
+}
+
+model Vocabulary {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+  word                String         @unique
+  meaning             String
+  banglaMeaning       String
+  banglaPronunciation String?
+  partOfSpeech        PartOfSpeech
+  verbForms           Json?
+  collocations        Json?
+  exampleSentences    String[]
+  wordFamily          Json?
+  synonyms            Json?
+  antonyms            Json?
+  englishLevel        EnglishLevel
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  myVocabularies      MyVocabulary[]
+}
+
+model MyVocabulary {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String           @db.ObjectId
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordId           String           @db.ObjectId
+  word             Vocabulary       @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  mySentences      String[]
+  notes            String?
+  masteryLevel     Int              @default(1)
+  vocabularyStatus VocabularyStatus
+  isFavorite       Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([userId, wordId])
+  @@index([userId, updatedAt])
+}
+
+model VocabStory {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String   @db.ObjectId
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title               String?  @default("Vocabulary Story")
+  storyEnglish        String
+  storyBangla         String
+  usedVocabulary      String[]
+  keywordExplanations Json? // Array of { word: string, explanation: string }
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
