@@ -1,29 +1,51 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { EnglishLevel } from '@prisma/client';
+import { INestApplication, NotFoundException } from '@nestjs/common';
+import request from 'supertest';
+import { App } from 'supertest/types';
 import { SkillsController } from './skills.controller';
 import { SkillsService } from './skills.service';
+import { SkillCategoryDto } from './dto/skill-response.dto';
 
 describe('SkillsController', () => {
+  let app: INestApplication<App>;
   let controller: SkillsController;
   let skillsService: jest.Mocked<SkillsService>;
 
-  const mockSkills = [
+  const mockSingleSkill = {
+    id: '665f1b2e2222222222222222',
+    slug: 'present_perfect',
+    name: 'Present Perfect',
+    category: 'verb',
+    cefr: 'B1',
+    parentId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockSkillTree: SkillCategoryDto[] = [
     {
-      id: '665f1b2e2222222222222222',
-      slug: 'present_perfect',
-      name: 'Present Perfect',
-      category: 'verb_tenses',
-      cefr: EnglishLevel.B1,
-      parentId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      slug: 'verb',
+      name: 'Verb',
+      category: 'verb',
+      children: [
+        {
+          slug: 'present_perfect',
+          name: 'Present Perfect',
+          cefr: 'B1',
+        },
+        {
+          slug: 'past_simple',
+          name: 'Past Simple',
+          cefr: 'A2',
+        },
+      ],
     },
   ];
 
   beforeEach(async () => {
     const mockSkillsService = {
+      getSkillTree: jest.fn(),
       findAll: jest.fn(),
       findBySlug: jest.fn(),
     };
@@ -35,27 +57,45 @@ describe('SkillsController', () => {
 
     controller = module.get<SkillsController>(SkillsController);
     skillsService = module.get(SkillsService);
+
+    app = module.createNestApplication();
+    await app.init();
   });
 
-  describe('findAll', () => {
-    it('should return list of skills', async () => {
-      skillsService.findAll.mockResolvedValue(mockSkills);
+  afterEach(async () => {
+    await app.close();
+  });
 
-      const result = await controller.findAll({});
+  describe('getSkillTree', () => {
+    it('should return nested skill tree from service', async () => {
+      skillsService.getSkillTree.mockResolvedValue(mockSkillTree);
 
-      expect(skillsService.findAll).toHaveBeenCalledWith({});
-      expect(result).toEqual(mockSkills);
+      const result = await controller.getSkillTree();
+
+      expect(skillsService.getSkillTree).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockSkillTree);
+    });
+
+    it('GET /skills returns 200 with Cache-Control header and no auth required', async () => {
+      skillsService.getSkillTree.mockResolvedValue(mockSkillTree);
+
+      const response = await request(app.getHttpServer())
+        .get('/skills')
+        .expect(200);
+
+      expect(response.headers['cache-control']).toBe('public, max-age=3600');
+      expect(response.body).toEqual(mockSkillTree);
     });
   });
 
   describe('findBySlug', () => {
     it('should return a skill if found', async () => {
-      skillsService.findBySlug.mockResolvedValue(mockSkills[0]);
+      skillsService.findBySlug.mockResolvedValue(mockSingleSkill);
 
       const result = await controller.findBySlug('present_perfect');
 
       expect(skillsService.findBySlug).toHaveBeenCalledWith('present_perfect');
-      expect(result).toEqual(mockSkills[0]);
+      expect(result).toEqual(mockSingleSkill);
     });
 
     it('should throw NotFoundException if skill not found', async () => {

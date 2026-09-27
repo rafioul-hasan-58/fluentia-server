@@ -54,6 +54,84 @@ describe('SkillsService', () => {
     prismaService = module.get(PrismaService);
   });
 
+  describe('getSkillTree', () => {
+    it('should query top-level skills and return tree with stripped internal fields', async () => {
+      const mockRawPrismaResult = [
+        {
+          id: '665f1b2e1111111111111111',
+          slug: 'verb',
+          name: 'Verb',
+          category: 'verb',
+          cefr: null,
+          parentId: null,
+          createdAt: new Date('2026-01-01'),
+          updatedAt: new Date('2026-01-02'),
+          children: [
+            {
+              id: '665f1b2e2222222222222222',
+              slug: 'present_perfect',
+              name: 'Present Perfect',
+              category: 'verb',
+              cefr: 'B1',
+              parentId: '665f1b2e1111111111111111',
+              createdAt: new Date('2026-01-01'),
+              updatedAt: new Date('2026-01-02'),
+            },
+            {
+              id: '665f1b2e3333333333333333',
+              slug: 'past_simple',
+              name: 'Past Simple',
+              category: 'verb',
+              cefr: 'A2',
+              parentId: '665f1b2e1111111111111111',
+              createdAt: new Date('2026-01-01'),
+              updatedAt: new Date('2026-01-02'),
+            },
+          ],
+        },
+      ];
+
+      prismaService.skill.findMany.mockResolvedValue(mockRawPrismaResult);
+
+      const result = await service.getSkillTree();
+
+      expect(prismaService.skill.findMany).toHaveBeenCalledWith({
+        where: { parentId: null },
+        include: {
+          children: {
+            orderBy: { name: 'asc' },
+          },
+        },
+        orderBy: { name: 'asc' },
+      });
+
+      expect(result).toEqual([
+        {
+          slug: 'verb',
+          name: 'Verb',
+          category: 'verb',
+          children: [
+            { slug: 'present_perfect', name: 'Present Perfect', cefr: 'B1' },
+            { slug: 'past_simple', name: 'Past Simple', cefr: 'A2' },
+          ],
+        },
+      ]);
+
+      // Explicitly assert that Mongo internals do not leak
+      const parent = result[0] as unknown as Record<string, unknown>;
+      expect(parent.id).toBeUndefined();
+      expect(parent.parentId).toBeUndefined();
+      expect(parent.createdAt).toBeUndefined();
+      expect(parent.updatedAt).toBeUndefined();
+
+      const child = result[0].children[0] as unknown as Record<string, unknown>;
+      expect(child.id).toBeUndefined();
+      expect(child.parentId).toBeUndefined();
+      expect(child.createdAt).toBeUndefined();
+      expect(child.updatedAt).toBeUndefined();
+    });
+  });
+
   describe('findAll', () => {
     it('should return all skills without filters', async () => {
       prismaService.skill.findMany.mockResolvedValue(mockSkills);

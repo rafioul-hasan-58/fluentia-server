@@ -1,13 +1,13 @@
 import {
   Controller,
   Get,
+  Header,
   NotFoundException,
   Param,
-  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SkillsService } from './skills.service';
-import { GetSkillsQueryDto } from './dto/getSkills.query.dto';
+import { SkillCategoryDto } from './dto/skill-response.dto';
 
 @ApiTags('Skills')
 @Controller('skills')
@@ -15,17 +15,19 @@ export class SkillsController {
   constructor(private readonly skillsService: SkillsService) {}
 
   @Get()
+  @Header('Cache-Control', 'public, max-age=3600')
   @ApiOperation({
-    summary: 'Get all grammar skills',
+    summary: 'Get nested grammar skill tree',
     description:
-      'Retrieves the list of available grammar skills with optional filtering by category, CEFR level, or search keyword.',
+      'Retrieves the public, cacheable grammar skill taxonomy as a nested tree for dropdown selectors.',
   })
   @ApiResponse({
     status: 200,
-    description: 'List of skills retrieved successfully.',
+    description: 'Nested grammar skill tree retrieved successfully.',
+    type: [SkillCategoryDto],
   })
-  async findAll(@Query() query: GetSkillsQueryDto) {
-    return this.skillsService.findAll(query);
+  async getSkillTree(): Promise<SkillCategoryDto[]> {
+    return this.skillsService.getSkillTree();
   }
 
   @Get(':slug')
