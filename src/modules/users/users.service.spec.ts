@@ -383,8 +383,6 @@ describe('UsersService', () => {
         _count: {
           testAttempts: 2,
           sessions: 1,
-          attempts: 2,
-          submissions: 1,
         },
       });
 
@@ -392,6 +390,12 @@ describe('UsersService', () => {
       expect(result.id).toBe('665f1b2e1111111111111111');
       expect(result.testsCount).toBe(2);
       expect(result.proficiency.level).toBe(EnglishLevel.B1);
+      expect(result.counts).toEqual({
+        testAttempts: 2,
+        sessions: 1,
+        attempts: 0,
+        submissions: 0,
+      });
     });
   });
 

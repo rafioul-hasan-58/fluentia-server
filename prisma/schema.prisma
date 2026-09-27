@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
@@ -38,11 +33,6 @@ model User {
 
   profile        LearningProfile?
   sessions       LearningSession[]
-  attempts       ExerciseAttempt[]
-  submissions    SentenceSubmission[]
-  skillProgress  SkillProgress[]
-  weaknesses     Weakness[]
-  reviews        ReviewSchedule[]
   testAttempts   TestAttempt[]
   myVocabularies MyVocabulary[]
   vocabStories   VocabStory[]
@@ -61,111 +51,21 @@ model Skill {
   createdAt DateTime?     @default(now())
   updatedAt DateTime?     @updatedAt
 
-  sessions    LearningSession[]
-  exercises   Exercise[]
-  submissions SentenceSubmission[]
-  progress    SkillProgress[]
-  weaknesses  Weakness[]
-  reviews     ReviewSchedule[]
+  sessions LearningSession[]
 }
 
 // One "diagnose → teach → practice" pass, scoped to one known skillId.
 model LearningSession {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String     @db.ObjectId
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skillId   String     @db.ObjectId
-  skill     Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId   String    @db.ObjectId
+  skill     Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
   rawInput  String? // optional free-text detail
   diagnosis Json? // validated AI diagnosis output
-  status    String     @default("diagnosing") // diagnosing|teaching|practicing|completed
-  createdAt DateTime?  @default(now())
-  updatedAt DateTime?  @updatedAt
-  exercises Exercise[]
-}
-
-model Exercise {
-  id         String            @id @default(auto()) @map("_id") @db.ObjectId
-  sessionId  String            @db.ObjectId
-  session    LearningSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  skillId    String            @db.ObjectId
-  skill      Skill             @relation(fields: [skillId], references: [id], onDelete: Cascade)
-  type       String // mcq|fill_blank|error_correction|sentence_transform
-  difficulty String // beginner|intermediate|advanced
-  content    Json // question/options — AI-generated, backend-validated
-  createdAt  DateTime?         @default(now())
-  updatedAt  DateTime?         @updatedAt
-  attempts   ExerciseAttempt[]
-}
-
-model ExerciseAttempt {
-  id         String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String    @db.ObjectId
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  exerciseId String    @db.ObjectId
-  exercise   Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  userAnswer String
-  isCorrect  Boolean
-  createdAt  DateTime? @default(now())
-}
-
-model SentenceSubmission {
-  id                String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String    @db.ObjectId
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skillId           String    @db.ObjectId
-  skill             Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
-  prompt            String
-  sentence          String
-  aiEvaluation      Json // errors, correction, explanation
-  usedTargetGrammar Boolean
-  createdAt         DateTime? @default(now())
-}
-
-model Weakness {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String    @db.ObjectId
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skillId       String    @db.ObjectId
-  skill         Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
-  confidence    Float // 0–1, backend-calculated from evidence
-  evidenceCount Int       @default(0)
-  status        String    @default("active") // active|improving|resolved
-  createdAt     DateTime? @default(now())
-  updatedAt     DateTime? @updatedAt
-
-  @@unique([userId, skillId])
-}
-
-model SkillProgress {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String    @db.ObjectId
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skillId         String    @db.ObjectId
-  skill           Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
-  masteryScore    Float     @default(0) // 0–100, backend-owned math
-  correctCount    Int       @default(0)
-  incorrectCount  Int       @default(0)
-  lastPracticedAt DateTime?
-  createdAt       DateTime? @default(now())
-  updatedAt       DateTime? @updatedAt
-
-  @@unique([userId, skillId])
-}
-
-model ReviewSchedule {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String    @db.ObjectId
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skillId      String    @db.ObjectId
-  skill        Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
-  nextReviewAt DateTime
-  intervalDays Int       @default(1)
-  lastResult   String? // success|fail
-  createdAt    DateTime? @default(now())
-  updatedAt    DateTime? @updatedAt
-
-  @@unique([userId, skillId])
+  status    String    @default("diagnosing") // diagnosing|teaching|practicing|completed
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 model LearningProfile {

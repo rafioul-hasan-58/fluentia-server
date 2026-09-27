@@ -278,8 +278,6 @@ export class UsersService {
           select: {
             testAttempts: true,
             sessions: true,
-            attempts: true,
-            submissions: true,
           },
         },
       },
@@ -320,7 +318,12 @@ export class UsersService {
       updatedAt: uRecord.updatedAt,
       profile: uRecord.profile,
       recentTestAttempts: uRecord.testAttempts,
-      counts: uRecord._count,
+      counts: {
+        testAttempts: uRecord._count?.testAttempts ?? 0,
+        sessions: uRecord._count?.sessions ?? 0,
+        attempts: 0,
+        submissions: 0,
+      },
     };
   }
 
