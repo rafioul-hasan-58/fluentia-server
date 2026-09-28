@@ -14,7 +14,7 @@ import { SkillCategoryDto } from './dto/skill-response.dto';
 export class SkillsController {
   constructor(private readonly skillsService: SkillsService) {}
 
-  @Get()
+  @Get('find-all')
   @Header('Cache-Control', 'public, max-age=3600')
   @ApiOperation({
     summary: 'Get nested grammar skill tree',
@@ -30,7 +30,7 @@ export class SkillsController {
     return this.skillsService.getSkillTree();
   }
 
-  @Get(':slug')
+  @Get('find-one/:slug')
   @ApiOperation({
     summary: 'Get a single grammar skill by slug',
     description:
