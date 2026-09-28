@@ -21,6 +21,7 @@ import { QueryBuilder } from '../../../infrastructure';
 
 @Injectable()
 export class MyVocabularyService {
+  getVocabularyWord: any;
   constructor(
     private readonly prisma: PrismaService,
     private readonly vocabularyCoreService: VocabularyCoreService,
@@ -148,11 +149,36 @@ export class MyVocabularyService {
 
     return item;
   }
+  async findMyVocabularyByWord(userId: string, wordName: string) {
+    const word = await this.prisma.vocabulary.findUnique({
+      where: {
+        word: wordName,
+      },
+    });
+    if (!word) {
+      throw new NotFoundException('Word not found!');
+    }
 
-  /**
-   * Updates personal study metadata (sentences, notes, mastery, status, favorite) for a user's vocabulary.
-   * NEVER mutates the global Vocabulary record.
-   */
+    const item = await this.prisma.myVocabulary.findUnique({
+      where: {
+        userId_wordId: {
+          userId,
+          wordId: word?.id,
+        },
+      },
+      include: {
+        word: true,
+      },
+    });
+
+    if (!item || item.userId !== userId) {
+      throw new NotFoundException('Personal vocabulary item not found');
+    }
+
+    return item;
+  }
+
+  //  update my vocabulary
   async updateMyVocabulary(
     userId: string,
     id: string,

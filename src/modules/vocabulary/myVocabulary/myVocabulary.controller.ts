@@ -171,6 +171,45 @@ export class MyVocabularyController {
     };
   }
 
+  @Get('word/:word')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get a single personal vocabulary item by word',
+    description:
+      'Retrieves personal study notes, custom sentences, mastery score, status, and the underlying dictionary definition.',
+  })
+  @ApiParam({
+    name: 'word',
+    description: 'The vocabulary word',
+    example: 'hello',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Personal vocabulary retrieved successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Personal vocabulary item not found.',
+  })
+  async getVocabularyByWord(
+    @CurrentUser('id') userId: string,
+    @Param('word') word: string,
+  ) {
+    const data = await this.myVocabularyService.findMyVocabularyByWord(
+      userId,
+      word,
+    );
+
+    return {
+      message: 'Personal vocabulary item retrieved successfully.',
+      data,
+    };
+  }
+
   @Patch(':id/update')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
