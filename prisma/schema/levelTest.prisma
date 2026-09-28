@@ -1,14 +1,4 @@
-enum TestQuestionSection {
-  GRAMMAR
-  VOCABULARY
-  READING
-}
 
-enum DifficultyType {
-  EASY
-  MEDIUM
-  HARD
-}
 
 model LevelTestSet {
   id          String              @id @default(auto()) @map("_id") @db.ObjectId
@@ -77,4 +67,15 @@ model TestAttemptAnswer {
   createdAt  DateTime          @default(now())
 
   @@unique([attemptId, questionId])
+}
+enum TestQuestionSection {
+  GRAMMAR
+  VOCABULARY
+  READING
+}
+
+enum DifficultyType {
+  EASY
+  MEDIUM
+  HARD
 }
