@@ -17,11 +17,14 @@ model User {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  profile        LearningProfile?
-  sessions       LearningSession[]
-  testAttempts   TestAttempt[]
-  myVocabularies MyVocabulary[]
-  vocabStories   VocabStory[]
+  profile          LearningProfile?
+  sessions         LearningSession[]
+  testAttempts     TestAttempt[]
+  myVocabularies   MyVocabulary[]
+  vocabStories     VocabStory[]
+  practiceSessions PracticeSession[]
+  exerciseAttempts ExerciseAttempt[]
+  skillProgresses  SkillProgress[]
 }
 
 model LearningProfile {

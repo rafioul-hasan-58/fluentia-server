@@ -12,7 +12,10 @@ model Skill {
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
 
-  sessions LearningSession[]
+  sessions         LearningSession[]
+  practiceSessions PracticeSession[]
+  exercises        Exercise[]
+  skillProgresses  SkillProgress[]
 
   @@index([parentId])
   @@index([category])
