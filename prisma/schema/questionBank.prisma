@@ -1,0 +1,43 @@
+model QuestionBank {
+    id      String @id @default(auto()) @map("_id") @db.ObjectId
+    skillId String @db.ObjectId
+    skill   Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+    type            QuestionType @default(MCQ)
+    difficulty      Difficulty
+    prompt          String
+    options         String[]
+    correctAnswer   String
+    acceptedAnswers String[] // alt. correct forms for fill_blank/error_correction; empty for MCQ
+    explanation     String
+
+    theme       String? // "harry_potter", null = generic
+    focusTags   String[] // ["for_since", "finished_time"]
+    visibility  QuestionVisibility @default(SHARED)
+    ownerUserId String?            @db.ObjectId // set only when visibility = PRIVATE
+
+    seenByUserIds String[] @db.ObjectId // who's already gotten this one
+
+    promptVersion String // which prompt template generated it
+    model         String // "gpt-4o" etc, for debugging/cost tracking
+    qualityScore  Float? // from the verification pass
+    reportCount   Int     @default(0)
+    isActive      Boolean @default(true)
+
+    createdAt DateTime @default(now())
+
+    exercises Exercise[]
+
+    @@index([skillId, difficulty, isActive])
+    @@index([skillId, theme, isActive])
+}
+
+enum QuestionVisibility {
+    SHARED
+    PRIVATE
+}
+
+enum QuestionType {
+    MCQ
+    FILL_BLANK
+}

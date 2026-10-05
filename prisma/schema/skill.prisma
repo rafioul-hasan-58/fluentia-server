@@ -16,6 +16,7 @@ model Skill {
   practiceSessions PracticeSession[]
   exercises        Exercise[]
   skillProgresses  SkillProgress[]
+  questionBanks    QuestionBank[]
 
   @@index([parentId])
   @@index([category])
