@@ -27,7 +27,48 @@ export class MyVocabularyService {
     private readonly prisma: PrismaService,
     private readonly vocabularyCoreService: VocabularyCoreService,
   ) {}
+  private buildMyVocabularyWhere(
+    userId: string,
+    query: Pick<
+      GetMyVocabulariesQueryDto | GetNextWordQueryDto,
+      | 'status'
+      | 'isFavorite'
+      | 'masteryLevel'
+      | 'date'
+      | 'partOfSpeech'
+      | 'englishLevel'
+    >,
+  ): Prisma.MyVocabularyWhereInput {
+    const rawWhere: Prisma.MyVocabularyWhereInput = { userId };
 
+    if (query.status) rawWhere.vocabularyStatus = query.status;
+    if (query.isFavorite !== undefined) rawWhere.isFavorite = query.isFavorite;
+    if (query.masteryLevel !== undefined)
+      rawWhere.masteryLevel = query.masteryLevel;
+
+    const wordFilter: Prisma.VocabularyWhereInput = {};
+    let hasWordFilter = false;
+
+    if (query.partOfSpeech) {
+      wordFilter.partOfSpeech = query.partOfSpeech;
+      hasWordFilter = true;
+    }
+    if (query.englishLevel) {
+      wordFilter.englishLevel = query.englishLevel;
+      hasWordFilter = true;
+    }
+    if (query.date) {
+      const dateStr = query.date.trim().slice(0, 10);
+      const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+      const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
+      if (!isNaN(startOfDay.getTime()) && !isNaN(endOfDay.getTime())) {
+        rawWhere.createdAt = { gte: startOfDay, lte: endOfDay };
+      }
+    }
+    if (hasWordFilter) rawWhere.word = wordFilter;
+
+    return rawWhere;
+  }
   // add vocabulary to user's personal collection
   async addToMyVocabulary(userId: string, dto: AddMyVocabularyDto) {
     // Verify global Vocabulary exists using VocabularyCoreService
@@ -355,14 +396,54 @@ export class MyVocabularyService {
   }
 
   async getNextWordDetails(userId: string, query: GetNextWordQueryDto) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
-
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('User not found!');
     }
+
+    const { page = 1, limit = 10, direction = 'next' } = query;
+    const rawWhere = this.buildMyVocabularyWhere(userId, query);
+
+    // Reuse QueryBuilder for where/orderBy ONLY — same construction findAll
+    // uses, guaranteeing "next" never drifts from whatever page/filter/sort
+    // context the user is actually browsing in. We deliberately skip
+    // .paginate(), since that computes a full-page skip/take; here we need a
+    // single neighboring row instead.
+    const queryBuilder = new QueryBuilder(
+      this.prisma.myVocabulary,
+      query as unknown as Record<string, unknown>,
+    )
+      .search(['word.word', 'word.meaning', 'word.banglaMeaning'])
+      .rawFilter(rawWhere)
+      .sort('-createdAt')
+      .include({ word: true });
+
+    const built = queryBuilder.getQuery() as {
+      where?: Prisma.MyVocabularyWhereInput;
+      orderBy?:
+        | Prisma.MyVocabularyOrderByWithRelationInput
+        | Prisma.MyVocabularyOrderByWithRelationInput[];
+      include?: Prisma.MyVocabularyInclude;
+    };
+
+    const skip = direction === 'next' ? page * limit : (page - 1) * limit - 1;
+
+    if (skip < 0) {
+      return { word: null, hasMore: false }; // no previous word — at the start
+    }
+
+    const [item] = await this.prisma.myVocabulary.findMany({
+      where: built.where,
+      orderBy: built.orderBy,
+      include: built.include,
+      skip,
+      take: 1,
+    });
+
+    if (!item) {
+      return { word: null, hasMore: false }; // ran past the end
+    }
+
+    return { word: item, hasMore: true };
   }
 }
