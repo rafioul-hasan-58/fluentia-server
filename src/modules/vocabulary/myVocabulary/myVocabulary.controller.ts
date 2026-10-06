@@ -27,6 +27,7 @@ import {
   GetVocabularyStatsQueryDto,
   UpdateMyVocabularyDto,
 } from './dto';
+import { GetNextWordQueryDto } from './dto/getNextWord.query';
 
 @ApiTags('My Vocabulary')
 @ApiBearerAuth()
@@ -283,5 +284,34 @@ export class MyVocabularyController {
       id,
     );
     return result;
+  }
+
+  @Get('next-word')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get next vocabulary word to learn',
+    description:
+      "Returns the next vocabulary word to learn based on the user's current learning path and progress.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Next vocabulary word retrieved successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized.',
+  })
+  async getNextVocabularyWord(
+    @CurrentUser('id') userId: string,
+    @Query() query: GetNextWordQueryDto,
+  ) {
+    const data = await this.myVocabularyService.getNextWordDetails(
+      userId,
+      query,
+    );
+    return {
+      message: 'Next vocabulary word retrieved successfully.',
+      data,
+    };
   }
 }

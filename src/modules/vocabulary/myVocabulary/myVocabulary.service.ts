@@ -18,6 +18,7 @@ import {
 } from './dto';
 import { VocabularyCoreService } from '../vocabularyCore';
 import { QueryBuilder } from '../../../infrastructure';
+import { GetNextWordQueryDto } from './dto/getNextWord.query';
 
 @Injectable()
 export class MyVocabularyService {
@@ -351,5 +352,17 @@ export class MyVocabularyService {
       partOfSpeeches,
       dateWordCounts,
     };
+  }
+
+  async getNextWordDetails(userId: string, query: GetNextWordQueryDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found!');
+    }
   }
 }
