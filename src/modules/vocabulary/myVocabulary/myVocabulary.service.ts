@@ -431,6 +431,7 @@ export class MyVocabularyService {
     if (skip < 0) {
       return { word: null, hasMore: false }; // no previous word — at the start
     }
+    console.log('skip', skip);
 
     const [item] = await this.prisma.myVocabulary.findMany({
       where: built.where,
