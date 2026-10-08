@@ -97,9 +97,6 @@ export class MyVocabularyService {
         wordId: dto.wordId,
         mySentences: [],
         notes: null,
-        masteryLevel: 0,
-        vocabularyStatus: VocabularyStatus.LEARNING,
-        isFavorite: false,
       },
     });
 
