@@ -28,7 +28,8 @@
     "db:backfill-collocations": "ts-node prisma/backfill-collocations.ts",
     "db:backfill-word-family": "ts-node prisma/backfill-word-family.ts",
     "db:backfill-verb-forms": "ts-node prisma/backfill-verb-forms.ts",
-    "db:backfill-favorite": "ts-node prisma/backfill-favorite-field.ts"
+    "db:backfill-favorite": "ts-node prisma/backfill-favorite-field.ts",
+    "db:backfill-mastery-level": "ts-node prisma/backfill-mastery-level.ts"
   },
   "prisma": {
     "schema": "prisma/schema",
