@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnglishLevel, PartOfSpeech, VocabularyStatus } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -116,23 +112,28 @@ describe('MyVocabularyService', () => {
           wordId: mockWordId,
           mySentences: [],
           notes: null,
-          masteryLevel: 0,
-          vocabularyStatus: VocabularyStatus.LEARNING,
-          isFavorite: false,
         },
       });
-      expect(result).toEqual(mockMyVocabulary);
+      expect(result).toEqual({
+        ...mockMyVocabulary,
+        alreadyExists: false,
+      });
     });
 
-    it('should throw ConflictException if user already has this word', async () => {
+    it('should return existing record with alreadyExists: true if user already has this word', async () => {
       vocabularyCoreService.findVocabularyById.mockResolvedValue(
         mockVocabulary,
       );
       prismaService.myVocabulary.findUnique.mockResolvedValue(mockMyVocabulary);
 
-      await expect(
-        service.addToMyVocabulary(mockUserId, { wordId: mockWordId }),
-      ).rejects.toThrow(ConflictException);
+      const result = await service.addToMyVocabulary(mockUserId, {
+        wordId: mockWordId,
+      });
+
+      expect(result).toEqual({
+        ...mockMyVocabulary,
+        alreadyExists: true,
+      });
     });
 
     it('should throw NotFoundException if global vocabulary does not exist', async () => {

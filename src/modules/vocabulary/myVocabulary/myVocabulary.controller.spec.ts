@@ -81,7 +81,10 @@ describe('MyVocabularyController', () => {
 
   describe('addToMyVocabulary', () => {
     it('should add a vocabulary to the authenticated user collection', async () => {
-      service.addToMyVocabulary.mockResolvedValue(mockMyVocabulary);
+      service.addToMyVocabulary.mockResolvedValue({
+        ...mockMyVocabulary,
+        alreadyExists: false,
+      });
 
       const result = await controller.addToMyVocabulary(mockUserId, {
         wordId: mockWordId,
@@ -92,7 +95,29 @@ describe('MyVocabularyController', () => {
       });
       expect(result).toEqual({
         message: 'Vocabulary added to your personal collection successfully.',
-        data: mockMyVocabulary,
+        data: {
+          ...mockMyVocabulary,
+          alreadyExists: false,
+        },
+      });
+    });
+
+    it('should return alreadyExists: true message if vocabulary is already in personal collection', async () => {
+      service.addToMyVocabulary.mockResolvedValue({
+        ...mockMyVocabulary,
+        alreadyExists: true,
+      });
+
+      const result = await controller.addToMyVocabulary(mockUserId, {
+        wordId: mockWordId,
+      });
+
+      expect(result).toEqual({
+        message: 'This vocabulary word is already in your personal collection.',
+        data: {
+          ...mockMyVocabulary,
+          alreadyExists: true,
+        },
       });
     });
   });

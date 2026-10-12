@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   EnglishLevel,
   PartOfSpeech,
@@ -85,9 +81,10 @@ export class MyVocabularyService {
     });
 
     if (existing) {
-      throw new ConflictException(
-        'This vocabulary word is already in your personal collection',
-      );
+      return {
+        ...existing,
+        alreadyExists: true,
+      };
     }
 
     // 3. Create personal MyVocabulary record
@@ -100,7 +97,10 @@ export class MyVocabularyService {
       },
     });
 
-    return created;
+    return {
+      ...created,
+      alreadyExists: false,
+    };
   }
 
   // get all vocabulary of this user

@@ -37,15 +37,16 @@ export class MyVocabularyController {
   constructor(private readonly myVocabularyService: MyVocabularyService) {}
 
   @Post('save')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Add a vocabulary word to personal collection',
+    summary: 'Add a vocabulary word to personal collection or return existing',
     description:
-      'Creates a personal user-scoped link to a global vocabulary item with default LEARNING status and initial mastery score.',
+      'Creates a personal user-scoped link to a global vocabulary item, or returns the existing record with alreadyExists: true if it already exists in the user vault.',
   })
   @ApiResponse({
-    status: 201,
-    description: 'Vocabulary added to personal collection successfully.',
+    status: 200,
+    description:
+      'Vocabulary added to personal collection or existing record returned.',
   })
   @ApiResponse({
     status: 400,
@@ -59,18 +60,15 @@ export class MyVocabularyController {
     status: 404,
     description: 'Global vocabulary item not found.',
   })
-  @ApiResponse({
-    status: 409,
-    description:
-      'Conflict — Vocabulary is already in your personal collection.',
-  })
   async addToMyVocabulary(
     @CurrentUser('id') userId: string,
     @Body() dto: AddMyVocabularyDto,
   ) {
     const data = await this.myVocabularyService.addToMyVocabulary(userId, dto);
     return {
-      message: 'Vocabulary added to your personal collection successfully.',
+      message: data.alreadyExists
+        ? 'This vocabulary word is already in your personal collection.'
+        : 'Vocabulary added to your personal collection successfully.',
       data,
     };
   }
