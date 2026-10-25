@@ -2,7 +2,7 @@
 export function buildVocabularyPrompt(word: string): string {
   const normalizedWord = word.trim().toLowerCase();
 
-  return `You are an expert lexicographer and language educator specializing in English-Bengali bilingual ESL instruction.
+  return `You are an expert lexicographer and language educator specializing in English-Bengali bilingual ESL instruction and IELTS exam preparation.
 Analyze the following English word or collocation: "${normalizedWord}"
 
 ### Spelling Correction Rule:
@@ -32,8 +32,13 @@ Generate accurate, structured dictionary data formatted strictly as a single JSO
    - "word": English morphological word form in lowercase (e.g. "significance").
    - "partOfSpeech": EXACTLY one of the allowed parts of speech (e.g. "NOUN").
    - "banglaMeaning": Single-word Bengali meaning of this specific word form (strictly ONE word only in Bengali script, e.g. "তাৎপর্য", "উল্লেখযোগ্যভাবে"). Do NOT use multiple words or phrases.
-9. "synonyms": Array of 2-5 direct English synonyms with their parts of speech (e.g. [{"word": "important", "partOfSpeech": "ADJECTIVE"}, {"word": "considerable", "partOfSpeech": "ADJECTIVE"}]).
-10. "antonyms": Array of 1-4 direct English antonyms with their parts of speech (or empty array if none apply) (e.g. [{"word": "insignificant", "partOfSpeech": "ADJECTIVE"}, {"word": "minor", "partOfSpeech": "ADJECTIVE"}]).
+9. "synonyms": Array of 2-5 IELTS-specific academic synonyms with their parts of speech (e.g. [{"word": "substantial", "partOfSpeech": "ADJECTIVE"}, {"word": "considerable", "partOfSpeech": "ADJECTIVE"}]):
+   - Prioritize high-utility academic words and paraphrases frequently tested in IELTS Reading passages and question types (such as True/False/Not Given, Matching Headings, Summary Completion).
+   - Ensure strong lexical resource suitable for IELTS Writing (Tasks 1 & 2), Speaking, and Listening sections.
+   - Each synonym MUST share the identical part of speech and core register of the headword for accurate paraphrase substitution.
+10. "antonyms": Array of 1-4 IELTS-specific academic antonyms / direct opposites with their parts of speech (or empty array if none apply) (e.g. [{"word": "insignificant", "partOfSpeech": "ADJECTIVE"}, {"word": "negligible", "partOfSpeech": "ADJECTIVE"}]):
+   - Prioritize direct academic opposites and contrasts commonly tested in IELTS Reading (especially True/False/Not Given contradictions) and IELTS Writing/Speaking counter-arguments.
+   - Each antonym MUST share the identical part of speech as the headword.
 11. "englishLevel": CEFR proficiency level (EXACTLY one of: "A1", "A2", "B1", "B2", "C1", "C2") based on Oxford/Cambridge standards.
 12. "verbForms": If "partOfSpeech" is "VERB", you MUST provide an object with "v1", "v2", and "v3" in lowercase containing the principal verb forms:
    - "v1": Base form / Present simple (e.g. "write", "go", "break").
@@ -78,13 +83,13 @@ Example (Non-verb):
     { "word": "significantly", "partOfSpeech": "ADVERB", "banglaMeaning": "উল্লেখযোগ্যভাবে" }
   ],
   "synonyms": [
-    { "word": "important", "partOfSpeech": "ADJECTIVE" },
+    { "word": "substantial", "partOfSpeech": "ADJECTIVE" },
     { "word": "considerable", "partOfSpeech": "ADJECTIVE" },
-    { "word": "substantial", "partOfSpeech": "ADJECTIVE" }
+    { "word": "momentous", "partOfSpeech": "ADJECTIVE" }
   ],
   "antonyms": [
     { "word": "insignificant", "partOfSpeech": "ADJECTIVE" },
-    { "word": "minor", "partOfSpeech": "ADJECTIVE" }
+    { "word": "negligible", "partOfSpeech": "ADJECTIVE" }
   ],
   "englishLevel": "B1"
 }

@@ -51,4 +51,17 @@ describe('buildVocabularyPrompt', () => {
       'If "partOfSpeech" is NOT "VERB", strictly set "verbForms" to null',
     );
   });
+
+  it('should instruct IELTS-specific synonyms and antonyms for reading and other sections', () => {
+    const prompt = buildVocabularyPrompt('significant');
+
+    expect(prompt).toContain('IELTS exam preparation');
+    expect(prompt).toContain('"synonyms"');
+    expect(prompt).toContain('IELTS-specific academic synonyms');
+    expect(prompt).toContain('IELTS Reading passages and question types');
+    expect(prompt).toContain('IELTS Writing (Tasks 1 & 2), Speaking, and Listening');
+    expect(prompt).toContain('"antonyms"');
+    expect(prompt).toContain('IELTS-specific academic antonyms');
+    expect(prompt).toContain('True/False/Not Given contradictions');
+  });
 });
